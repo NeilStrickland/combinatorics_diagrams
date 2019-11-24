@@ -1,0 +1,443 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <style type="text/css">
+
+   div#controls_div {
+    position:absolute;
+    left: 1100px;
+    top: 50px;
+   }
+
+   div#controls_div td {
+    display: inline-block;
+    width: 90px;
+   }
+
+   div#count_div {
+    position: absolute;
+    left: 1100px;
+    top: 200px;
+   }
+
+   div#count_div td {
+    width:70px;
+   }
+
+   div#msg_div {
+    text-align:center;
+    font-size: 24px;
+    margin: 40px;
+   }
+
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/utils/Draggable.min.js"></script>
+  <script type="text/javascript">
+
+   var tile = {
+    parent : null,
+    index : null,
+    i0 : 0,
+    j0 : 0,
+    x0 : 0,
+    y0 : 0,
+    i : 0,
+    j : 0,
+    x : 0,
+    y : 0,
+    squares : [],
+    bdy : [],
+    svg : null,
+    dragger : null
+   }
+
+   tile.clone = function() {
+    var t = Object.create(tile);
+    t.parent = this.parent;
+    t.index = this.index;
+    t.i0 = this.i0;
+    t.j0 = this.j0;
+    t.x0 = this.x0;
+    t.y0 = this.y0;
+    t.i  = this.i;
+    t.j  = this.j;
+    t.x  = this.x;
+    t.y  = this.y;
+    t.squares = this.squares;
+    t.bdy = this.bdy;
+    t.svg = null;
+    t.dragger = null;
+
+    return t;
+   }
+
+   tile.create_svg = function() {
+    var s,g,p,c,d,u;
+
+    s = this.parent;
+    g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('transform','translate(' + this.x0 + ',' + this.y0 + ')');
+
+    p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    c = 'M ';
+    d = '';
+    u = s.fg(this.i,this.j);
+
+    for (l = 0; 2*l < this.bdy.length; l++) {
+     d += c + (s.board_size * this.bdy[2*l  ]) + ' '
+      + (s.board_size * this.bdy[2*l+1]) + ' ';
+     c = 'L ';
+    } 
+    d += ' L ' + (s.board_size * this.bdy[0]) + ' '
+     + (s.board_size * this.bdy[1]);
+    p.setAttribute('d',d);
+    p.setAttribute('fill','#5DADE2');
+    p.setAttribute('fill-opacity','0.8');
+    p.setAttribute('stroke','#000000');
+    p.setAttribute('stroke-width',2);
+    g.appendChild(p);    
+    this.svg = g;
+
+    return g;
+   }
+
+   var demo = {};
+
+   demo.board_x0 = 50;
+   demo.board_y0 = 50;
+   demo.board_size = 50;
+   demo.board_cols = 20;
+   demo.board_rows = 10;
+   demo.num       = 0;
+   demo.num_white = 0;
+   demo.num_red   = 0;
+   demo.mode = 'show';
+   
+   demo.f = function(i,j) {
+    return Math.round(this.board_x0 + i * this.board_size);
+   }
+
+   demo.g = function(i,j) {
+    return Math.round(this.board_y0 + j * this.board_size);
+   }
+
+   demo.fg = function(i,j) {
+    return {'x' : this.f(i,j), 'y' : this.g(i,j) };
+   }
+
+   demo.create_tile = function(i,j,squares,bdy) {
+    var t,g,p,c,d,u,l;
+    var me = this;
+
+    t = Object.create(tile);
+    t.parent = this;
+    t.index = this.num_tiles;
+    this.num_tiles++;
+    this.tiles[t.index] = t;
+
+    t.i0 = i;
+    t.j0 = j;
+    t.x0 = this.f(i,j);
+    t.y0 = this.g(i,j);
+    t.i = i;
+    t.j = j;
+    t.x = t.x0;
+    t.y = t.y0;
+    t.squares = squares;
+    t.bdy = bdy;
+
+    g = t.create_svg();
+    this.main_svg.appendChild(g);
+
+    t.dragger = Draggable.create(t.svg,{
+     type : 'x,y',
+     liveSnap  : { points : function(z) { return me.snap(z,t); }},
+     onDragEnd : function() { me.handle_dragend(t); },
+     onClick : function() { me.twist(t); }
+    })[0];    
+
+    this.set_covered(t,1);
+    return t;
+   }
+
+   demo.init = function() {
+    var i,j,p,dh,dv,me;
+
+    me = this;
+
+    this.main_svg = document.getElementById('main_svg');
+
+    this.board_x1 = this.f(this.board_cols,0);
+    this.board_y1 = this.g(0,this.board_rows);
+
+    for(i = 0; i <= this.board_cols; i++) {
+     p =  document.createElementNS('http://www.w3.org/2000/svg', 'line');
+     p.setAttribute('x1',this.f(i,0));
+     p.setAttribute('y1',this.g(i,0));
+     p.setAttribute('x2',this.f(i,this.board_rows));
+     p.setAttribute('y2',this.g(i,this.board_rows));
+     p.setAttribute('stroke','black');
+     p.setAttribute('stroke-width',1);
+     this.main_svg.appendChild(p);
+    }
+
+    for(j = 0; j <= this.board_rows; j++) {
+     p =  document.createElementNS('http://www.w3.org/2000/svg', 'line');
+     p.setAttribute('x1',this.f(0,j));
+     p.setAttribute('y1',this.g(0,j));
+     p.setAttribute('x2',this.f(this.board_cols,j));
+     p.setAttribute('y2',this.g(this.board_cols,j));
+     p.setAttribute('stroke','black');
+     p.setAttribute('stroke-width',1);
+     this.main_svg.appendChild(p);
+    }
+
+    this.is_covered = {};
+    for (i = 0; i < this.board_cols; i++) {
+     this.is_covered[i] = {};
+     for (j = 0; j < this.board_rows; j++) {
+      this.is_covered[i][j] = null;
+     }
+    }
+
+    p = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    p.setAttribute('x',this.f( 7,3));
+    p.setAttribute('y',this.g( 7,3));
+    p.setAttribute('width',7 * this.board_size);
+    p.setAttribute('height',4 * this.board_size);
+    p.setAttribute('stroke','blue');
+    p.setAttribute('stroke-width',4);
+    p.setAttribute('fill','none');
+    this.main_svg.appendChild(p);
+
+    this.lights = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    this.lights.setAttribute('visibility','hidden');
+    this.main_svg.appendChild(this.lights);
+    
+    for (i = 0; i < this.board_cols; i++) {
+     for (j = 0; j < this.board_rows; j++) {
+      if ((i+j) % 2) {
+       p = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+       p.setAttribute('cx',this.f(i+0.5,j+0.5));
+       p.setAttribute('cy',this.g(i+0.5,j+0.5));
+       p.setAttribute('r',0.3*this.board_size);
+       p.setAttribute('fill','#FF6666');
+       p.setAttribute('stroke','none');
+       this.lights.appendChild(p);
+      }
+     }
+    }
+
+    this.num_tiles = 0;
+    this.tiles = {};
+
+    this.create_tile( 4,3,[[-2, 0],[-1, 0],[ 0, 0],[ 1, 0]],[-2,0,2,0,2,1,-2,1]);
+    this.create_tile( 9,3,[[-2, 0],[-1, 0],[ 0, 0],[ 0,-1]],[-2,0,0,0,0,-1,1,-1,1,1,-2,1]);
+    this.create_tile(13,3,[[-2, 0],[-1, 0],[ 0, 0],[ 0,-1]],[-2,0,0,0,0,-1,1,-1,1,1,-2,1]);
+    this.create_tile(16,3,[[-1,-1],[ 0,-1],[-1, 0],[ 0, 0]],[-1,-1,-1,1,1,1,1,-1]);
+    this.create_tile( 3,6,[[-1, 0],[ 0, 0],[ 0,-1],[ 1,-1]],[-1,0,-1,1,1,1,1,0,2,0,2,-1,0,-1,0,0]);
+    this.create_tile( 8,6,[[-1, 0],[ 0, 0],[ 0,-1],[ 1,-1]],[-1,0,-1,1,1,1,1,0,2,0,2,-1,0,-1,0,0]);
+    this.create_tile(12,6,[[-1, 0],[ 0, 0],[ 0,-1],[ 1, 0]],[-1,0,-1,1,2,1,2,0,1,0,1,-1,0,-1,0,0]);
+    
+    document.getElementById('count').onclick = function() { me.toggle_mode(); }
+   }
+
+   demo.twist = function(t) {
+    var me,sq,bd,i,t1,c;
+
+    me = this;
+
+    t1 = t.clone();
+    sq = t1.squares;
+    bd = t1.bdy;
+    t1.squares = [];
+    t1.bdy = [];
+    for (i in sq) {
+     t1.squares.push([-sq[i][1]-1,sq[i][0]]);
+    }
+
+    for (i = 0; i < bd.length; i += 2) {
+     t1.bdy.push(-bd[i+1]);
+     t1.bdy.push( bd[i]);
+    }
+
+    t1.x0 = t1.x;
+    t1.y0 = t1.y;
+    t1.i0 = t1.i;
+    t1.j0 = t1.j;
+
+    c = this.check_cover(t1,t1.i,t1.j);
+    if (c) {
+     this.set_covered(t,0);
+     t.dragger.kill();
+     this.main_svg.removeChild(t.svg);
+     t1.create_svg();
+
+     this.main_svg.appendChild(t1.svg);
+
+     this.tiles[t1.index] = t1;
+     this.set_covered(t1,1);
+
+     t1.dragger = Draggable.create(t1.svg,{
+      type : 'x,y',
+      liveSnap  : { points : function(z) { return me.snap(z,t1); }},
+      onDragEnd : function() { me.handle_dragend(t1); },
+      onClick : function() { me.twist(t1); }
+     })[0];    
+    }
+   }
+
+   demo.set_covered = function(t,u) {
+    var i,j,k;
+    
+    this.num = 0;
+    this.num_red = 0;
+    this.num_white = 0;
+    
+    for(k in t.squares) {
+     i = t.i + t.squares[k][0];
+     j = t.j + t.squares[k][1];
+     if (u) {
+      this.is_covered[i][j] = t.index;
+     } else {
+      this.is_covered[i][j] = null;
+     }
+    } 
+    
+    for (i = 0; i < this.board_cols; i++) {
+     for (j = 0; j < this.board_rows; j++) {
+      if (this.is_covered[i][j] !== null) {
+       this.num++;
+       if ((i+j) % 2) {
+        this.num_red++;
+       } else {
+        this.num_white++;
+       }
+      }
+     }
+    }
+    
+    document.getElementById('num').innerHTML = this.num;
+    document.getElementById('num_red').innerHTML = this.num_red;
+    document.getElementById('num_white').innerHTML = this.num_white;
+   }
+
+   demo.check_cover = function(t,i,j) {
+    var k,p,q,c;
+
+    for(k in t.squares) {
+     p = i + t.squares[k][0];
+     q = j + t.squares[k][1];
+     if (p < 0 || q < 0 || p >= this.board_cols || q >= this.board_rows) {
+      return 0;
+     }
+     c = this.is_covered[p][q];
+     if ((c !== null) && (c != t.index)) { return 0; }
+    }
+    return 1;
+   }
+
+   demo.snap = function(z,t) {
+    var ok,i,j,i0,j0,i1,j1,i2,j2,d1,d2,x1,y1;
+
+    ok = [];
+    for (i = 0; i < this.board_cols; i++) {
+     for (j = 0; j < this.board_cols; j++) {
+      if (this.check_cover(t,i,j)) {ok.push([i,j]);}
+     }
+    }
+
+    i0 = (z.x - this.board_x0) / this.board_size;
+    j0 = (z.y - this.board_y0) / this.board_size;
+    i1 = null;
+    j1 = null;
+    d1 = 10000;
+    for (k in ok) {
+     i2 = ok[k][0];
+     j2 = ok[k][1];
+     d2 = Math.abs(i0 - i2) + Math.abs(j0 - j2);
+     if (d2 < d1) {
+      d1 = d2; i1 = i2; j1 = j2;
+     }
+    }
+
+    //    console.log(z.x + ',' + z.y + '|' + i0 + ',' + j0 + '|' + i1 + ',' + j1 + ',' + d1);
+    return this.fg(i1,j1);
+   }
+
+   demo.handle_dragend = function(t) {
+    this.set_covered(t,0);
+    t.x = t.dragger.endX;
+    t.y = t.dragger.endY;
+    t.i = Math.round((t.x - this.board_x0) / this.board_size);
+    t.j = Math.round((t.y - this.board_y0) / this.board_size);
+    this.set_covered(t,1);
+   }
+
+   demo.toggle_mode = function() {
+    if (this.mode == 'show') {
+     this.mode = 'count';
+     this.lights.setAttribute('visibility','visible');
+     document.getElementById('count_div').style.display = 'block';
+     document.getElementById('msg_div').style.display = 'block';
+    } else {
+     this.mode = 'show';
+     this.lights.setAttribute('visibility','hidden');
+     document.getElementById('count_div').style.display = 'none';     
+     document.getElementById('msg_div').style.display = 'none';
+    }
+   }
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1200" height="550">
+   </svg>
+   <div id="controls_div">
+    <table>
+     <tr>
+      <td class="control" id="count">Count</td>
+     </tr>
+    </table>
+   </div>
+   <div id="count_div" style="display:none">
+    <table class="edged">
+     <tr>
+      <td>Red</td>
+      <td id="num_red">0</td>
+     </tr>
+     <tr>
+      <td>White</td>
+      <td id="num_white">0</td>
+     </tr>
+     <tr>
+      <td>Total</td>
+      <td id="num">0</td>
+     </tr>
+    </table>
+   </div>
+   <div id="msg_div" style="display:none">
+    Most of the tiles cover two white squares and two red squares, no matter 
+    how they are translated or rotated.  Only the last T-shaped block is different:
+    it either covers one red square and three white squares, or three red squares 
+    and one white square.  Thus, the seven tiles together cover (13 red and 15 white), 
+    or (15 red and 13 white).  However, the blue rectangle covers (14 red and 14 white).
+    Thus, it is impossible to arrange the seven tiles to cover the blue rectangle.
+   </div>
+  </div>
+ </body>
+</html>

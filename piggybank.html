@@ -1,0 +1,436 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <style type="text/css">
+
+   div#controls_div {
+    position:absolute;
+    left: 1200px;
+    top: 20px;
+   }
+
+   div#controls_div div {
+    width: 120px;
+   }
+
+   div#count_div {
+    position: absolute;
+    left: 1100px;
+    top: 200px;
+   }
+
+   div#count_div td {
+    width:70px;
+   }
+
+   div#main_div {
+    position:absolute;
+    left: 50px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position:absolute;
+    top: 600px;
+    text-align:center;
+    font-size: 24px;
+    margin: 40px;
+   }
+
+   rect.chosen {
+    fill : #00FF00;
+   }
+
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/utils/Draggable.min.js"></script>
+  <script type="text/javascript">
+
+   var day = {
+    i : 0,
+    x : 0,
+    y : 0,
+    z : 0,
+    x_base : 0,
+    y_base : 0,
+    text : null,
+    x_rect : null,
+    y_bar : null,
+    long_y_bar: null,
+    z_bar : null,
+    long_z_bar: null
+   };
+
+   day.set_x = function(k) {
+    this.x = k;
+    this.x_rect.setAttribute('y',this.x_base - demo.h * k);
+    this.x_rect.setAttribute('height',demo.h * k);
+   }
+
+   day.set_y = function(k) {
+    this.y = k;
+    var t = this.y_base - demo.h * this.y;
+    this.y_bar.setAttribute('y1',t);
+    this.y_bar.setAttribute('y2',t);
+    this.long_y_bar.setAttribute('y1',t);
+    this.long_y_bar.setAttribute('y2',t);
+    this.right_y_bar.setAttribute('y1',t);
+    this.right_y_bar.setAttribute('y2',t);
+   }
+
+   day.show_y = function(x) {
+    var v = x ? 'visible' : 'hidden';
+    this.y_bar.setAttribute('visibility',v);
+    this.long_y_bar.setAttribute('visibility',v);
+    this.right_y_bar.setAttribute('visibility',v);
+   }
+
+   day.set_z = function(k) {
+    this.z = this.y + k;
+    var t = this.y_base - demo.h * this.z;
+    this.z_bar.setAttribute('y1',t);
+    this.z_bar.setAttribute('y2',t);
+    this.long_z_bar.setAttribute('y1',t);
+    this.long_z_bar.setAttribute('y2',t);
+    this.right_z_bar.setAttribute('y1',t);
+    this.right_z_bar.setAttribute('y2',t);
+   }
+
+   day.show_z = function(x) {
+    var v = x ? 'visible' : 'hidden';
+    this.z_bar.setAttribute('visibility',v);
+    this.long_z_bar.setAttribute('visibility',v);
+    this.right_z_bar.setAttribute('visibility',v);
+   }
+   
+   day.fade = function(x) {
+    if (x) {
+     this.text.setAttribute('fill','#DDDDFF');
+     if (this.x_rect) {
+      this.x_rect.setAttribute('fill','#DDDDFF');
+     }
+    } else {
+     this.text.setAttribute('fill','black');
+     if (this.x_rect) {
+      this.x_rect.setAttribute('fill','blue');     
+     }
+    }
+   }
+   
+   var demo = {};
+
+   demo.n = 15;
+   demo.w = 30;
+   demo.h = 8;
+   demo.base = 550;
+
+   demo.init = function() {
+    var i,j,d,x1,x2,x3,x4,u,w;
+
+    me = this;
+
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div  = document.getElementById('msg_div');
+
+    this.day = {};
+
+    for (i = 0; i <= 2 * this.n; i++) {
+     d = Object.create(day);
+     this.day[i] = d;
+     d.i = i;
+     d.x = 0;
+     d.y = 0;
+     d.x_base = demo.base;
+     d.y_base = demo.base - 40;
+
+     if (i > 0) {
+      d.x_rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      d.x_rect.setAttribute('stroke','none');
+      d.x_rect.setAttribute('fill','blue');
+      d.x_rect.setAttribute('x',this.w*i + 42);
+      d.x_rect.setAttribute('y',d.x_base);
+      d.x_rect.setAttribute('width',this.w - 4);
+      d.x_rect.setAttribute('height',10);
+      this.main_svg.appendChild(d.x_rect);
+     }
+
+     x1 = this.w*i + 42;
+     x2 = this.w*(i+1) + 38;
+     x3 = (2 * this.n + 1) * this.w + 50;
+     x4 = x3 + this.w - 4;
+
+     d.y_bar       = this.bar(x1,x2,d.y_base,'red',3);
+     d.long_y_bar  = this.bar(x2,x3,d.y_base,'red',1);
+     d.long_y_bar.setAttribute('stroke-dasharray','1 5');
+     d.right_y_bar = this.bar(x3,x4,d.y_base,'red',3);
+
+     x3 += this.w;
+     x4 += this.w;
+
+     d.z_bar       = this.bar(x1,x2,d.y_base,'green',3);
+     d.long_z_bar  = this.bar(x2,x3,d.y_base,'green',1);
+     d.long_z_bar.setAttribute('stroke-dasharray','1 5');
+     d.right_z_bar = this.bar(x3,x4,d.y_base,'green',3);
+
+     d.z_bar.setAttribute('visibility','hidden');
+     d.long_z_bar.setAttribute('visibility','hidden');
+     d.right_z_bar.setAttribute('visibility','hidden');
+
+     d.text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+     d.text.setAttribute('font-size',20);
+     d.text.setAttribute('text-anchor','middle');
+     d.text.setAttribute('alignment-baseline','middle');
+     d.text.setAttribute('x',this.w*(i + 0.5)+40);
+     d.text.setAttribute('y',demo.base + 15);
+     d.text.textContent = i;
+     this.main_svg.appendChild(d.text);
+    }
+
+    for (i = 0; i <= this.n * 4; i++) {
+     u = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+     x1 = (2 * this.n + 3) * this.w + 50;
+     y1 = demo.base - 40 - this.h * i;
+     u.setAttribute('stroke','black');
+     if (i % 10 == 0 || i == 3 * this.n) {
+      u.setAttribute('stroke-width',3);
+      w = 30;
+     } else {
+      u.setAttribute('stroke-width',1);
+      w = 15;
+     }
+
+     u.setAttribute('x1',x1);
+     u.setAttribute('x2',x1 + w);
+     u.setAttribute('y1',y1);
+     u.setAttribute('y2',y1);
+     this.main_svg.appendChild(u);
+    }
+
+    u = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    u.setAttribute('font-size',20);
+    u.setAttribute('text-anchor','left');
+    u.setAttribute('alignment-baseline','middle');
+    u.setAttribute('x',(2 * this.n + 3) * this.w + 91);
+    u.setAttribute('y',demo.base - 37);
+    u.textContent = '0';
+    this.main_svg.appendChild(u);
+
+    u = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    u.setAttribute('font-size',20);
+    u.setAttribute('text-anchor','left');
+    u.setAttribute('alignment-baseline','middle');
+    u.setAttribute('x',(2 * this.n + 3) * this.w + 91);
+    u.setAttribute('y',demo.base - 37 - 3 * this.n * this.h);
+    u.textContent = 3 * this.n;
+    this.main_svg.appendChild(u);
+
+    u = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    u.setAttribute('font-size',20);
+    u.setAttribute('text-anchor','left');
+    u.setAttribute('alignment-baseline','middle');
+    u.setAttribute('x',(2 * this.n + 3) * this.w + 91);
+    u.setAttribute('y',demo.base - 37 - 4 * this.n * this.h);
+    u.textContent = 4 * this.n;
+    this.main_svg.appendChild(u);
+
+
+    document.getElementById('choose').onclick = 
+     function() { me.choose_set(); }
+
+    document.getElementById('check').onclick = 
+     function() { me.show_sol(); }
+
+    this.choose_set();
+   }
+
+   demo.bar = function(x1,x2,y,st,sw) {
+    var b = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    b.setAttribute('stroke',st);
+    b.setAttribute('stroke-width',sw);
+    b.setAttribute('fill','none');
+    b.setAttribute('x1',x1);
+    b.setAttribute('x2',x2);
+    b.setAttribute('y1',y);
+    b.setAttribute('y2',y);
+    this.main_svg.appendChild(b);
+    return b;
+   }
+
+   demo.choose_set = function() {
+    var i,j,d;
+    this.chosen = [];
+    this.is_chosen = {};
+
+    for (i = 1; i <= 2 * this.n; i++) {
+     this.is_chosen[i] = 0; 
+    }
+
+    for (i = 0; i < this.n; i++) {
+     j = -1;
+     while(j == -1 || this.is_chosen[j]) {
+      j = Math.ceil(Math.random() * this.n * 2);
+     }
+     this.chosen.push(j);
+     this.is_chosen[j] = 1;
+    }
+
+    this.chosen.sort((a, b) => a - b);
+
+    this.day[0].y = 0;
+
+    for (i = 1; i <= 2 * this.n; i++) {
+     d = this.day[i];
+     d.set_x(this.is_chosen[i] ? 2 : 1);
+     d.set_y(this.day[i-1].y + d.x);
+    }
+
+    for (i = 0; i <= 2 * this.n; i++) {
+     this.day[i].show_y(1);
+     this.day[i].show_z(0);
+     this.day[i].fade(0);
+    }
+    
+    document.getElementById('select_k').value = '';
+    this.msg_div.innerHTML = '';
+   }
+
+   demo.show_k = function() {
+    var i;
+    
+    for (i = 0; i <= 2 * this.n; i++) {
+     if (this.k) {
+      this.day[i].set_z(this.k);
+      this.day[i].show_z(1);
+     } else {
+      this.day[i].show_z(0);
+     }
+     
+     this.day[i].show_y(1);
+     this.day[i].fade(0);
+    }
+    
+    if (this.k) {
+     this.msg_div.innerHTML = 
+      'The green bars are the same as the red bars but shifted up by ' + this.k + '.';
+    } else {
+     this.msg_div.innerHTML = ''; 
+    }
+    
+    this.find_sol();
+   }
+
+   demo.select_k = function() {
+    this.k = parseInt(document.getElementById('select_k').value);
+    this.show_k();
+   }
+
+   demo.find_sol = function() {
+    var Y,Z,J,i;
+    
+    Y = {};
+    Z = {};
+    J = [];
+    
+    for (i = 0; i <= 4 * this.n; i++) {
+     Y[i] = null;
+     Z[i] = null;
+    }
+    
+    for (i = 0; i <= 2 * this.n; i++) {
+     Y[this.day[i].y] = i;
+     Z[this.day[i].z] = i;
+    }
+    
+    for (i = 0; i <= 4 * this.n; i++) {
+     if (Y[i] && Z[i]) {
+      J.push(i);
+     }
+    }
+    
+    this.sol_J = J;
+    this.sol_j = J[Math.floor(J.length * Math.random())];
+    this.sol_p = Z[this.sol_j];
+    this.sol_q = Y[this.sol_j];
+   }
+
+   demo.show_sol = function() {
+    for(i = 0; i <= 2 * this.n; i++) {
+     d = this.day[i];
+     if (this.sol_p <= i && i <= this.sol_q) {
+      d.show_y(1); 
+     } else {
+      d.show_y(0);
+     }
+     if (this.sol_p < i && i <= this.sol_q) {
+      d.fade(0);
+     } else {
+      d.fade(1);
+     }
+
+     this.day[i].show_z(this.sol_p == i);
+     
+     if (this.k == 1) {
+      a = ' one pound';
+     } else {
+      a = '' + this.k + ' pounds';
+     }
+     
+     if (this.sol_q == this.sol_p + 1) {
+      p = 'On day ' + this.sol_q;
+     } else {
+      p = 'Over days ' + (this.sol_p + 1) + ' to ' + 
+      this.sol_q;
+     }
+     
+     this.msg_div.innerHTML = p + ' we deposit a total of ' + a + '.';
+    }
+   }
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="650">
+   </svg>
+   <div id="controls_div">
+    <div class="control" id="choose">Choose</div>
+    <div class="control">
+     $k=$
+     <select id="select_k" onchange="demo.select_k()">
+      <option></option>
+      <option>1</option>
+      <option>2</option>
+      <option>3</option>
+      <option>4</option>
+      <option>5</option>
+      <option>6</option>
+      <option>7</option>
+      <option>8</option>
+      <option>9</option>
+      <option>10</option>
+      <option>11</option>
+      <option>12</option>
+      <option>13</option>
+      <option>14</option>
+      <option>15</option>
+     </select>
+    </div>
+    <div class="control" id="check">Check</div>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

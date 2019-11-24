@@ -1,0 +1,436 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    left: 1220px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 680px;
+    margin-left: 80px;
+    margin-right: 80px;
+    font-size: 24px;
+   }
+   
+   td.lhs {
+    text-align: right;
+    font-size: 24px;
+   }
+   
+   td.rhs {
+    text-align: left;
+    font-size: 24px;
+   }
+   
+   tr.row_equation td {
+    padding-top: 10px;
+   }
+   
+   tr.col_equation td {
+    padding-top: 10px;
+   }
+   
+  </style>
+  <script type="text/javascript">
+   var demo = {};
+   
+   demo.init = function() {
+    var T,i,j,k,l,A,B,x,y,b,t,a;
+    var me = this;
+
+    this.main_svg = document.getElementById('main_svg');
+    this.main_svg.appendChild(comb.svg.arrow_defs());
+    this.msg_div = document.getElementById('msg_div');
+
+    T = tournament.setup([
+     ['A','F'],['A','G'],['A','U'],['F','G'],['G','U'],
+     ['U','F'],['W','A'],['W','F'],['W','G'],['W','U']]);
+
+    this.T = T;
+    
+    T.names = {
+     'A' : 'Australia',
+     'F' : 'Fiji',
+     'G' : 'Georgia',
+     'U' : 'Uruguay',
+     'W' : 'Wales'
+    };
+    
+    T.grid_x0 = 200;
+    T.grid_y0 = 50;
+    T.grid_h = 80;
+    T.grid_w = 80;
+
+    this.main_svg.appendChild(T.make_grid(1).svg);
+
+    for(i = 0; i < 5; i++) {
+     img = comb.svg.node('image');
+     n = T.names[T.players[i]].toLowerCase();
+     img.setAttribute('href','../images/' + n + '.png');
+     img.setAttribute('width',105);
+     img.setAttribute('height',70);
+     img.setAttribute('x',80);
+     img.setAttribute('y',T.grid_y0 + (i + 1) * T.grid_h + 5);
+     this.main_svg.appendChild(img);
+    }
+
+    T.graph_pos = [
+     [0,1.6],[-1,0],[1,0],[0,0.87],[0,2.2]
+    ];
+
+    T.graph_x0 = 1100;
+    T.graph_y0 = 450;
+    T.graph_scale = -150;
+
+    this.main_svg.appendChild(T.make_graph().svg);
+
+    T.graph.svg.removeChild(T.graph.arrow[4][1]);
+    T.graph.svg.removeChild(T.graph.arrow[4][2]);
+    T.graph.svg.removeChild(T.graph.arrow[4][3]);
+
+    f = function(xy) { return [T.graph_x0 + T.graph_scale * xy[0],
+			       T.graph_y0 + T.graph_scale * xy[1]]; }
+    
+    a = comb.svg.lines([[-0.2,2.2],[-1,2.2],[-1,0.2]].map(f),'black',1);
+    a.setAttribute('marker-end','url(#head)');
+    T.graph.arrow[4][1] = a;
+    T.graph.arrow[1][4] = a;
+    T.graph.svg.appendChild(a);
+    
+    a = comb.svg.lines([[ 0.2,2.2],[ 1,2.2],[ 1,0.2]].map(f),'black',1);
+    a.setAttribute('marker-end','url(#head)');
+    T.graph.arrow[4][2] = a;
+    T.graph.arrow[2][4] = a;
+    T.graph.svg.appendChild(a);
+    
+    a = comb.svg.lines([[-0.1,2.1],[-0.65,1.55],[-0.1,1.0]].map(f),'black',1);
+    a.setAttribute('marker-end','url(#head)');
+    T.graph.arrow[4][3] = a;
+    T.graph.arrow[3][4] = a;
+    T.graph.svg.appendChild(a);
+    
+    this.set_all_handlers(1);
+   }
+
+   demo.highlight_square = function(i,j,k) {
+    var s = this.T.grid.indexed_square[i][j];
+    var r = this.T.indexed_result[i][j];
+    s.rect.setAttribute('fill',this.T.col[r][k]);
+   }
+   
+   demo.highlight_score = function(i,k) {
+    var s = this.T.grid.indexed_score[i];
+    s.rect.setAttribute('fill',k ? '#ffbbbb' : '#ffffff');
+   }
+
+   demo.highlight_arrow = function(i,j,k) {
+    if (i == j) { return; }
+    
+    var a = this.T.graph.arrow[i][j];
+    if (k == 0) {
+     a.setAttribute('stroke','#888888');
+     a.setAttribute('stroke-width',1);
+    } else if (k == 1) {
+     a.setAttribute('stroke','#000000');
+     a.setAttribute('stroke-width',1);
+    } else {
+     if (this.T.indexed_result[i][j] == 1) {
+      a.setAttribute('stroke','#0000ff');
+     } else {
+      a.setAttribute('stroke','#00ff00');
+     }
+     a.setAttribute('stroke-width',3);
+    }
+   }
+   
+   demo.set_all_handlers = function(t) {
+    for (i = 0; i < this.T.n; i++) {
+     this.set_player_handlers(i);
+     
+     for (j = 0; j < this.T.n; j++) {
+      this.set_square_handler(i,j);
+     }
+    }
+   };
+   
+   demo.set_player_handlers = function(i) {
+    var me = this;
+
+    this.T.grid.indexed_col_header[i].rect.onmouseover =
+     function() { me.handle_col_header_mouseover(i); }
+    this.T.grid.indexed_col_header[i].text.onmouseover =
+     function() { me.handle_col_header_mouseover(i); }
+    this.T.grid.indexed_col_header[i].rect.onmouseout =
+     function() { me.handle_mouseout(); }
+    this.T.grid.indexed_row_header[i].rect.onmouseover =
+     function() { me.handle_row_header_mouseover(i); }
+    this.T.grid.indexed_row_header[i].text.onmouseover =
+     function() { me.handle_row_header_mouseover(i); }
+    this.T.grid.indexed_row_header[i].rect.onmouseout =
+     function() { me.handle_mouseout(); }
+    this.T.grid.indexed_score[i].rect.onmouseover =
+     function() { me.handle_score_mouseover(i); }
+    this.T.grid.indexed_score[i].text.onmouseover =
+     function() { me.handle_score_mouseover(i); }
+    this.T.grid.indexed_score[i].rect.onmouseout =
+     function() { me.handle_mouseout(); }
+   }
+
+   demo.set_square_handler = function(i,j) {
+    var me = this;
+    var u = this.T.grid;
+    var v = u.indexed_square[i][j];
+    
+    v.text.onmouseover = function() { me.handle_square_mouseover(i,j); };
+    v.rect.onmouseover = function() { me.handle_square_mouseover(i,j); };
+    v.rect.onmouseout  = function() { me.handle_mouseout(); };
+   }
+
+   demo.handle_col_header_mouseover = function(i) {
+    var T,j,k,p,s;
+
+    T = this.T;
+    p = T.players[i];
+    P = T.names[p];
+    
+    for (j = 0; j < this.T.n; j++) {
+     for (k = 0; k < this.T.n; k++) {
+      if (j != k) {
+       this.highlight_square(j,k,(i == k) ? 2 : 0);
+       this.highlight_arrow(j,k,0);       
+      }
+     }
+    }
+
+    for (j = 0; j < this.T.n; j++) {
+     this.highlight_arrow(j,i,2);
+    }
+
+    s = 'This column shows the games against ' + P + '. ';
+
+    if (T.wins_for[p].length == 0) {
+     s += 'Every other team wins against ' + P + ', so every entry in this column is W.';
+    } else if (T.wins_for[p].length == 1) {
+     q = T.wins_for[p][0];
+     Q = T.names[q];
+     s += Q + ' loses to ' + P + ', so we have an L in the (' +
+      q + ',' + p + ') position.  Every other team wins against ' + P +
+      ', so all other entries in this column are W.';
+    } else if (T.wins_for[p].length == T.n - 2) {
+     q = T.losses_for[p][0];
+     Q = T.names[q];
+     s += Q + ' wins against ' + P + ', so we have a W in the (' +
+      q + ',' + p + ') position.  Every other team loses to ' + P +
+      ', so all other entries in this column are L.';
+    } else if (T.wins_for[p].length == T.n - 1) {
+     s += 'Every other team loses to ' + P + ', so every entry in this column is L.';
+    } else {
+     WP = T.wins_for[p].map(function(k) { return T.names[k]; }); 
+     LP = T.losses_for[p].map(function(k) { return T.names[k]; });
+     
+     s +=
+      P + ' wins against ' +
+      WP.slice(0,-1).join(',') + ' and ' + WP.slice(-1)[0] + '. ' + 
+      P + ' loses to ' +
+      LP.slice(0,-1).join(',') + ' and ' + LP.slice(-1)[0] + '.';
+
+     s +=
+      WP.slice(0,-1).join(',') + ' and ' + T.wins_for[p].slice(-1)[0] +
+      ' lose to ' + P + '. ' +
+      LP.slice(0,-1).join(',') + ' and ' + LP.slice(-1)[0] + '.' + 
+      ' win against ' + P + '.'; 
+    }
+
+    this.msg_div.innerHTML = s;
+   }
+   
+   demo.handle_row_header_mouseover = function(i) {
+    var T,j,k,p,s,P;
+
+    T = this.T;
+    p = T.players[i];
+    P = T.names[p];
+    
+    for (j = 0; j < this.T.n; j++) {
+     for (k = 0; k < this.T.n; k++) {
+      if (j != k) {
+       this.highlight_square(j,k,(i == j) ? 2 : 0);
+       this.highlight_arrow(j,k,0);
+      }
+     }
+
+     this.highlight_score(j, i == j ? 1 : 0);
+    }
+
+    for (j = 0; j < this.T.n; j++) {
+     this.highlight_arrow(i,j,2);
+    }
+    
+    s = 'This row shows the games played by ' + P + '. ';
+
+    if (T.wins_for[p].length == 0) {
+     s += P + ' loses to every other team, so every entry in this row is L. ';
+    } else if (T.wins_for[p].length == 1) {
+     q = T.wins_for[p][0];
+     Q = T.names[q]; 
+     s += P + ' wins against ' + Q + ', so we have a W in the (' +
+      p + ',' + q + ') position. ' + P + ' loses to every other team, so all other entries in this row are L.';
+    } else if (T.wins_for[p].length == T.n - 2) {
+     q = T.losses_for[p][0];
+     Q = T.names[q]; 
+     s += P + ' loses to ' + Q + ', so we have an L in the (' +
+      p + ',' + q + ') position.  ' + P + ' wins against every other team, so all other entries in this row are W.';
+    } else if (T.wins_for[p].length == T.n - 1) {
+     s += P + ' wins against every other team, so every entry in this row is W.';
+    } else {
+     WP = T.wins_for[p].map(function(k) { return T.names[k]; }); 
+     LP = T.losses_for[p].map(function(k) { return T.names[k]; });
+     
+     s +=
+      P + ' wins against ' +
+      WP.slice(0,-1).join(',') + ' and ' + WP.slice(-1)[0] + '. ' + 
+      P + ' loses to ' +
+      LP.slice(0,-1).join(',') + ' and ' + LP.slice(-1)[0] + '.';
+    }
+
+    s += ' The score for ' + P + ' is ' + T.wins_for[p].length + '.';
+    
+    this.msg_div.innerHTML = s;
+
+   }
+
+   demo.handle_score_mouseover = function(i) {
+    var T,R,p,j,k;
+    
+    T = this.T;
+    R = T.indexed_result;
+    p = T.players[i];
+    
+    
+    for (j = 0; j < this.T.n; j++) {
+     this.highlight_score(j, i == j ? 1 : 0);
+     for (k = 0; k < this.T.n; k++) {
+      this.highlight_square(j,k,0);
+      this.highlight_arrow(j,k,0);
+     }
+    }
+
+    for (k = 0; k < this.T.n; k++) {
+     if (R[i][k] == 1) {
+      this.highlight_square(i,k,2);
+      this.highlight_arrow(i,k,2);
+     } else {
+      this.highlight_square(i,k,1);
+     }
+    }
+
+    P = T.names[p];
+    s = ' The score for ' + P + ' is ' + T.wins_for[p].length + '.';
+    
+    this.msg_div.innerHTML = s;
+    
+   }
+   
+   demo.handle_square_mouseover = function(i,j) {
+    var k,l;
+
+    for (k = 0; k < this.T.n; k++) {
+     this.highlight_score(k,0);
+     
+     for (l = 0; l < this.T.n; l++) {
+      if (k != l) {
+       this.highlight_square(k,l,0);
+       this.highlight_arrow(k,l,0);
+      }
+     }
+    }
+
+    this.highlight_arrow(i,j,2);
+    this.highlight_square(i,j,2);
+    this.highlight_square(j,i,1);
+
+    p = this.T.players[i];
+    q = this.T.players[j];
+    P = this.T.names[p];
+    Q = this.T.names[q];
+    
+    if (this.T.indexed_result[i][j] == 1) {
+     s = P + ' wins against ' + Q + '. <br/> ' +
+      '(Equivalently, ' + Q + ' loses to ' + P + '.)';
+    } else {
+     s = P + ' loses to ' + Q + '. <br/> ' +
+      '(Equivalently, ' + Q + ' wins against ' + P + '.)';
+    }
+
+    this.msg_div.innerHTML = s;
+   }
+
+   demo.handle_mouseout = function() {
+    var j,k;
+
+    for (j = 0; j < this.T.n; j++) {
+     this.highlight_score(j,0);
+     
+     for (k = 0; k < this.T.n; k++) {
+      if (j != k) {
+       this.highlight_square(j,k,0);
+       this.highlight_arrow(j,k,1);
+      }
+     }
+    }
+    this.msg_div.innerHTML = '';
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <h1 style="padding-left:50px">Pool C, Rugby World Cup 2019</h1>
+   <svg id="main_svg" width="1300" height="700">
+   </svg>
+   <div id="msg_div">
+   </div>
+   <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+     <defs id="main_defs">
+      <marker
+       id="head"
+       orient="auto"
+       markerUnits="userSpaceOnUse"
+       markerWidth="10"
+       markerHeight="14"
+       refX="1"
+       refY="5" 
+       viewBox="0 0 10 10"
+       >
+	 <path d="M 0 0 L 10 5 L 0 10 z" fill="#000000"/>
+       </marker>
+     </defs>
+   </svg>
+  </div>
+ </body>
+</html>

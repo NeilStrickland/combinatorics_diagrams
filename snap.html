@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="UTF-8">
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    left: 1220px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 540px;
+    left: 720px;
+    width: 500px;
+    font-size: 24px;
+   }
+   
+   td.lhs {
+    text-align: right;
+    font-size: 24px;
+   }
+   
+   td.rhs {
+    text-align: left;
+    font-size: 24px;
+   }
+   
+   tr.row_equation td {
+    padding-top: 10px;
+   }
+   
+   tr.col_equation td {
+    padding-top: 10px;
+   }
+   
+   div#perms {
+    position: absolute;
+    left: 800px;
+    top: 100px;
+   }
+   
+   table.solution_table {
+    display: none;
+    position: absolute;
+    left: 560px;
+    top: 100px;
+   }
+   
+   tr.solution_row {
+    height: 50px;    
+   }
+   
+   td.solution_size { 
+    width: 40px;
+    vertical-align: top;
+   }
+   
+   td.solution_count { 
+    width: 40px;
+    vertical-align: top;
+   }
+   
+   td.solution_keys {
+    width: 400px;
+    min-height: 30px;
+    vertical-align: top;
+   }
+   
+   td.perm:hover {
+    cursor:pointer; 
+   }
+   
+   td.selected_perm {
+    background: orange;
+   }
+   
+   td.selected_perm:hover {
+    cursor:pointer; 
+   }
+   
+  </style>
+  <script type="text/javascript">
+   var demo = {};
+   
+   demo.init = function() {
+    var i,j,k,l,A,B,x,y,b,t;
+    var me = this;
+
+    this.frame = document.getElementById('frame');
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div = document.getElementById('msg_div');
+
+    this.cards = [
+     'AC','AH','AD','AS',
+     'KC','KH','KD','KS',
+     'QC','QH','QD','QS',
+     'JC','JH','JD','JS'
+    ];
+    
+    this.suit_symbol = {
+     'C' : '♣',
+     'H' : '♥',
+     'D' : '♦',
+     'S' : '♠'
+    }
+    
+    this.suit_colour = {
+     'C' : 'black',
+     'H' : 'red',
+     'D' : 'red',
+     'S' : 'black'
+    }
+    
+    this.card_name = {
+     'A' : 'ace',
+     'K' : 'king',
+     'Q' : 'queen',
+     'J' : 'jack'
+    }
+    
+    this.card_width  = Math.round(0.2 * 691);
+    this.card_height = Math.round(0.2 * 1056);
+    
+    E = [];
+    for (i in this.cards) {
+     a = this.cards[i];
+     for (j in this.cards) {
+      b = this.cards[j];
+      
+      if (a.substr(0,1) != b.substr(0,1)) {
+       E.push([a,b]);
+      }
+     }
+    }
+    
+    this.board = matching_problem.setup(this.cards,this.cards,E);
+    
+    R = this.board;
+    R.grid_x0 = 10;
+    R.grid_y0 = 0;
+    R.grid_w = 40;
+    R.grid_h = 40;
+    R.make_grid();
+    G = R.grid;
+    
+    for (i in this.cards) {
+     c = this.cards[i];
+     v = c.substr(0,1);
+     s = c.substr(1,1);
+     l = v + this.suit_symbol[s]; 
+     G.row_label[c].textContent = l;
+     G.row_label[c].setAttribute('font-size','20px');
+     G.row_label[c].setAttribute('fill',this.suit_colour[s]);
+     G.col_label[c].textContent = l;
+     G.col_label[c].setAttribute('font-size','20px');
+     G.col_label[c].setAttribute('fill',this.suit_colour[s]);
+    }
+    
+    this.main_svg.appendChild(R.grid.svg);
+    
+    this.left_deck = comb.svg.node('image');
+    this.left_deck.setAttribute('href','../images/cards/green_back.png');
+    this.left_deck.setAttribute('width',this.card_width);
+    this.left_deck.setAttribute('height',this.card_height);
+    this.left_deck.setAttribute('x',750);
+    this.left_deck.setAttribute('y',50);
+    G.svg.appendChild(this.left_deck);
+    
+    this.right_deck = comb.svg.node('image');
+    this.right_deck.setAttribute('href','../images/cards/green_back.png');
+    this.right_deck.setAttribute('width',this.card_width);
+    this.right_deck.setAttribute('height',this.card_height);
+    this.right_deck.setAttribute('x',920);
+    this.right_deck.setAttribute('y',50);
+    G.svg.appendChild(this.right_deck);
+    
+    this.left_card_image = comb.svg.node('image');
+    this.left_card_image.setAttribute('href','../images/cards/AS.png');
+    this.left_card_image.setAttribute('width',this.card_width);
+    this.left_card_image.setAttribute('height',this.card_height);
+    this.left_card_image.setAttribute('x',750);
+    this.left_card_image.setAttribute('y',290);
+    this.left_card_image.setAttribute('visibility','hidden');
+    G.svg.appendChild(this.left_card_image);
+    
+    this.right_card_image = comb.svg.node('image');
+    this.right_card_image.setAttribute('href','../images/cards/AS.png');
+    this.right_card_image.setAttribute('width',this.card_width);
+    this.right_card_image.setAttribute('height',this.card_height);
+    this.right_card_image.setAttribute('x',920);
+    this.right_card_image.setAttribute('y',290);
+    this.right_card_image.setAttribute('visibility','hidden');
+    G.svg.appendChild(this.right_card_image);
+    
+    this.shuffle();
+    this.show_board();
+    
+   }
+   
+   demo.draw = function(c) {
+    var me = this;
+   
+    if (this.step >= 16 || this.snap_state) {
+     return;
+    }
+    
+    this.step++;
+    i = this.step - 1;
+    this.left_card = this.cards[i];
+    this.right_card = this.shuffled_cards[i];
+    this.left_card_image.setAttribute('href','../images/cards/' + this.left_card + '.png');
+    this.right_card_image.setAttribute('href','../images/cards/' + this.right_card + '.png');
+    this.left_card_image.setAttribute('visibility','visible');
+    this.right_card_image.setAttribute('visibility','visible');
+    
+    if (this.step == 16) {
+     this.left_deck.setAttribute('visibility','hidden');
+     this.right_deck.setAttribute('visibility','hidden');
+    }
+    
+    this.left_val = this.left_card.substr(0,1);
+    this.right_val = this.right_card.substr(0,1);
+    this.left_val_name = this.card_name[this.left_val];
+    this.right_val_name = this.card_name[this.right_val];
+    
+    this.snap_state = (this.left_val == this.right_val);
+
+    if (! c) {
+     if (this.snap_state) {
+      this.msg_div.innerHTML =
+       'We have two ' + this.card_name[this.left_card.substr(0,1)] + 
+       's, so this is a snap.  This corresponds to the fact that the ' + 
+       'rook is in the grey box, which is not allowed.';
+     } else {
+      this.msg_div.innerHTML =
+       'The ' + this.left_val_name + ' and ' + this.right_val_name + 
+       ' have different values, so this is not a snap.';
+
+      if (this.step == 16) {
+       this.msg_div.innerHTML += 
+	' We have now dealt out the whole pack without having a snap.';
+      }
+     }
+    }
+   
+    this.board.add_rook(this.left_card,this.right_card);
+    this.board.paint_grid();
+
+    if (c) {
+     setTimeout(function() { me.draw(1); },250);
+    }
+   }
+   
+   demo.show_board = function() {
+    var m,i,a,b;
+    this.board.clear();
+    this.board.paint_grid();
+    
+    for (i in this.board.left_set) {
+     a = this.board.left_set[i];
+     for (j in this.board.right_set) {
+      b = this.board.right_set[j];
+     }
+    }
+   }
+   
+   demo.shuffle = function() {
+    var n,P,Q,i,j,a,b;
+    
+    n = 16;
+    P = this.cards.slice();
+    Q = [];
+    for (i = 0; i < n; i++) {
+     j = Math.floor(Math.random() * P.length);
+     Q.push(P[j]);
+     P = P.slice(0,j).concat(P.slice(j+1));
+    }
+    
+    this.shuffled_cards = Q;
+    this.step = 0;
+    this.snap_state = 0;
+    this.left_card = null;
+    this.right_card = null;
+    this.board.clear();
+    this.show_board();
+    
+    this.left_deck.setAttribute('visibility','visible');
+    this.right_deck.setAttribute('visibility','visible');
+    this.left_card_image.setAttribute('visibility','hidden');
+    this.right_card_image.setAttribute('visibility','hidden');
+
+    for (i in this.board.left_set) {
+     a = this.board.left_set[i];
+     for (j in this.board.right_set) {
+      b = this.board.right_set[j];      
+      f = this.board.relation_table[a][b] ? 'white' : 'grey';
+      this.board.grid.square[a][b].setAttribute('fill',f);
+     }
+    }
+    
+    this.msg_div.innerHTML = '';
+   }
+
+   demo.play = function() {
+    this.shuffle();
+    this.draw(1);
+   }
+		    
+  </script>
+ </head>
+ 
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="700">
+   </svg>
+   <div id="controls_div">
+    <div class="control" onclick="demo.shuffle()">Shuffle</div>
+    <div class="control" onclick="demo.draw(0)">Draw</div>
+    <div class="control" onclick="demo.play()">Play</div>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

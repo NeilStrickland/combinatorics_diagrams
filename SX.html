@@ -1,0 +1,294 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    left: 1220px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 120px;
+    left: 680px;
+    width : 600px;
+    font-size: 20px;
+   }
+   
+   div.cols_div {
+    position : absolute;
+    padding: 2px;
+   }
+   
+   div.rows_div {
+    position : absolute;
+    padding: 2px;
+   }
+   
+   div.selected_cols_div {
+    position : absolute;
+    padding: 2px;
+    background: cyan;
+   }
+   
+   div.selected_rows_div {
+    position : absolute;
+    padding: 2px;
+    background: cyan;
+   }
+   
+   div.cols_div:hover {
+    cursor: pointer;
+   }
+
+   div.rows_div:hover {
+    cursor: pointer;
+   }
+
+   div.selected_cols_div:hover {
+    cursor: pointer;
+   }
+
+   div.selected_rows_div:hover {
+    cursor: pointer;
+   }
+
+   ul.algo li {
+    padding-bottom: 10px;
+   }
+  </style>
+  <script type="text/javascript">
+   var demo = {};
+   
+   demo.init = function() {
+    var i,j,k,l,A,B,x,y,b,t;
+    var me = this;
+
+    this.frame = document.getElementById('frame');
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div = document.getElementById('msg_div');
+    this.perms_table = document.getElementById('perms_table');
+    
+    this.n = 6;
+    
+    this.board = matching_problem.full_board(this.n);
+    R = this.board;
+    R.grid_x0 = 50;
+    R.grid_y0 = 50;
+    R.grid_w = 80;
+    R.grid_h = 80;
+    R.make_grid();
+    this.main_svg.appendChild(R.grid.svg);
+    
+    for (i = 1; i <= this.n; i++) {
+     for (j = 1; j <= this.n; j++) {
+      x = R.grid_x0 + (j + 0.5) * R.grid_w;
+      y = R.grid_y0 + (i + 0.5) * R.grid_h;
+      c = R.cell[i][j];
+      c.marker_icon = comb.svg.circle(x,y,25,'blue',5);
+      c.marker_icon.setAttribute('visibility','hidden');
+      R.grid.svg.appendChild(c.marker_icon);
+     }
+    }
+    
+    this.X = [];
+    this.row_is_free = {1 : 1, 2 : 2, 3 : 1, 4 : 1, 5 : 1, 6 : 1};
+    this.col_is_free = {1 : 1, 2 : 2, 3 : 1, 4 : 1, 5 : 1, 6 : 1};
+
+    this.show_board();
+    R.toggle_rook(2,4);
+    R.toggle_rook(5,1);    
+    this.paint();
+   }
+   
+   demo.show_board = function() {
+    var m,i,a,b;
+    this.board.clear();
+    this.board.paint_grid();
+    
+    for (i = 1; i <= this.n; i++) {
+     for (j = 1; j <= this.n; j++) {
+      c = this.board.cell[i][j];
+      this.set_square_handler(c.square,i,j);
+      this.set_square_handler(c.marker_icon,i,j);
+     }
+    }
+   }
+      
+   demo.set_square_handler = function(x,a,b) {
+    var me = this;
+    x.onclick = function() { me.handle_square_click(a,b); };
+   }
+   
+   demo.handle_square_click = function(a,b) {
+    var c;
+    
+    c = this.board.cell[a][b];
+    c.is_filled = c.is_filled ? 0 : 1;
+    this.paint();
+   }
+   
+   demo.paint = function() {
+    var R,i,j,c;
+    
+    R = this.board;
+    
+    for (i = 1; i <= this.n; i++) {
+     this.row_is_free[i] = 1;
+     this.col_is_free[i] = 1;
+    }
+    
+    this.is_legal = 1;
+    this.X = [];
+    
+    for (i = 1; i <= this.n; i++) {
+     for (j = 1; j <= this.n; j++) {
+      c = R.cell[i][j];
+      if (c.is_filled) {
+       if (! this.row_is_free[i]) { this.is_legal = 0; }
+       if (! this.col_is_free[j]) { this.is_legal = 0; }
+       this.row_is_free[i] = 0;
+       this.col_is_free[j] = 0;
+       this.X.push([i,j]);
+       c.marker_icon.setAttribute('visibility','visible');
+      } else {
+       c.marker_icon.setAttribute('visibility','hidden');
+      }
+     }
+    }
+    
+    for (i = 1; i <= this.n; i++) {
+     for (j = 1; j <= this.n; j++) {
+      c = R.cell[i][j];
+
+      if (this.is_legal && this.row_is_free[i] && this.col_is_free[j]) {
+       c.square.setAttribute('fill','cyan');
+      } else {
+       c.square.setAttribute('fill','white');
+      }
+     }
+    }
+    
+    m = this.X.length;
+    p = this.n - m;
+    
+    s0 = '\\{';
+    s1 = '';
+    
+    for (i = 0; i < m-1; i++) {
+     s0 += '(' + this.X[i][0] + ',' + this.X[i][1] + '),';
+     s1 += '$(' + this.X[i][0] + ',' + this.X[i][1] + ')$';
+     if (i < m-2) {
+      s1 += ', ';
+     } else {
+      s1 += ' and ';
+     }
+    }
+    
+    if (m > 0) {
+     s0 += '(' + this.X[m-1][0] + ',' + this.X[m-1][1] + ')\\}';
+     s1 += '(' + this.X[m-1][0] + ',' + this.X[m-1][1] + ')';
+    }
+    
+    if (m == 0) {
+     this.X_string = '\\emptyset';
+     this.msg_div.innerHTML =
+      'This shows the case $X=\\emptyset$.  Here $S_X$ is just the set of ' +
+      'legal rook placements for the full board, so $|S_X|=6!$.';
+    } else if (m == 1) {
+     this.msg_div.innerHTML =
+      'This shows the case $X=' + s0 + '$.  Here $S_X$ is just the set of ' +
+      'legal rook placements that include a rook at ' + s1 + '.<br/><br/> ' +
+      'Such placements correspond to ways of placing 5 non-challenging ' + 
+      'rooks on the blue part of the board, of which the number is $5!$. ' +
+      'We therefore have $|S_X|=5!$.';
+    } else if (m < 5) {
+     s = 
+      'This shows the case $$X=' + s0 + '.$$  Here $S_X$ is just the set of ' +
+      'legal rook placements that include rooks at ' + s1 + '. <br/><br/>';
+     if (this.is_legal) {
+      s += 
+      'Such placements correspond to ways of placing ' + p +
+      ' non-challenging rooks on the blue part of the board, of which ' + 
+      'the number is $' + p + '!$. ' +
+      'We therefore have $|S_X|=' + p + '!$.';     
+     } else {
+      s +=
+       'However, if we put rooks in these places then they automatically ' +
+       'clash, so there are no legal possibilities.  This means that ' + 
+       '$S_X=\\emptyset$ and $|S_X|=0$.';
+     }
+     this.msg_div.innerHTML = s;
+    } else if (m == 5) {
+     s = 
+      'This shows the case $$X=' + s0 + '.$$  Here $S_X$ is just the set of ' +
+      'legal rook placements that include rooks at ' + s1 + '. <br/><br/>';
+     if (this.is_legal) {
+      s += 'If we put rooks in all these places, then the last rook must ' +
+       'go on the square marked in blue.  This shows that $|S_X|=1=1!$.';
+     } else {
+      s +=
+       'However, if we put rooks in these places then they automatically ' +
+       'clash, so there are no legal possibilities.  This means that ' + 
+       '$S_X=\\emptyset$ and $|S_X|=0$.';
+     }
+     this.msg_div.innerHTML = s;
+    } else if (m == 6) {
+     s = 
+      'This shows the case $$X=' + s0 + '.$$  Here $S_X$ is just the set of ' +
+      'legal rook placements that include rooks at ' + s1 + '. <br/><br/>';
+     if (this.is_legal) {
+      s += 'If we put rooks in all these places, then we have a rook in ' + 
+       'every row and column and there is nothing left to do.  ' +
+       'This shows that $|S_X|=1=0!$.';
+     } else {
+      s +=
+       'However, if we put rooks in these places then they automatically ' +
+       'clash, so there are no legal possibilities.  This means that ' + 
+       '$S_X=\\emptyset$ and $|S_X|=0$.';
+     }
+     this.msg_div.innerHTML = s;
+    } else {
+     this.msg_div.innerHTML = '';
+    }
+    
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.msg_div]);
+   }
+    
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="700">
+   </svg>
+   <div id="perms">
+    <table id="perms_table" class="edged">
+    </table>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

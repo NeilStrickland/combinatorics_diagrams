@@ -1,0 +1,348 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <style type="text/css">
+
+   div#controls_div {
+    position:absolute;
+    left: 1260px;
+    top: 20px;
+   }
+
+   div#controls_div div {
+    width: 60px;
+   }
+
+   div#count_div {
+    position: absolute;
+    left: 1100px;
+    top: 200px;
+   }
+
+   div#count_div td {
+    width:70px;
+   }
+
+   div#main_div {
+    position:absolute;
+    left: 50px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position:absolute;
+    top: 500px;
+    text-align:center;
+    font-size: 24px;
+    margin: 40px;
+   }
+
+   table#main_table {
+     border-collapse: collapse;
+   }
+   
+   td.left_header {
+    width: 100px;
+    height: 20px;
+    text-align: right;
+    padding: 3px 0.5em;
+    margin-right: 3px;
+    border: 1px solid #CCCCCC; 
+   }
+
+   td.right_header {
+    width: 100px;
+    height: 20px;
+    text-align: left;
+    padding: 3px 0.5em;
+    margin-left: 3px;
+    border: 1px solid #CCCCCC; 
+   }
+
+   td.top_header {
+    width: 40px;
+    height: 20px;
+    text-align: left;
+    padding: 3px 0.5em;
+    margin-left: 3px;
+    border: 1px solid #CCCCCC; 
+   }
+
+   td.middle {
+    width: 40px;
+    height: 20px;
+    text-align: left;
+    padding: 3px 0.5em;
+    margin-left: 3px;
+    border-top: 1px solid #CCCCCC;     
+    border-bottom: 1px solid #CCCCCC;     
+   }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/utils/Draggable.min.js"></script>
+  <script type="text/javascript">
+
+   var demo = {};
+
+   demo.n = 10;
+   demo.m = 100;
+   
+   demo.init = function() {
+    var me = this;
+    
+    this.msg_div = document.getElementById('msg_div');
+    this.main_table = document.getElementById('main_table');
+    this.x_td = {};
+    this.y_td = {};
+    this.z_td = {};
+    this.l_td = {};
+    
+    this.step = -1;
+    
+    tr = document.createElement('tr');
+    this.main_table.appendChild(tr);
+    td = document.createElement('td');
+    tr.appendChild(td);
+    td.className = 'left_header';
+    td.innerHTML = '$x_1,\\dotsc,x_{' + this.n + '}=$';
+    for (i = 1; i <= this.n; i++) {
+     this.x_td[i] = {};
+     td = document.createElement('td');
+     td.className = 'top_header';
+     tr.appendChild(td);
+     this.x_td[i][0] = td;
+    }
+    td = document.createElement('td');
+    td.className = 'right_header';
+    tr.appendChild(td);
+    
+    for (j = 0; j <= this.n; j++) {
+     tr = document.createElement('tr');
+     this.main_table.appendChild(tr);
+     td = document.createElement('td');
+     this.l_td[j] = td;
+     tr.appendChild(td);
+     td.className = 'left_header';
+     td.innerHTML = '$y_{' + j + '}=$';
+     for (i = 1; i <= this.n; i++) {
+      td = document.createElement('td');
+      td.className = 'middle';
+      tr.appendChild(td);
+      if (i <= j) { this.x_td[i][j] = td; }
+     }
+     td = document.createElement('td');
+     td.className = 'right_header';
+     tr.appendChild(td);
+     this.y_td[j] = td;
+    }
+    
+    tr = document.createElement('tr');
+    this.main_table.appendChild(tr);
+    td = document.createElement('td');
+    tr.appendChild(td);
+    td.className = 'left_header';
+     
+    for (i = 1; i <= this.n; i++) {
+      td = document.createElement('td');
+      tr.appendChild(td);
+      td.className = 'middle';
+      this.z_td[i] = td;
+    }
+
+    td = document.createElement('td');
+    tr.appendChild(td);
+    td.className = 'right_header';
+    this.zz_td = td;
+    
+    document.getElementById('step').onclick = 
+     function() { me.do_step(); }
+
+    this.do_step();
+   }
+
+   demo.choose_seq = function() {
+    this.x = {};
+    this.y = {0 : 0};
+    this.v = {};
+    
+    this.v[0] = [0];
+    for (i = 1; i < this.n; i++) { this.v[i] = []; }
+    
+    for (i = 1; i <= this.n; i++) {
+     this.x[i] = Math.ceil(Math.random() * this.m);
+     this.y[i] = (this.y[i-1] + this.x[i]) % this.n;
+     this.v[this.y[i]].push(i);
+    }
+    
+    this.r = [];
+    for (i = 0; i < this.n; i++) {
+     if (this.v[i].length > 1) {
+      this.r.push(i);
+     }
+    }
+    
+    p = this.r[Math.floor(this.r.length * Math.random())];
+    V = this.v[p];
+    k = V.length;
+    i = Math.floor(k * Math.random());
+    j = i;
+    while(j == i) { j = Math.floor(k * Math.random()); }
+    if (i < j) {
+     this.a = V[i]; this.b = V[j];
+    } else {
+     this.a = V[j]; this.b = V[i];
+    }
+   }
+
+   demo.show_seq = function() {
+    for (i = 1; i <= this.n; i++) {
+     this.x_td[i][0].innerHTML = '$' + this.x[i] + '$';
+     this.x_td[i][0].style.color = 'black';
+     for (j = i; j <= this.n; j++) {
+      this.x_td[i][j].innerHTML = '';
+      this.x_td[i][j].style.color = 'black';
+     }
+    }
+    
+    for (j = 0; j <= this.n; j++) {
+     this.l_td[j].style.color = '#FFFFFF';
+     this.y_td[j].innerHTML = '';
+     this.y_td[j].style.color = 'black';
+     this.y_td[j].style.background = '#FFFFFF';
+    }
+    
+    for (j = 1; j <= this.n; j++) {
+     this.z_td[j].innerHTML = '';
+     this.z_td[j].style.color = 'black';
+    }
+    
+    this.zz_td.innerHTML = '';
+    
+    this.msg_div.innerHTML = 'Here is a list of $' + this.n + '$ integers.';
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+   }
+   
+   demo.show_sums = function() {
+    for (i = 1; i <= this.n; i++) {
+     for (j = i; j <= this.n; j++) {
+      this.x_td[i][j].innerHTML = '$' + this.x[i] + ((j > i) ? '+' : '') + '$';
+     }
+    }
+    
+    for (j = 0; j <= this.n; j++) {
+     this.l_td[j].style.color = '#000000';
+     this.y_td[j].innerHTML = '$ = ' + this.y[j] + ' \\pmod{' + this.n + '}$';
+    }
+    
+    this.msg_div.innerHTML =
+     'Here are the partial sums $y_j=\\sum_{i=1}^jx_i\\pmod{' + this.n + 
+     '}$ for $j=0,\\dotsc' + this.n + '$.<br/>  There are ' + (this.n + 1) + 
+     ' of these sums, all in the set $\\{0,\\dotsc,' + (this.n - 1) + '\\}$, ' +
+     ' which only has size ' + this.n + '.<br/>  Thus, two of the sums must be the same.';
+    
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+   }
+   
+   demo.show_repeat = function() {
+    for (j = 0; j <= this.n; j++) {
+     if (j == this.a || j == this.b) {
+      this.y_td[j].style.background = '#00FF00';
+     } else {
+      this.y_td[j].style.background = '#FFFFFF';
+     }
+    }
+    this.msg_div.innerHTML =
+     'In fact $y_{' + this.a + '}=y_{' + this.b + '}$.';
+    
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+   }
+   
+   demo.fade = function() {
+    for (j = 0; j <= this.n; j++) {
+     if (j == this.a) {
+      for (i = 1; i <= j; i++) {
+       this.x_td[i][j].style.color = 'green';
+      }      
+     } else if (j == this.b) {
+      for (i = 1; i <= j; i++) {
+       this.x_td[i][j].style.color = (i <= this.a) ? 'green' : 'blue';
+      }            
+     } else {
+      this.l_td[j].style.color = '#EEEEEE';
+      this.y_td[j].style.color = '#EEEEEE';
+      for (i = 1; i <= j; i++) {
+       this.x_td[i][j].style.color = '#EEEEEE';
+      }
+     }
+    }
+   }
+   
+   demo.show_sol = function() {
+    for (j = 1; j <= this.n; j++) {
+     if (this.a < j) {
+      if (j < this.b) {
+       this.z_td[j].innerHTML = '$' + this.x[j] + '+$';
+      } else if (j == this.b) {
+       this.z_td[j].innerHTML = '$' + this.x[j] + '$';       
+      } else {
+       this.z_td[j].innerHTML = '';
+      }
+     } else {
+      this.z_td[j].innerHTML = '';
+     }
+    }
+    
+    this.zz_td.innerHTML = '$ = 0 \\pmod{' + this.n + '}$';
+
+    this.msg_div.innerHTML =
+     'By taking the difference between these two equations, ' +
+     'we find a consecutive block whose sum is zero modulo ' + this.n + '.';
+
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+   }
+
+   demo.do_step = function() {
+    this.step = (this.step + 1) % 5;
+    
+    if (this.step == 0) {
+     this.choose_seq();
+     this.show_seq();
+    } else if (this.step == 1) {
+     this.show_sums();
+    } else if (this.step == 2) {
+     this.show_repeat();
+    } else if (this.step == 3) {
+     this.fade();
+    } else if (this.step == 4) {
+     this.show_sol();
+    }
+   }
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <div id="main_div">
+    <table id="main_table">
+    </table>
+   </div>
+   <div id="controls_div">
+    <div class="control" id="step">Step</div>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

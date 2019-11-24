@@ -1,0 +1,217 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <style type="text/css">
+   div#main_div { 
+    position:absolute; 
+   }
+
+   div#vals_div { 
+    position:absolute; 
+    left: 30px;
+    top: 30px;
+   }
+
+   div#controls_div { 
+    position:absolute;
+    left:1200;
+    top:0;
+   }
+
+   div#msg_div {
+    font-size:22px;
+    margin: 20px;
+   }
+
+   text.set {
+    font-size: 20px;
+   }
+
+  </style>
+  <script type="text/javascript">
+
+   var subset = {};
+   subset.elts = [];
+   subset.x = 0;
+   subset.y = 0;
+   subset.string = '';
+   subset.full_string = '{}';
+   subset.last = -1;
+
+   var subsets = {};
+
+   subsets.offset = {
+    1 : [2,0],
+    2 : [0,2],
+    3 : [4,0],
+    4 : [0,4]
+   };
+
+   subsets.xscale = 80;
+   subsets.yscale = 50;
+
+   subsets.f = function(i,j) { return Math.round((i+1.5) * this.xscale); };
+   subsets.g = function(i,j) { return Math.round((j+1.5) * this.yscale); };
+   subsets.fg = function(i,j) { return {'x' : this.f(i,j), 'y' : this.g(i,j)}; };
+
+   subsets.set_d = function(p,u) {
+    var n = u.length;
+    var z = this.fg(u[0][0],u[0][1]);
+    var s = 'M ' + z.x + ' ' + z.y;
+    for (i = 1; i<n; i++) {
+     z = this.fg(u[i][0],u[i][1]);
+     s += ' L ' + z.x + ' ' + z.y;
+    }
+    p.setAttribute('d',s);
+   }
+
+   subsets.msg = {};
+
+   subsets.msg[1] = 'There are two subsets of the set $\\{1\\}$: the empty set $\\emptyset=\\{\\}$ and the full set $\\{1\\}$.';
+   subsets.msg[2] = 'To get a subset of $\\{1,2\\}$, we take a subset of $\\{1\\}$ (above the dotted line) and either leave it as it is, or add in the element $2$. <br/> So there are twice as many subset of $\\{1,2\\}$ as of $\\{1\\}$.  The total number is $4=2^2$.';
+   subsets.msg[3] = 'To get a subset of $\\{1,2,3\\}$, we take a subset of $\\{1,2\\}$ (to the left of the dotted line) and either leave it as it is, or add in the element $3$. <br/> So there are twice as many subset of $\\{1,2,3\\}$ as of $\\{1,2\\}$.  The total number is $8=2^3$.';
+   subsets.msg[4] = 'To get a subset of $\\{1,2,3,4\\}$, we take a subset of $\\{1,2,3\\}$ (above the dotted line) and either leave it as it is, or add in the element $4$. <br/> So there are twice as many subset of $\\{1,2,3,4\\}$ as of $\\{1,2,3\\}$.  The total number is $16=2^4$.  <br/><br/> In general, a set of size $n$ has $2^n$ different subsets.';
+
+   subsets.init = function() {
+    var e,i,j,k,dx,dy,old_sets;
+
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div  = document.getElementById('msg_div');
+    this.stage = 1;
+
+    this.sets = [];
+    e = Object.create(subset);
+    e.elts = [];
+    e.x = 0;
+    e.y = 0;
+    e.string = '';
+    e.full_string = '{}';
+    e.last = -1;
+    this.sets.push(e);
+    for (i = 1; i <= 4; i++) {
+     dx = this.offset[i][0];
+     dy = this.offset[i][1];
+     old_sets = this.sets;
+     for(j in old_sets) {
+      e = old_sets[j];
+      f = Object.create(subset);
+      f.elts = e.elts.concat([i]);
+      f.x = e.x + dx;
+      f.y = e.y + dy;
+      f.string = f.elts.join('');
+      f.full_string = '{' + f.elts.join(',') + '}';
+      f.last = i;
+      this.sets.push(f);
+     }
+    }
+
+    for (i in this.sets) {
+     e = this.sets[i];
+     e.text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+     e.text.className = 'set';		 
+     e.text.setAttribute('x',this.f(e.x,e.y));
+     e.text.setAttribute('y',this.g(e.x,e.y));
+     e.text.setAttribute('font-size','24');
+     e.text.setAttribute('text-anchor','middle');
+     e.text.textContent = e.full_string;
+     this.main_svg.appendChild(e.text);
+    }
+
+    this.box = {};
+    this.divider = {};
+    for (i = 1; i <= 4; i++) {
+     this.box[i] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.box[i].setAttribute('stroke','#FF0000');
+     this.box[i].setAttribute('stroke-width','4');
+     this.box[i].setAttribute('stroke-linejoin','round');
+     this.box[i].setAttribute('fill','none');
+     this.box[i].setAttribute('visibility','hidden');
+     this.main_svg.appendChild(this.box[i]);
+
+     this.divider[i] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.divider[i].setAttribute('stroke','#0000FF');
+     this.divider[i].setAttribute('stroke-width','2');
+     this.divider[i].setAttribute('stroke-dasharray','5,5');
+     this.divider[i].setAttribute('visibility','hidden');
+     this.main_svg.appendChild(this.divider[i]);
+    }
+
+    this.set_d(this.box[1],[[-1,-1],[3,-1],[3,1],[-1,1],[-1,-1]]);
+    this.set_d(this.box[2],[[-1,-1],[3,-1],[3,3],[-1,3],[-1,-1]]);
+    this.set_d(this.box[3],[[-1,-1],[7,-1],[7,3],[-1,3],[-1,-1]]);
+    this.set_d(this.box[4],[[-1,-1],[7,-1],[7,7],[-1,7],[-1,-1]]);
+
+    this.set_d(this.divider[1],[[1,-1],[1,1]]);
+    this.set_d(this.divider[2],[[-1,1],[3,1]]);
+    this.set_d(this.divider[3],[[3,-1],[3,3]]);
+    this.set_d(this.divider[4],[[-1,3],[7,3]]);
+
+    this.msg_span = {};
+    for (i = 1; i <= 4; i++) {
+     this.msg_span[i] = document.createElement('span');
+     this.msg_span[i].innerHTML = this.msg[i];
+     this.msg_span[i].style.display = 'none';
+     this.msg_div.appendChild(this.msg_span[i]);
+     MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.msg_span[i]]);
+    }
+    this.set_stage(1);
+   };
+
+   subsets.set_stage = function(m) {
+    this.stage = m;
+    for (i in this.sets) {
+     e = this.sets[i];
+     if (e.last <= m) {
+      e.text.setAttribute('visibility','visible');
+     } else {
+      e.text.setAttribute('visibility','hidden');
+     }
+    }
+
+    for (i = 1; i <= 4; i++) {
+     if (i == m) {
+      this.box[i].setAttribute('visibility','visible');
+      this.divider[i].setAttribute('visibility','visible');
+      this.msg_span[i].style.display='inline';
+     } else {
+      this.box[i].setAttribute('visibility','hidden');
+      this.divider[i].setAttribute('visibility','hidden');
+      this.msg_span[i].style.display='none';
+     }
+    }
+   }
+
+   subsets.next = function() {
+    if (this.stage < 4) {
+     this.set_stage(this.stage + 1);
+    }
+   }
+
+   subsets.previous = function() {
+    if (this.stage > 1) {
+     this.set_stage(this.stage - 1);
+    }
+   }
+  </script>
+ </head>
+ <body onload="subsets.init()">
+  <div id="frame">
+   <svg id="main_svg" width="800" height="500"></svg>
+   <div id="msg_div"></div>
+   <div id="controls_div">
+    <div class="control" id="previous" onclick="subsets.previous()">Previous</div>
+    <div class="control" id="next" onclick=subsets.next()>Next</div>
+   </div>
+  </div>
+ </body>
+</html>

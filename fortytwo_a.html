@@ -1,0 +1,502 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <style type="text/css">
+   div#main_div {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    font-size: 24px;
+   }
+
+   div#controls_div { 
+    position:absolute; 
+    right: 50px;
+    top: 50px;
+   }
+
+   div#controls_div td { 
+    font-size: 24px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    left: 50px;
+    top: 600px;
+    text-align:center;
+    font-size: 20px;
+   }
+
+
+  </style>
+  <script type="text/javascript">
+
+   var el = {
+    index: 0,
+    r : 0,
+    c : 0,
+    prime_divisors : [],
+    is_divisible : {2 : 0, 3 : 0, 7 : 0},
+    svg : null
+   }
+
+   var demo = {};
+   
+   demo.x0 = 80;
+   demo.y0 = 60;
+   demo.w0 = 100;
+   demo.h0 = 100;
+
+   demo.cols = {
+    d2:  '#87CEFA',
+    d3:  '#90EE90',
+    d7:  '#FFA500',
+    d6:  '#FF69B4',
+    d14: '#7B68EE',
+    d21: '#FF0000',
+    d42: '#000000',
+    f2:  '#D7FFFF',
+    f3:  '#E0FFE0',
+    f7:  '#EFFF80',
+    f6:  '#FFD9FF',
+    f14: '#DCC8FF',
+    f21: '#FFDDDD',
+    f42: '#DDDDDD'
+   }
+   
+   demo.f = function(i,j) {
+    return Math.round(this.x0 + i * this.w0);
+   }
+
+   demo.g = function(i,j) {
+    return Math.round(this.y0 + j * this.h0);
+   }
+
+   demo.fg = function(i,j) {
+    return {'x' : this.f(i,j), 'y' : this.g(i,j) };
+   }
+
+
+   demo.init = function() {
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div = document.getElementById('msg_div');
+
+    r = 0;
+    c = 0;
+    m = 0;
+
+    this.filter = {
+     '2' : 0,
+     '3' : 0,
+     '7' : 0,
+     'none' : 0
+    }
+
+    this.els = {};
+
+    for (i = 0; i < 42; i++) {
+     e = Object.create(el);
+     this.els[i] = e;
+     e.index = i;
+     e.r = i % 6;
+     e.c = Math.floor(i / 6);
+     e.svg = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+     e.svg.setAttribute('fill','black');
+     e.svg.setAttribute('font-size',24);
+     e.svg.setAttribute('text-anchor','middle');
+     e.svg.setAttribute('alignment-baseline','middle');
+     e.svg.setAttribute('x',this.f(e.c,e.r));
+     e.svg.setAttribute('y',this.g(e.c,e.r));
+     e.svg.textContent = i;
+     this.main_svg.appendChild(e.svg);
+    }
+
+    this.cb = {};
+    this.cb[2] = document.getElementById('div_2');
+    this.cb[3] = document.getElementById('div_3');
+    this.cb[7] = document.getElementById('div_7');
+    this.cb['none'] = document.getElementById('div_none');
+    
+    this.div = {};
+    
+    this.make_div_2();
+    this.make_div_3();
+    this.make_div_7();
+    this.make_div_6();
+    this.make_div_14();
+    this.make_div_21();
+    this.make_div_42();
+    
+    this.make_not_coprime();
+   }
+   
+   demo.repaint = function(k) {
+   }
+
+   demo.row_box = function(r,col) {
+    var x = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    x.setAttribute('fill','none');
+    x.setAttribute('stroke',col);
+    x.setAttribute('stroke-width',3);
+    x.setAttribute('x',this.f(-0.2,r-0.2));
+    x.setAttribute('y',this.g(-0.2,r-0.2));
+    x.setAttribute('width' ,6.5 * this.w0);
+    x.setAttribute('height',0.4 * this.h0);
+    x.setAttribute('rx',0.2 * this.h0);
+    x.setAttribute('ry',0.2 * this.h0);
+    return x;
+   }
+   
+   demo.diag_box = function(col) {
+    var x = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    x.setAttribute('fill','none');
+    x.setAttribute('stroke',col);
+    x.setAttribute('stroke-width',3);
+    x.setAttribute('x',0);
+    x.setAttribute('y',0);
+    x.setAttribute('width' ,7.6 * this.w0);
+    x.setAttribute('height',0.4 * this.h0);
+    x.setAttribute('rx',0.2 * this.h0);
+    x.setAttribute('ry',0.2 * this.h0);
+    x.setAttribute('transform',"translate(80 50) rotate(45)");
+    return x;
+   }
+   
+   demo.circle = function(i,col,s) {
+    r = i % 6;
+    c = Math.floor(i/6);
+    
+    var x = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    x.setAttribute('fill','none');
+    x.setAttribute('stroke',col);
+    x.setAttribute('stroke-width',3);
+    x.setAttribute('cx',this.f(c,r));
+    x.setAttribute('cy',this.g(c,r));
+    x.setAttribute('r',s * 0.3 * this.w0);
+    return x;
+   }
+   
+   demo.make_div_2 = function() {
+    var d = {};
+    d.divisor = 2;
+    d.multiples = [0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40];
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('visibility','hidden');
+    d.svg = g;
+    
+    g.appendChild(this.row_box(0,this.cols['d2']));
+    g.appendChild(this.row_box(2,this.cols['d2']));
+    g.appendChild(this.row_box(4,this.cols['d2']));
+    
+    this.div[d.divisor] = d;
+    this.main_svg.appendChild(d.svg);
+    
+    var s = '$D_2=\\{\\text{numbers divisible by }2\\}=\\{0,2,4,\\dotsc,40\\}$ has size $42/2=21$.';
+    d.msg = document.createElement('div');
+    d.msg.style.display = 'none';
+    d.msg.innerHTML = s;
+    this.msg_div.appendChild(d.msg);
+    
+    return d;
+   } 
+
+   demo.make_div_3 = function() {
+    var d = {};
+    d.divisor = 3;
+    d.multiples = [0,3,6,9,12,15,18,21,24,27,30,33,36,39];
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('visibility','hidden');
+    d.svg = g;
+    
+    g.appendChild(this.row_box(0,this.cols['d3']));
+    g.appendChild(this.row_box(3,this.cols['d3']));
+    
+    this.div[d.divisor] = d;
+    this.main_svg.appendChild(d.svg);
+
+    var s = '$D_3=\\{\\text{numbers divisible by }3\\}=\\{0,3,6,\\dotsc,39\\}$ has size $42/3=14$.';
+    d.msg = document.createElement('div');
+    d.msg.style.display = 'none';
+    d.msg.innerHTML = s;
+    this.msg_div.appendChild(d.msg);
+    
+    return d;
+   } 
+
+   demo.make_div_7 = function() {
+    var d = {};
+    d.divisor = 7;
+    d.multiples = [0,7,14,21,28,35];
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('visibility','hidden');
+    d.svg = g;
+    
+    g.appendChild(this.diag_box(this.cols['d7']));
+    this.div[d.divisor] = d;
+    this.main_svg.appendChild(d.svg);
+
+    var s = '$D_7=\\{\\text{numbers divisible by }7\\}=\\{0,7,14,21,28,35\\}$ has size $42/7=6$.';
+    d.msg = document.createElement('div');
+    d.msg.style.display = 'none';
+    d.msg.innerHTML = s;
+    this.msg_div.appendChild(d.msg);
+    
+    return d;
+   } 
+
+   demo.make_div_6 = function() {
+    var d = {};
+    d.divisor = 6;
+    d.multiples = [0,6,12,18,24,30,36];
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('visibility','hidden');
+    d.svg = g;
+    
+    g.appendChild(this.row_box(2,this.cols['f2']));
+    g.appendChild(this.row_box(4,this.cols['f2']));
+    g.appendChild(this.row_box(3,this.cols['f3']));
+    g.appendChild(this.row_box(0,this.cols['d6']));
+
+    this.div[d.divisor] = d;
+    this.main_svg.appendChild(d.svg);
+
+    var s = '$D_2\\cap D_3=\\{\\text{numbers divisible by }6\\}=\\{0,6,12,18,24,40,36\\}$ has size $42/6=7$.';
+    d.msg = document.createElement('div');
+    d.msg.style.display = 'none';
+    d.msg.innerHTML = s;
+    this.msg_div.appendChild(d.msg);
+    
+    return d;
+   } 
+
+   demo.make_div_14 = function() {
+    var d = {};
+    d.divisor = 14;
+    d.multiples = [0,14,28];
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('visibility','hidden');
+    d.svg = g;
+    
+    g.appendChild(this.row_box(0,this.cols['f2']));
+    g.appendChild(this.row_box(2,this.cols['f2']));
+    g.appendChild(this.row_box(4,this.cols['f2']));
+    g.appendChild(this.diag_box(this.cols['f7']));
+    g.appendChild(this.circle(0,this.cols['d14'],1));
+    g.appendChild(this.circle(14,this.cols['d14'],1));
+    g.appendChild(this.circle(28,this.cols['d14'],1));
+
+    this.div[d.divisor] = d;
+    this.main_svg.appendChild(d.svg);
+    
+    var s = '$D_2\\cap D_7=\\{\\text{numbers divisible by }14\\}=\\{0,14,28\\}$ has size $42/14=3$.';
+    d.msg = document.createElement('div');
+    d.msg.style.display = 'none';
+    d.msg.innerHTML = s;
+    this.msg_div.appendChild(d.msg);
+
+    return d;
+   } 
+
+   demo.make_div_21 = function() {
+    var d = {};
+    d.divisor = 21;
+    d.multiples = [0,21];
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('visibility','hidden');
+    d.svg = g;
+    
+    g.appendChild(this.row_box(0,this.cols['f3']));
+    g.appendChild(this.row_box(3,this.cols['f3']));
+    g.appendChild(this.diag_box(this.cols['f7']));
+    g.appendChild(this.circle(0,this.cols['d21'],1));
+    g.appendChild(this.circle(21,this.cols['d21'],1));
+
+    this.div[d.divisor] = d;
+    this.main_svg.appendChild(d.svg);
+    
+    var s = '$D_3\\cap D_7=\\{\\text{numbers divisible by }21\\}=\\{0,21\\}$ has size $42/21=2$.';
+    d.msg = document.createElement('div');
+    d.msg.style.display = 'none';
+    d.msg.innerHTML = s;
+    this.msg_div.appendChild(d.msg);
+
+    return d;
+   } 
+
+   demo.make_div_42 = function() {
+    var d = {};
+    d.divisor = 42;
+    d.multiples = [0];
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('visibility','hidden');
+    d.svg = g;
+    
+    g.appendChild(this.circle(0,this.cols['d42'],1));
+
+    this.div[d.divisor] = d;
+    this.main_svg.appendChild(d.svg);
+    
+    var s = '$D_2\\cap D_3\\cap D_7=\\{\\text{numbers divisible by }42\\}=\\{0\\}$ has size $42/42=1$.';
+    d.msg = document.createElement('div');
+    d.msg.style.display = 'none';
+    d.msg.innerHTML = s;
+    this.msg_div.appendChild(d.msg);
+
+    return d;
+   } 
+   
+   demo.make_not_coprime = function() {
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    this.not_coprime = g;
+    g.setAttribute('visibility','hidden');
+    for (i = 0; i < 21; i++) {
+     g.appendChild(this.circle(2*i,this.cols['d2'],0.8));
+    }
+    for (i = 0; i < 14; i++) {
+     g.appendChild(this.circle(3*i,this.cols['d3'],1.0));
+    }
+    for (i = 0; i < 6; i++) {
+     g.appendChild(this.circle(7*i,this.cols['d7'],1.2));
+    }
+    this.main_svg.appendChild(g);
+    
+    var d = document.createElement('div');
+    d.style.display = 'none';
+    this.coprime_msg = d;
+    this.msg_div.appendChild(d);
+    d.innerHTML = '$$ \\# \\text{coprime numbers} = ' +
+     ' 42 - |D_2| - |D_3| - |D_7| + |D_6| + |D_{14}| + |D_{21}| - |D_{42}| $$' + 
+     '$$ = 42\\left(1 - \\frac{1}{2} - \\frac{1}{3} - \\frac{1}{7} + ' +
+     ' \\frac{1}{6} + \\frac{1}{14} + \\frac{1}{21} - \\frac{1}{42} \\right) ' + 
+     ' = 42 \\left(1 - \\frac{1}{2}\\right)' + 
+              '\\left(1 - \\frac{1}{3}\\right)' +
+              '\\left(1 - \\frac{1}{7}\\right)$$';
+   }
+
+   demo.repaint_old = function(k) {
+    var m,i,d;
+    
+    if (k == 'none' && this.cb['none'].checked) {
+     this.cb[2].checked = false;
+     this.cb[3].checked = false;
+     this.cb[7].checked = false;
+    }
+    
+    if (k != 'none' && this.cb[k].checked) {
+     this.cb['none'].checked = false;
+    }
+    
+    m = 1;
+    if (this.cb[2].checked) { m *= 2; }
+    if (this.cb[3].checked) { m *= 3; }
+    if (this.cb[7].checked) { m *= 7; }
+    
+    for (i in this.div) {
+     d = this.div[i];
+     if (d.divisor == m) {
+      d.svg.setAttribute('visibility','visible');
+      d.msg.style.display = 'block';
+     } else {
+      d.svg.setAttribute('visibility','hidden');
+      d.msg.style.display = 'none';
+     }
+    }
+    
+    if (m > 1) {
+     this.not_coprime.setAttribute('visibility','hidden');
+     this.coprime_msg.style.display = 'none';
+    }
+    
+    if(this.cb['none'].checked) {
+     for (i in this.div) {
+      this.div[i].svg.setAttribute('visibility','hidden');
+      this.div[i].msg.style.display = 'none';
+     }
+     this.not_coprime.setAttribute('visibility','visible');
+     this.coprime_msg.style.display = 'block';
+    }
+   }
+
+   demo.repaint = function(k) {
+    var m,i,d;
+    
+    if (k == 'none' && this.cb['none'].checked) {
+     this.cb[2].checked = false;
+     this.cb[3].checked = false;
+     this.cb[7].checked = false;
+    }
+    
+    if (k != 'none' && this.cb[k].checked) {
+     this.cb['none'].checked = false;
+    }
+    
+    m = 1;
+    if (this.cb[2].checked) { m *= 2; }
+    if (this.cb[3].checked) { m *= 3; }
+    if (this.cb[7].checked) { m *= 7; }
+    
+    for (i in this.div) {
+     d = this.div[i];
+     if (d.divisor == m) {
+      d.svg.setAttribute('visibility','visible');
+      d.msg.style.display = 'block';
+     } else {
+      d.svg.setAttribute('visibility','hidden');
+      d.msg.style.display = 'none';
+     }
+    }
+    
+    if (m > 1) {
+     this.not_coprime.setAttribute('visibility','hidden');
+     this.coprime_msg.style.display = 'none';
+    }
+    
+    if(this.cb['none'].checked) {
+     for (i in this.div) {
+      this.div[i].svg.setAttribute('visibility','hidden');
+      this.div[i].msg.style.display = 'none';
+     }
+     this.not_coprime.setAttribute('visibility','visible');
+     this.coprime_msg.style.display = 'block';
+    }
+   }
+
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="800" height="640"></svg>
+   <div id="controls_div">
+    <table>
+     <tr>
+      <td>Divisible by 2</td>
+      <td><input type="checkbox" id="div_2" onclick="demo.repaint(2)"></td>
+     </tr>
+     <tr>
+      <td>Divisible by 3</td>
+      <td><input type="checkbox" id="div_3" onclick="demo.repaint(3)"></td>
+     </tr>
+     <tr>
+      <td>Divisible by 7</td>
+      <td><input type="checkbox" id="div_7" onclick="demo.repaint(7)"></td>
+     </tr>
+     <tr>
+      <td>Coprime with 42</td>
+      <td><input type="checkbox" id="div_none" onclick="demo.repaint('none')"></td>
+     </tr>
+    </table>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

@@ -1,0 +1,123 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div.left_set {
+    position: absolute;
+    color: green;
+    font-size: 24px;
+   }
+
+   div.right_set {
+    position: absolute;
+    color:darkblue;
+    font-size: 24px;
+   }
+
+   span.extra {
+    color: red;
+    font-weight: bold;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 330px;
+    margin-left: 30px;
+    font-size: 20px;
+   }
+  </style>
+  <script type="text/javascript">
+   var addition = {};
+   addition.n_max = 8;
+   addition.subsets = {};
+
+   addition.f = function(i,j) { return (0.8+i) * 130; }
+   addition.g = function(i,j) { return (1+j) * 40; }
+
+   addition.init = function() {
+    var i,x,A,B,xl,xt;
+
+    this.main_div = document.getElementById('main_div');
+
+    for (i = 0; i <= this.n_max; i++) { 
+     this.subsets[i] = {}; 
+     this.subsets[i][0] = [[]];
+     this.subsets[i][i+1] = [];
+     for (j = 1; j <= i; j++) {
+      A = this.subsets[i-1][j];
+      B = this.subsets[i-1][j-1].map(u => u.concat([i]));
+      this.subsets[i][j] = A.concat(B);
+     }
+    }
+
+    this.left_sets = [];
+    this.right_sets = [];
+
+    for (i = 0; i < 21; i++) {
+     x = {};
+     x.set = this.subsets[7][5][i];
+     x.index = i;
+     x.row = Math.floor(i / 3);
+     x.col = i - 3 * x.row;
+     x.div = document.createElement('div');
+     x.div.className = 'left_set';
+     x.div.innerHTML = '{' + x.set.join(',') + '}';
+     xl = this.f(x.col,x.row) + 'px';
+     xt = this.g(x.col,x.row) + 'px';
+     x.div.style.left = xl;
+     x.div.style.top  = xt;
+     this.main_div.appendChild(x.div);
+    }
+
+    for (i = 0; i < 35; i++) {
+     x = {};
+     x.set = this.subsets[7][4][i];
+     x.index = i;
+     x.row = Math.floor(i / 5);
+     x.col = i - 5 * x.row;
+     x.div = document.createElement('div');
+     x.div.className = 'right_set';
+     x.div.innerHTML = '{' + x.set.join(',') + ',<span class="extra">8</span>}';
+     xl = this.f(x.col+4,x.row) + 'px';
+     xt = this.g(x.col+4,x.row) + 'px';
+     x.div.style.left = xl;
+     x.div.style.top  = xt;
+     this.main_div.appendChild(x.div);
+    }
+   }
+  </script>
+ </head>
+ <body onload="addition.init()">
+  <div id="frame">
+   <div id="main_div"></div>
+   <div id="msg_div">
+    The number of subsets of size $5$ in $\{1,\dotsc,8\}$ is $\left(\begin{matrix}8\\5\end{matrix}\right)=56$. <br/>
+    These can be divided into (a) subsets that do not contain $8$, and (b) those that do contain $8$.<br/>
+    The sets of type (a) are just the subsets of size $5$ in $\{1,\dotsc,7\}$, as shown on the left.
+    The number of these is $\left(\begin{matrix}7\\5\end{matrix}\right)=21$.
+    <br/>
+    The sets of type (b) are obtained by adding $8$ to a subset of size $4$ in $\{1,\dotsc,7\}$, as shown 
+    on the right. <br/> The number of these is $\left(\begin{matrix}7\\4\end{matrix}\right)=35$.  This shows that 
+    $\left(\begin{matrix}8\\5\end{matrix}\right)=\left(\begin{matrix}7\\5\end{matrix}\right)+\left(\begin{matrix}7\\4\end{matrix}\right)$.
+    <br/><br/>
+    In general, for $n\geq m>0$ we have
+    $$ \left(\begin{matrix}n\\m\end{matrix}\right)=\left(\begin{matrix}n-1\\m\end{matrix}\right)+\left(\begin{matrix}n-1\\m-1\end{matrix}\right) $$
+   </div>
+  </div>
+ </body>
+</html>

@@ -1,0 +1,322 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    left: 1220px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 680px;
+    margin-left: 80px;
+    margin-right: 80px;
+    font-size: 24px;
+   }
+   
+   td.lhs {
+    text-align: right;
+    font-size: 24px;
+   }
+   
+   td.rhs {
+    text-align: left;
+    font-size: 24px;
+   }
+   
+   tr.row_equation td {
+    padding-top: 10px;
+   }
+   
+   tr.col_equation td {
+    padding-top: 10px;
+   }
+   
+   table.solution_table {
+    display: none;
+    position: absolute;
+    left: 560px;
+    top: 100px;
+   }
+   
+   tr.solution_row {
+    height: 50px;    
+   }
+   
+   td.solution_size { 
+    width: 40px;
+    vertical-align: top;
+   }
+   
+   td.solution_count { 
+    width: 40px;
+    vertical-align: top;
+   }
+   
+   td.solution_keys {
+    width: 400px;
+    min-height: 30px;
+    vertical-align: top;
+   }
+   
+   div.solution_key {
+    display: inline-block;
+    padding: 5px;
+    margin: 4px;
+   }
+   
+   div.solution_key:hover {
+    cursor:pointer; 
+   }
+   
+   div.solution_key_selected {
+    display: inline-block;
+    padding: 5px;
+    margin: 4px;
+    background: orange;
+   }
+   
+   div.rook_polynomial {
+    display: none;
+    position: absolute;
+    left: 560px;
+    top: 500px;
+    font-size: 24px;
+   }
+   
+  </style>
+  <script type="text/javascript">
+   var demo = {};
+   
+   demo.init = function() {
+    var i,R,div,t,h,x;
+    var me = this;
+
+    this.frame = document.getElementById('frame');
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div = document.getElementById('msg_div');
+    
+    this.rooks = {};
+    
+    this.rooks[0] = matching_problem.from_eqs(
+     {a : [1,2], b : [1,2,3], c : [1,2,3]}
+    );
+    
+    this.rooks[1] = matching_problem.from_eqs(
+     {a : [1,2,3], b : [1,2,3], c : [1,2,3]}
+    );
+    
+    this.rooks[2] = matching_problem.from_eqs(
+     {a : [3], b : [1,2], c : [1,2], d : [4]}
+    );
+    
+    this.rooks[3] = matching_problem.from_eqs(
+     {A : ['a','d'], B : ['b','c','d'], C : ['c'], D : ['a','b']}
+    );
+
+   this.rooks[0].parse_packed_solutions(
+     'a1|a2|b1|b2|b3|c1|c2|c3|' +
+     'a1b2|a1b3|a1c2|a1c3|a2b1|a2b3|a2c1|a2c3|' +
+     'b1c2|b1c3|b2c1|b2c3|b3c1|b3c2|' +
+     'a1b2c3|a1b3c2|a2b1c3|a2b3c1'
+    );
+    
+    this.rooks[1].parse_packed_solutions(
+     'a1|a2|a3|b1|b2|b3|c1|c2|c3|' +
+     'a1b2|a1b3|a1c2|a1c3|a2b1|a2b3|a2c1|a2c3|a3b1|a3b2|a3c1|a3c2|' +
+     'b1c2|b1c3|b2c1|b2c3|b3c1|b3c2|' + 
+     'a1b2c3|a1b3c2|a2b1c3|a2b3c1|a3b1c2|a3b2c1'
+    );
+    
+    this.rooks[2].parse_packed_solutions(
+     'a3|b1|b2|c1|c2|d4|a3b1|a3b2|a3c1|a3c2|a3d4|' +
+     'b1c2|b1d4|b2c1|b2d4|c1d4|c2d4|' +
+     'a3b1c2|a3b1d4|a3b2c1|a3b2d4|a3c1d4|a3c2d4|' +
+     'b1c2d4|b2c1d4|a3b1c2d4|a3b2c1d4'
+    );
+    
+    this.rooks[3].parse_packed_solutions(
+     'Aa|Ad|Bb|Bc|Bd|Cc|Da|Db|AaBb|AaBc|AaBd|AaCc|AaDb|' +
+     'AdBb|AdBc|AdCc|AdDa|AdDb|BbCc|BbDa|BcDa|BcDb|' +
+     'BdCc|BdDa|BdDb|CcDa|CcDb|' +
+     'AaBbCc|AaBcDb|AaBdCc|AaBdDb|AaCcDb|' +
+     'AdBbCc|AdBbDa|AdBcDa|AdBcDb|AdCcDa|AdCcDb|' +
+     'BbCcDa|BdCcDa|BdCcDb|' +
+     'AaBdCcDb|AdBbCcDa'
+    );
+    
+    for (i = 0; i < 4; i++) {
+     R = this.rooks[i];
+     R.grid_x0 = 0;
+     R.grid_y0 = 0;
+     R.grid_w = 100;
+     R.grid_h = 100;
+     R.make_grid();
+     R.grid.svg.setAttribute('visibility','hidden');
+     this.main_svg.appendChild(R.grid.svg);
+     
+     R.make_solution_table();
+     this.frame.appendChild(R.solution_table);
+     
+     div = document.createElement('div');
+     R.rook_polynomial_div = div;
+     div.className = 'rook_polynomial';
+     div.innerHTML = 'Rook polynomial: $' + R.rook_polynomial_string + '$';
+     
+     t = R.solution_table;
+     x = t.style.left;
+     t.style.left = -10000;
+     t.style.display = 'block';
+     h = t.clientHeight;
+     t.style.display = 'none';
+     t.style.left = x;
+     div.style.top = (150 + parseInt(h)) + 'px';
+     this.frame.appendChild(div);
+    }
+    
+    this.show_board(0);
+   }
+   
+   demo.show_board = function(k) {
+    var m,i,a,b;
+    for (m = 0; m < 4; m++) {
+     this.rooks[m].clear();
+     this.rooks[m].paint_grid();
+     this.rooks[m].grid.svg.setAttribute('visibility',m == k ? 'visible' : 'hidden');
+     this.rooks[m].solution_table.style.display = (m == k ? 'block' : 'none');
+     this.rooks[m].rook_polynomial_div.style.display = (m == k ? 'block' : 'none');
+    }
+    
+    this.k = k;
+    this.board = this.rooks[k];
+    
+    for (i in this.board.left_set) {
+     a = this.board.left_set[i];
+     for (j in this.board.right_set) {
+      b = this.board.right_set[j];
+      
+      if (this.board.relation_table[a][b]) {
+       this.set_square_handler(this.board.grid.square[a][b],a,b);
+       this.set_square_handler(this.board.grid.rook_icon[a][b],a,b);
+      }
+     }
+    }
+    
+    a = 0;
+    
+    for (i in this.board.solutions) {
+     s = this.board.solutions[i];
+     this.set_solution_handler(s);
+    }
+   }
+   
+   demo.set_square_handler = function(x,a,b) {
+    var me = this;
+    x.onclick = function() { me.handle_square_click(a,b); };
+   }
+   
+   demo.handle_square_click = function(a,b) {
+    var i,s,k0,k1;
+    
+    this.board.toggle_rook(a,b);
+    
+    this.board.paint_grid();
+    this.board.paint_solutions();
+   }
+    
+   demo.set_solution_handler = function(u) {
+    var me = this;
+    
+    u.div.onclick = function() { me.handle_solution_click(u); };
+   }
+   
+   demo.handle_solution_click = function(u) {
+    this.board.set_rooks(u.slots);
+    this.board.solution_key = u.key;
+    this.board.solution = u;
+    this.board.paint_grid();
+    this.board.paint_solutions();
+   }
+   
+   demo.show_solution = function() {
+    var P,s,a,b,ab,i,j,k;
+    this.set_all_handlers(0);
+    
+    P = this.P;
+    
+    s = '';
+    
+    for (i in P.match) {
+     ab = P.match[i];
+     a = ab[0];
+     b = ab[1];
+     this.show_link(a,b,1);
+     
+     if(i > 0) {
+      s += ', ';
+      if (i == 4) {
+       s += ' and ';
+      }
+     }
+     
+     s += this.left_set_full[a] + ' is the ' +
+      this.right_set_full[b].toLowerCase();
+    }
+    
+    s += '.';
+    this.msg_div.innerHTML = s;
+
+    for (k in P.match) {
+     ab = this.P.match[k];
+     a = ab[0];
+     b = ab[1];
+     i = P.left_index[a];
+     j = P.right_index[b];
+     r = comb.svg.rook();
+     x = P.grid_x0 + j * P.grid_w;
+     y = P.grid_y0 + i * P.grid_h;
+     r.setAttribute('transform','translate(' + x + ',' + y + ')');
+     this.main_svg.appendChild(r);
+    }
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="700">
+   </svg>
+   <div id="controls_div">
+    <div class="control" onclick="demo.show_board(0)">Problem 7.1</div>
+    <div class="control" onclick="demo.show_board(1)">Example 7.7</div>
+    <div class="control" onclick="demo.show_board(2)">Example 7.8</div>
+    <div class="control" onclick="demo.show_board(3)">Example 7.14</div>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

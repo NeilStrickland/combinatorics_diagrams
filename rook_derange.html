@@ -1,0 +1,270 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    left: 1220px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 580px;
+    margin-left: 80px;
+    margin-right: 80px;
+    font-size: 24px;
+   }
+   
+   td.lhs {
+    text-align: right;
+    font-size: 24px;
+   }
+   
+   td.rhs {
+    text-align: left;
+    font-size: 24px;
+   }
+   
+   tr.row_equation td {
+    padding-top: 10px;
+   }
+   
+   tr.col_equation td {
+    padding-top: 10px;
+   }
+   
+   div#perms {
+    position: absolute;
+    left: 800px;
+    top: 100px;
+   }
+   
+   table.solution_table {
+    display: none;
+    position: absolute;
+    left: 560px;
+    top: 100px;
+   }
+   
+   tr.solution_row {
+    height: 50px;    
+   }
+   
+   td.solution_size { 
+    width: 40px;
+    vertical-align: top;
+   }
+   
+   td.solution_count { 
+    width: 40px;
+    vertical-align: top;
+   }
+   
+   td.solution_keys {
+    width: 400px;
+    min-height: 30px;
+    vertical-align: top;
+   }
+   
+   td.perm:hover {
+    cursor:pointer; 
+   }
+   
+   td.selected_perm {
+    background: orange;
+   }
+   
+   td.selected_perm:hover {
+    cursor:pointer; 
+   }
+   
+  </style>
+  <script type="text/javascript">
+   var demo = {};
+   
+   demo.init = function() {
+    var i,j,k,l,A,B,x,y,b,t;
+    var me = this;
+
+    this.frame = document.getElementById('frame');
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div = document.getElementById('msg_div');
+    this.perms_table = document.getElementById('perms_table');
+    
+    this.board = matching_problem.derangement_board(5);
+    R = this.board;
+    R.grid_x0 = 0;
+    R.grid_y0 = 0;
+    R.grid_w = 80;
+    R.grid_h = 80;
+    R.make_grid();
+    this.main_svg.appendChild(R.grid.svg);
+    
+    this.row_text = {};
+    for (i = 1; i <= 5; i++) {
+     n = comb.svg.node('text');
+     this.row_text[i] = n;
+     n.setAttribute('text-anchor','start');
+     n.setAttribute('alignment-baseline','middle');
+     n.setAttribute('font-size','24px');
+     n.setAttribute('fill','black');
+     n.setAttribute('x', R.grid_x0 + 6.2 * R.grid_w);
+     n.setAttribute('y', R.grid_y0 + (i + 0.5) * R.grid_h);
+     n.textContent = 'No rook';
+     R.grid.svg.appendChild(n);
+    }
+     
+    this.show_board();
+    
+    this.perms0 = derangements(5);
+    this.perms = [];
+    this.perms_by_key = {};
+    
+    for (i = 0; i < 44; i++) {
+     p0 = this.perms0[i];
+     p = {};
+     p.list = p0;
+     p.key = p0.join('');
+     this.perms_by_key[p.key] = p;
+     
+     this.perms.push(p);
+     
+     if (i % 4 == 0) {
+      tr = document.createElement('tr');
+      this.perms_table.appendChild(tr);
+     }
+     
+     p.td = document.createElement('td');
+     tr.appendChild(p.td);
+     p.td.className = 'perm';
+     p.td.innerHTML = p.key;
+     this.set_perm_handler(p);
+    }
+   }
+   
+   demo.show_board = function() {
+    var m,i,a,b;
+    this.board.clear();
+    this.board.paint_grid();
+    
+    for (i in this.board.left_set) {
+     a = this.board.left_set[i];
+     for (j in this.board.right_set) {
+      b = this.board.right_set[j];
+      
+      if (this.board.relation_table[a][b]) {
+       this.set_square_handler(this.board.grid.square[a][b],a,b);
+       this.set_square_handler(this.board.grid.rook_icon[a][b],a,b);
+      }
+     }
+    }
+   }
+   
+   demo.set_square_handler = function(x,a,b) {
+    var me = this;
+    x.onclick = function() { me.handle_square_click(a,b); };
+   }
+   
+   demo.handle_square_click = function(a,b) {
+    var i,s,p;
+    
+    this.board.toggle_rook(a,b);
+    this.paint();
+   }
+   
+   demo.paint = function() {
+    var i,p;
+    
+    this.board.paint_grid();
+    
+    for (i in this.perms) {
+     p = this.perms[i];
+     p.td.className =
+      (p.key == this.board.full_solution_key) ? 'selected_perm' : 'perm';
+    }
+    
+    for (i = 1; i<= 5; i++) {
+     if (this.board.left_match[i]) {
+      this.row_text[i].textContent = 'Rook in column ' + this.board.left_match[i];
+     } else {
+      this.row_text[i].textContent = 'No rook';
+     }
+    }
+    
+    if (this.board.solution_is_full) {
+     this.msg_div.innerHTML =
+     'This is a full matching so it corresponds to a permutation. <br/> ' + 
+      'There are rooks in columns ' + 
+      this.board.left_match[1] + ', ' + 
+      this.board.left_match[2] + ', ' + 
+      this.board.left_match[3] + ', ' + 
+      this.board.left_match[4] + ' and ' + 
+      this.board.left_match[5] + ', ' + 
+      ' so the permutation is ' + this.board.full_solution_key + '.' +
+      '<br/>' +
+      'There are no rooks on the diagonal, so this permutation is a derangement.' +
+      '<br/><br/>' + 
+      'In total there are $44$ derangements, so there are $44$ full matchings ' + 
+      'for this board.';
+     MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.msg_div]);
+    } else {
+     this.msg_div.innerHTML =
+      'There is not a rook in every row, so this is not a full matching ' +
+      'and does not correspond to a permutation.';
+    }
+   }
+    
+   demo.set_perm_handler = function(p) {
+    var me = this;
+    
+    p.td.onclick = function() { me.handle_perm_click(p); };
+   }
+   
+   demo.handle_perm_click = function(p) {
+    var r,i;
+    r = [];
+    for (i = 0; i < 5; i++) {
+     r.push([i+1,p.list[i]]);
+    }
+    
+    this.board.set_rooks(r);
+    this.paint();
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="700">
+   </svg>
+   <div id="perms">
+    <table id="perms_table" class="edged">
+    </table>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

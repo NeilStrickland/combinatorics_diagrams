@@ -1,0 +1,146 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <style type="text/css">
+
+   div#msg_div {
+    font-size: 24px;
+    margin: 40px;
+    position:absolute;
+    left: 350px;
+    top: 490px;
+   }
+
+   div#main_div {
+    position: absolute;
+    left: 50;
+    top: 50;
+    width : 350;
+   }
+   
+   div#controls_div {
+    position:absolute;
+    left: 1220px;
+    top: 50px;
+   }
+   
+   table#max_sols td {
+    font-size: 20px;
+   }
+   
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  <script type="text/javascript">
+
+   var demo = {};
+
+   demo.init = function() {
+    var w,x,y,s;
+    this.main_svg = document.getElementById('main_svg');
+    this.main_div = document.getElementById('main_div');
+    this.msg_div  = document.getElementById('msg_div');
+    
+    this.board = matching_problem.from_eqs({
+     A : [2,3,4],
+     B : [3,4,5],
+     C : [1,4,5],
+     D : [1,2,5],
+     E : [1,2,3]
+    });
+    
+    this.board.grid_x0 = 450;
+    this.board.grid_y0 = 0;
+    this.board.grid_w = 80;
+    this.board.grid_h = 80;
+    this.board.make_grid();
+    this.main_svg.appendChild(this.board.grid.svg);
+
+    this.board.find_max_sols();
+    
+    this.main_div.appendChild(this.board.find_max_sols_table());
+    
+    this.current_step = 1;
+    this.current_mode = 'step';
+    this.board.show_step(1);
+   }
+   
+   demo.next = function() {
+    steps = this.board.max_sols_steps;
+    
+    if (this.current_mode == 'backtrack') {
+     s = steps[this.current_step];
+     this.current_mode = 'step';
+     this.board.show_step(this.current_step); 
+     this.msg_div.innerHTML = s.msg;
+    } else {
+     if (this.current_step == steps.length - 1) {
+      return;
+     }
+     this.current_step++;
+     s = steps[this.current_step];
+     if (s.type == 'backtrack' || s.type == 'nudge') {
+      this.current_mode = 'backtrack';
+      this.board.show_backtrack(this.current_step);
+      this.msg_div.innerHTML = s.backtrack_msg;
+     } else {
+      this.current_mode = 'step';
+      this.board.show_step(this.current_step);
+      this.msg_div.innerHTML = s.msg;
+     }
+    }
+   }
+      
+   demo.previous = function() {
+    steps = this.board.max_sols_steps;
+    
+    if (this.current_mode == 'backtrack') {
+     this.current_step--;
+     this.current_mode = 'step';
+     s = steps[this.current_step];
+     this.board.show_step(this.current_step); 
+     this.msg_div.innerHTML = s.msg;
+    } else {
+     if (this.current_step == 0) {
+      return;
+     }
+     s = steps[this.current_step];
+     if (s.type == 'backtrack' || s.type == 'nudge') {
+      this.current_mode = 'backtrack';
+      this.board.show_backtrack(this.current_step);
+      this.msg_div.innerHTML = s.backtrack_msg;
+     } else {
+      this.current_mode = 'step';
+      this.current_step--;
+      s = steps[this.current_step];
+      this.board.show_step(this.current_step);
+      this.msg_div.innerHTML = s.msg;
+     }
+    }
+   }
+      
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <div id="main_div"></div>
+   <svg id="main_svg" width="1200" height="600">
+   </svg>
+   <div id="msg_div">
+   </div>
+   <div id="controls_div">
+    <div class="control" onclick="demo.next()">Next</div>
+    <div class="control" onclick="demo.previous()">Previous</div>
+   </div>
+  </div>
+ </body>
+</html>

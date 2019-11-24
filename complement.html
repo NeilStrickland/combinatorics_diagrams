@@ -1,0 +1,221 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div.left_set {
+    position: absolute;
+    color: green;
+    font-size: 24px;
+   }
+
+   div.right_set {
+    position: absolute;
+    color:darkblue;
+    font-size: 24px;
+   }
+
+   span.extra {
+    color: red;
+    font-weight: bold;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 540px;
+    margin-left: 80px;
+    margin-right: 80px;
+    font-size: 20px;
+   }
+  </style>
+  <script type="text/javascript">
+   var box = {
+    i : 0,
+    j : 0,
+    k : 0,
+    A : null,
+    B : null,
+    svg : null,
+    A_svg : null,
+    B_svg : null
+   };
+   
+   var demo = {};
+   demo.n = 7;
+   demo.k = 3;
+   demo.subsets = {};
+
+   demo.f = function(i,j) { return (0.8+i) * 200; }
+   demo.g = function(i,j) { return (0.3+j) * 70; }
+
+   demo.init = function() {
+    var i,j,k,l,A,B,x,y,b,t;
+    this.main_svg = document.getElementById('main_svg');
+    
+    this.P = [];
+    this.Q = [];
+    
+    for (i = 1; i <= this.n; i++) {
+     for (j = i+1; j <= this.n; j++) {
+      for (k = j+1; k <= this.n; k++) {
+       A = [i,j,k];
+       B = [];
+       for (l = 1; l <= this.n; l++) {
+        if (l != i && l != j && l != k) {
+         B.push(l);
+        }
+       }
+       this.P.push(A);
+       this.Q.push(B);
+      }
+     }
+    }
+    
+    for (i = 0; i <= 7; i++) {
+      u = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      u.setAttribute('stroke','grey');
+      u.setAttribute('stroke-width','1');
+      u.setAttribute('x1',this.f(0,i));
+      u.setAttribute('y1',this.g(0,i));
+      u.setAttribute('x2',this.f(5,i));
+      u.setAttribute('y2',this.g(5,i));
+      this.main_svg.appendChild(u);
+    }
+    
+    for (i = 0; i <= 5; i++) {
+      u = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      u.setAttribute('stroke','grey');
+      u.setAttribute('stroke-width','1');
+      u.setAttribute('x1',this.f(i,0));
+      u.setAttribute('y1',this.g(i,0));
+      u.setAttribute('x2',this.f(i,7));
+      u.setAttribute('y2',this.g(i,7));
+      this.main_svg.appendChild(u);
+    }
+    
+    this.box = {};
+    
+    for (i = 0; i < 5; i++) {
+     this.box[i] = {};
+     
+     for (j = 0; j < 7; j++) {
+      b = Object.create(box);
+      this.box[i][j] = b;
+      b.i = i;
+      b.j = j;
+      b.k = 7 * i + j;
+      b.A = this.P[b.k];
+      b.B = this.Q[b.k];
+      b.svg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      this.main_svg.appendChild(b.svg);
+      x = this.f(i,j);
+      y = this.g(i,j);
+      b.svg.setAttribute('transform','translate(' + x + ',' + y + ')');
+      b.A_svg = [];
+      b.B_svg = [];
+      for (l = 0; l < 3; l++) {
+       t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+       t.className = 'A';
+       t.textContent = b.A[l];
+       t.setAttribute('font-size','24px');
+       t.setAttribute('fill','green');
+       t.setAttribute('x',14*l+20);
+       t.setAttribute('y',30);
+       b.A_svg.push(t);
+       b.svg.appendChild(t);
+      }
+
+      for (l = 0; l < 4; l++) {
+       t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+       t.className = 'B';
+       t.textContent = b.B[l];
+       t.setAttribute('font-size','24px');
+       t.setAttribute('fill','blue');
+       t.setAttribute('x',14*l+120);
+       t.setAttribute('y',60);
+       b.B_svg.push(t);
+       b.svg.appendChild(t);
+      }
+      
+      b.rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      b.rect.setAttribute('x',this.f(i,j));
+      b.rect.setAttribute('y',this.g(i,j));
+      b.rect.setAttribute('width',200);
+      b.rect.setAttribute('height',70);
+      b.rect.setAttribute('fill','white');
+      b.rect.setAttribute('fill-opacity','0');
+      b.rect.setAttribute('stroke','none');
+      this.main_svg.appendChild(b.rect);
+      
+      b.A_tween = {};
+      b.B_tween = {};
+      this.set_handler(b.rect,b);
+     }
+    }
+   }
+   
+   demo.set_handler = function(r,b) {
+    var me = this;
+    r.onmouseover = function() { me.handle_over(b); }
+    r.onmouseout  = function() { me.handle_out(b); }
+   }
+   
+   demo.handle_over = function(b) {
+    for (i = 0; i < 3; i++) {
+     p = parseInt(b.A[i]);
+     b.A_tween[i] = TweenMax.to(b.A_svg[i],0.3,{x : 14 * (p - i) + 10, y : 15});
+    }
+    
+    for (i = 0; i < 4; i++) {
+     p = parseInt(b.B[i]);
+     b.B_tween[i] = TweenMax.to(b.B_svg[i],0.3,{x : 14 * (p - i) - 90, y : -15});
+    }
+   }
+   
+   demo.handle_out = function(b) {
+    for (i = 0; i < 3; i++) {
+     if (b.A_tween[i]) { b.A_tween[i].reverse(); }
+    }
+
+    for (i = 0; i < 4; i++) {
+     if (b.B_tween[i]) { b.B_tween[i].reverse(); }
+    }
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1200" height="650"></svg>
+   <div id="msg_div">
+    This illustrates the proof that
+    $\left(\begin{matrix}n\\k\end{matrix}\right)=\left(\begin{matrix}n\\n-k\end{matrix}\right)$
+    in the case 
+    $\left(\begin{matrix}7\\3\end{matrix}\right)=\left(\begin{matrix}7\\4\end{matrix}\right)$.
+    The picture shows the subsets $A\subseteq\{1,\dotsc,7\}$ with $|A|=3$ in green, and the 
+    subsets $B$ with $|B|=4$ in blue.  Each set is paired with its complement, showing that 
+    the number of $A$'s is the same as the number of $B$'s.  The number of $A$'s is 
+    $\left(\begin{matrix}7\\3\end{matrix}\right)$ and the number of $B$'s is 
+    $\left(\begin{matrix}7\\4\end{matrix}\right)$.
+   </div>
+  </div>
+ </body>
+</html>

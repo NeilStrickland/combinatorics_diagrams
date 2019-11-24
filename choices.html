@@ -1,0 +1,372 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <style type="text/css">
+
+   div#choice_div {
+    position: absolute;
+   }
+
+   div#message_div {
+    position: absolute;
+    top: 700px;
+    width: 1360px;
+    text-align: center;
+    font-size: 20px;
+   }
+
+   div.choice1 {
+    position: absolute;
+    width: 20px;
+    height: 16px;
+    border-radius: 9px 9px 9px 9px;
+    border: solid 4px #FFD700;
+    text-align: center;
+    font-size: 24px;
+    padding: 0px 5px 10px 5px;
+   }
+
+   div.selected1 { background-color: #FFD700; }
+
+   div.faded1 { 
+    border: solid 4px #FFEE80;
+    color: #CCCCCC;
+   }
+
+   div.choice2 {
+    position: absolute;
+    width: 30px;
+    height: 20px;
+    border-radius: 7px 7px 7px 7px;
+    border: solid 4px #E6E8FA;
+    text-align: center;
+    font-size: 24px;
+    padding: 0px 5px 10px 5px;
+   }
+
+   div.selected2 { background-color: #E6E8FA; }
+
+   div.faded2 { 
+    border: solid 4px #F6F8FF;
+    color: #CCCCCC;
+   }
+
+   div.choice3 {
+    position: absolute;
+    width: 40px;
+    height: 20px;
+    border-radius: 2px 2px 2px 2px;
+    border: solid 4px #D98719;
+    text-align: center;
+    font-size: 24px;
+    padding: 0px 5px 10px 5px;
+   }
+
+   div.selected3 { background-color: #D98719; }
+
+   div.faded3 { 
+    border: solid 4px #FFD769;
+    color: #CCCCCC;
+   }
+
+   div.choice1:hover { 
+    border-color: #C9C909;   
+    cursor: pointer;
+   }
+
+   div.choice2:hover { 
+    border-color: #D6D8EA;   
+    cursor: pointer;
+   }
+
+   div.choice3:hover { 
+    border-color: #C97709;   
+    cursor: pointer;
+   }
+
+   div.set {
+    position: absolute;
+    width: 50px;
+    height: 20px;
+    border-radius: 5px 5px 5px 5px;
+    border: solid 4px #808000;
+    text-align: center;
+    font-size: 20px;
+    padding:  3px 10px 5px 2px;
+   }
+
+   div.set:hover { 
+    border-color: #505000;   
+    cursor: pointer;
+   }
+
+   div.selected_set {
+    background-color: #D8D888;
+   }
+
+   div.faded_set {
+    border-color: #FAFAAA;
+    color: #AAAAAA;
+   }
+
+  </style>
+  <script type="text/javascript">
+   var choice = {};
+   choice.length = 0;
+   choice.div = null;
+   choice.spans = [];
+   choice.children = [];
+   choice.string = '';
+   choice.chars = [];
+   choice.pos = [0,0];
+
+   choice.set_pos = function(i0,j0,h0) {
+    var p;
+    i1 = (i0 <= 3) ? i0 : i0 - 3;
+    y0 = (i0 <= 3) ? 0 : 285;
+    if (this.length == 1) {
+     p = [226*(2*i1-1) - 10,y0 + 20];
+    } else if (this.length == 2) {
+     p = [226*(2*i1-1) + 60 * (j0 - 2) - 15,y0 + 70];
+    } else {
+     p = [226*(2*i1-1) + 60 * (j0 - 2) - 19,y0 + 125 + 40 * h0];
+    }
+    this.pos = p;
+    this.div.style.left = p[0] + 'px';
+    this.div.style.top  = p[1] + 'px';
+   }
+
+   choice.init = function(s) {
+    var i,me;
+
+    me = this;
+
+    this.string = s;
+    this.length = s.length;
+    this.chars = s.split('');
+    this.children = [];
+    this.div = document.createElement('div');
+    this.div.className = 'choice' + this.length;
+
+    for (i = 0; i < s.length; i++) {
+     sp = document.createElement('span');
+     this.div.appendChild(sp);
+     sp.className = 'choice_letter';
+     sp.innerHTML = this.chars[i];
+    }
+    this.div.onclick = function() { me.parent.handle_list_click(me); }; 
+   };
+
+   var set = {};
+   set.div = null;
+   set.elements = [];
+   set.string = '';
+   set.key = '';
+   set.lists = [];
+   set.pos = [0,0];
+
+   set.init = function(i,j,k) {
+    var me = this;
+    this.elements = [i,j,k];
+    this.string = '{' + i + ',' + j + ',' + k + '}';
+    this.key = '' + i + j + k;
+    this.lists = [''+i+j+k,''+i+k+j,''+j+i+k,
+                  ''+j+k+i,''+k+i+j,''+k+j+i];
+    this.div = document.createElement('div');
+    this.div.className = 'set';
+    this.div.innerHTML = this.string;
+    this.div.onclick = function() { me.parent.handle_set_click(me); };                 
+   };
+
+   set.set_pos = function(m0) {
+    if (m0 < 10) {
+     this.pos = [100 * (2+m0),578];
+    } else {
+     this.pos = [100 * (2+m0-10),620];
+    }
+    this.div.style.left = this.pos[0] + 'px';
+    this.div.style.top  = this.pos[1] + 'px';
+   };
+
+   var choices = {};
+
+   choices.init = function() {
+    this.choice_div  = document.getElementById('choice_div');
+    this.message_div = document.getElementById('message_div');
+    this.n = 6;
+    this.k = 3;
+    this.list_selection = '';
+    this.set_selection = '';
+    this.obj = {};
+    this.obj_list = [];
+    this.set = {};
+    this.set_list = [];
+    for (i = 1; i <= this.k; i++) { this.obj[i] = {}; }
+    for (i = 1; i <= this.n; i++) {
+     x1 = Object.create(choice);
+     x1.parent = this;
+     x1.init('' + i);
+     x1.set_pos(i,0,0);
+     this.choice_div.appendChild(x1.div);
+     this.obj[1][x1.string] = x1;
+     this.obj_list.push(x1);
+     j0 = 0;
+     for (j = 1; j <= this.n; j++) {
+      if (j == i) { continue; }
+      x2 =  Object.create(choice);
+      x2.parent = this;
+      x2.init('' + i + j);
+      x2.set_pos(i,j0,0);
+      this.choice_div.appendChild(x2.div);
+      this.obj[2][x2.string] = x2;
+      this.obj_list.push(x2);
+      x1.children.push(x2);
+      h0 = 0;
+      for (h = 1; h <= this.n; h++) {
+       if (h == i || h == j) { continue; }
+       x3 =  Object.create(choice);
+       x3.parent = this;
+       x3.init('' + i + j + h);
+       x3.set_pos(i,j0,h0);
+       this.choice_div.appendChild(x3.div);
+       this.obj[3][x3.string] = x3;
+       this.obj_list.push(x3);
+       x1.children.push(x3);
+       x2.children.push(x3);
+       h0++;
+      }
+      j0++;
+     }
+    }
+    this.clear_selection();
+    m0 = 0;
+    for (i = 1; i <= this.n - 2; i++) {
+     for (j = i+1; j <= this.n - 1; j++) {
+      for(k = j+1; k <= this.n; k++) {
+       x = Object.create(set);
+       x.parent = this;
+       x.init(i,j,k);
+       x.set_pos(m0);
+       this.choice_div.appendChild(x.div);
+       this.set_list.push(x);
+       this.set[''+i+j+k] = x;
+       this.set[''+i+k+j] = x;
+       this.set[''+j+i+k] = x;
+       this.set[''+j+k+i] = x;
+       this.set[''+k+i+j] = x;
+       this.set[''+k+j+i] = x;
+       m0++;
+      }
+     }
+    }
+   }
+
+   choices.clear_selection = function() {
+    var i,x;
+    this.list_selection = '';
+    for (i in this.obj_list) {
+     x = this.obj_list[i];
+     x.div.className = 'choice' + x.length;
+    }
+    for (i in this.set_list) {
+     x = this.set_list[i];
+     x.div.className = 'set';
+    }
+    this.message_div.innerHTML = 'There are six possible choices for which athlete wins gold.';
+   }
+
+   choices.set_list_selection = function(s) {
+    var l,i,x,y;
+    this.list_selection = s;
+    l = s.length;
+    for (i in this.obj_list) {
+     x = this.obj_list[i];
+     if (x.length <= l && x.string == s.substring(0,x.length)) {
+      x.div.className = 'choice' + x.length + ' selected' + x.length;                        
+     } else if (x.length >= l && x.string.substring(0,l) == s) {
+      x.div.className = 'choice' + x.length;
+     } else {
+      x.div.className = 'choice' + x.length + ' faded' + x.length;
+     }
+    }
+
+    for (i in this.set_list) {
+     x = this.set_list[i];
+     x.div.className = 'set faded_set';
+    }
+
+    y = this.set[s];
+
+    if (l == 3) {
+     y.div.className = 'set selected_set';
+    }
+
+    if (l == 1) {
+     msg = 'If athlete ' + s + ' wins gold, then there are five remaining choices for who wins silver.';
+    } else if (l == 2) {
+     msg = 'If athlete ' + s.substring(0,1) + ' wins gold and athlete ' + s.substring(1,2) + 'wins silver, ' +
+      'then there are four remaining choices for who wins bronze.'
+    } else {
+     msg = 'Here athlete ' + s.substring(0,1) + ' wins gold, athlete ' + s.substring(1,2) + ' wins silver ' +
+      ' and athlete ' + s.substring(2,3) + ' wins bronze.  This is one of the 6&times;5&times;4=120 ' +
+      ' ways in which the medals can be awarded.<br/>  The unordered set of athletes who win a medal is ' + 
+      y.string + '.';
+    }
+
+    this.message_div.innerHTML = msg;
+   }
+
+
+   choices.set_set_selection = function(t) {
+    var i,x;
+    this.list_selection = '';
+    this.set_selection = t;
+
+    for (i in this.obj_list) {
+     x = this.obj_list[i];
+     x.div.className = 'choice' + x.length + ' faded' + x.length;
+    }
+    for (i in this.set_list) {
+     x = this.set_list[i];
+     x.div.className = 'set faded_set';
+    }
+
+    x = this.set[t];
+    x.div.className ='set selected_set';
+
+    for (j in x.lists) {
+     u = x.lists[j];
+     y = this.obj[3][u];
+     y.div.className = 'choice3 selected3';
+    }
+
+    this.message_div.innerHTML = 'If we know that the set of athletes who get a medal is ' + x.string + 
+     ', then there are six possible ways in which the gold, silver and bronze can be awarded.';
+   }
+
+   choices.handle_list_click = function(c) {
+    if (this.list_selection == c.string) {
+     this.clear_selection();
+    } else {
+     this.set_list_selection(c.string);
+    }
+   }
+
+   choices.handle_set_click = function(s) {
+    if (this.set_selection == s.key) {
+     this.clear_selection();
+    } else {
+     this.set_set_selection(s.key);
+    }
+   }
+  </script>
+ </head>
+ <body onload="choices.init()">
+  <div id="frame">
+   <div id="choice_div"></div>
+   <div id="message_div"></div>
+  </div>
+ </body>
+</html>

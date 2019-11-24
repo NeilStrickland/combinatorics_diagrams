@@ -1,0 +1,123 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div.set {
+    position: absolute;
+    color: green;
+    font-size: 24px;
+   }
+
+   span.max {
+    color: red;
+    font-weight: bold;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 450px;
+    margin-left: 30px;
+    font-size: 20px;
+   }
+  </style>
+  <script type="text/javascript">
+   var addition = {};
+   addition.n_max = 8;
+   addition.subsets = {};
+
+   addition.f = function(i,j) { return (0.5+i) * 100; }
+   addition.g = function(i,j) { return (1+j) * 40; }
+
+   addition.init = function() {
+    var i,x,A,B,xl,xt;
+
+    this.main_div = document.getElementById('main_div');
+
+    for (i = 0; i <= this.n_max; i++) { 
+     this.subsets[i] = {}; 
+     this.subsets[i][0] = [[]];
+     this.subsets[i][i+1] = [];
+     for (j = 1; j <= i; j++) {
+      A = this.subsets[i-1][j];
+      B = this.subsets[i-1][j-1].map(u => u.concat([i]));
+      this.subsets[i][j] = A.concat(B);
+     }
+    }
+
+    this.obj = [];
+    i = 0;
+
+    for (m = 4; m <= 8; m++) {
+     ss = this.subsets[m-1][3];
+     k = 0;
+     for (j in ss) {
+      s = ss[j];
+      x = {};
+      this.obj.push(x);
+      x.max = m;
+      x.extra = s;
+      x.set = s.concat([m]);
+      if (m == 4) {
+       x.col = 0;
+       x.row = 0;
+      } else if (m == 5) {
+       x.col = 1.5;
+       x.row = k;
+      } else if (m == 6) {
+       x.col = 3;
+       x.row = k;                            
+      } else if (m == 7) {
+       x.col = 4.5 + Math.floor(k/10);
+       x.row = k % 10;
+      } else {
+       x.col = 7 + Math.floor(k/7);
+       x.row = k % 7;
+      }
+      x.div = document.createElement('div');
+      x.div.className = 'set';
+      x.div.innerHTML = '{' + x.extra.join(',') + ',<span class="max">' + m + '</span>}';
+      xl = this.f(x.col,x.row) + 'px';
+      xt = this.g(x.col,x.row) + 'px';
+      x.div.style.left = xl;
+      x.div.style.top  = xt;
+      this.main_div.appendChild(x.div);    
+      k++;
+     }
+    }
+   }
+  </script>
+ </head>
+ <body onload="addition.init()">
+  <div id="frame">
+   <div id="main_div"></div>
+   <div id="msg_div">
+    To choose a subset $A$ of size $4$ in $\{1,\dotsc,8\}$, we can start by choosing a number $m\in\{4,5,6,7,8\}$ which will be the maximum element of $A$.  We then have to choose $3$ more elements, which must lie in $\{1,\dotsc,m-1\}$ because $m$ is the maximum.  There are $\small\left(\begin{matrix}m-1\\3\end{matrix}\right)$ ways to do this, giving $\small\left(\begin{matrix}m-1\\3\end{matrix}\right)$ different sets of size $4$ in $\{1,\dotsc,8\}$ whose maximum is $m$.  From this we see that 
+    $$ \left(\begin{matrix}8\\4\end{matrix}\right) =
+    \left(\begin{matrix}3\\3\end{matrix}\right) + 
+    \left(\begin{matrix}4\\3\end{matrix}\right) + 
+    \left(\begin{matrix}5\\3\end{matrix}\right) + 
+    \left(\begin{matrix}6\\3\end{matrix}\right) + 
+    \left(\begin{matrix}7\\3\end{matrix}\right) =
+    \sum_{m=4}^8 \left(\begin{matrix}m-1\\3\end{matrix}\right).
+    $$
+    By counting subsets of size $k$ in $\{1,\dotsc,n\}$ in the same way, we see that
+    $ \left(\begin{matrix}n\\k\end{matrix}\right) = \sum_{m=k}^n \left(\begin{matrix}m-1\\k-1\end{matrix}\right).$
+   </div>
+  </div>
+ </body>
+</html>

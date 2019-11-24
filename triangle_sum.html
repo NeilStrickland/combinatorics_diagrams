@@ -1,0 +1,225 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <style type="text/css">
+   div#main_div { 
+    position:absolute; 
+   }
+
+   div.text {
+    position:absolute; 
+    font-size: 24px;
+   }
+
+   div.partial {
+    font-size: 24px;
+   }
+
+   div#vals_div { 
+    position:absolute; 
+    left: 30px;
+    top: 30px;
+    font-size: 24px;
+   }
+
+   div#controls_div { 
+    position:absolute; 
+    right: 30px;
+    top: 30px;
+   }
+
+   div#msg_div {
+    text-align:center;
+    font-size: 22px;
+   }
+
+  </style>
+  <script type="text/javascript">
+
+   var bin = {};
+   bin.n = 0;
+   bin.k = 0;
+   bin.m = 0;
+   bin.val = 0;
+
+   var demo = {};
+
+   demo.f = function(n,k,m,x) {
+    return Math.round((0.5 * k - 0.5 * m + 0.5 * this.n_max + 4.5 + x) * this.scale); 
+   }
+
+   demo.g = function(n,k,m,x) {
+    return Math.round((0.866 * (k + m + n + 0.5)) * this.scale);
+   }
+
+   demo.fg = function(n,k,m,x) {
+    return {'x' : this.f(n,k,m,x),
+            'y' : this.g(n,k,m,x)};
+   }
+
+   demo.latex_binom = function(n,k) {
+    return "\\left(\\begin{matrix}" + n + "\\\\" + k + "\\end{matrix}\\right)";
+   }
+
+   demo.init = function() {
+    var i,j,k,n,x,x0,x1,y0,y1,p;
+    this.n_max = 6;
+    this.scale = 80;
+
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div  = document.getElementById('msg_div');
+    this.partial_div = document.getElementById('partial');
+
+    this.bins = {};
+    this.box = {};
+    this.partial = {};
+    this.bc = {};
+
+    this.n_line = {};
+    this.k_line = {};
+    this.m_line = {};
+
+    for (n = 1; n <= this.n_max + 1; n++) {
+     x0 = this.f(0,n,0,0);
+     x1 = this.f(0,0,n,0);
+     y0 = this.g(0,0,n,0);
+     p = 'M ' + x0 + ' ' + y0 + ' L ' + x1 + ' ' + y0;
+     this.n_line[n] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.n_line[n].setAttribute('stroke','#CCCCCC');
+     this.n_line[n].setAttribute('stroke-width',4);
+     this.n_line[n].setAttribute('d',p);
+     this.main_svg.appendChild(this.n_line[n]);
+    }
+
+    for (k = 0; k <= this.n_max + 1; k++) {
+     x0 = this.f(0,k,0,0);
+     y0 = this.g(0,k,0,0);
+     x1 = this.f(0,k,this.n_max+1-k,0);
+     y1 = this.g(0,k,this.n_max+1-k,0);
+     p = 'M ' + x0 + ' ' + y0 + ' L ' + x1 + ' ' + y1;
+     this.k_line[k] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.k_line[k].setAttribute('stroke','#CCCCCC');
+     this.k_line[k].setAttribute('stroke-width',4);
+     this.k_line[k].setAttribute('d',p);
+     this.main_svg.appendChild(this.k_line[k]);
+    }
+
+    for (m = 0; m <= this.n_max + 1; m++) {
+     x0 = this.f(0,0,m,0);
+     y0 = this.g(0,0,m,0);
+     x1 = this.f(0,this.n_max+1-m,m,0);
+     y1 = this.g(0,this.n_max+1-m,m,0);
+     p = 'M ' + x0 + ' ' + y0 + ' L ' + x1 + ' ' + y1;
+     this.m_line[m] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.m_line[m].setAttribute('stroke','#CCCCCC');
+     this.m_line[m].setAttribute('stroke-width',4);
+     this.m_line[m].setAttribute('d',p);
+     this.main_svg.appendChild(this.m_line[m]);
+    }
+
+    for (n = 0; n <= this.n_max; n++) {
+     this.bins[n] = {};
+     for (k = 0; k <= n; k++) {
+      x = Object.create(bin);
+      this.bins[n][k] = x;
+      x.n = n;
+      x.k = k;
+      x.m = n - k;
+      x.val = k+1;
+      x.text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      x.text.setAttribute('x',this.f(0.7,k,n-k,0) + 'px');
+      x.text.setAttribute('y',this.g(0.7,k,n-k,0) + 'px');
+      x.text.setAttribute('text-anchor','middle');
+      x.text.setAttribute('font-size','24px');
+      x.text.textContent = x.val;
+      this.main_svg.appendChild(x.text);
+     }
+    }
+
+    for (k = 2; k <= this.n_max + 2; k++) {
+     this.bc[k] = document.getElementById('b' + k);
+     this.set_handlers(this.bc[k],k);
+     this.box[k] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.box[k].setAttribute('fill','none');
+     this.box[k].setAttribute('stroke','green');
+     this.box[k].setAttribute('stroke-width',4);
+     this.box[k].setAttribute('visibility','hidden');
+     z0 = this.fg(0,0,8-k,0);
+     z1 = this.fg(0,0,9-k,0);
+     z2 = this.fg(0,k-2,9-k,0);
+     z3 = this.fg(0,k-1,8-k,0);
+     p = 'M ' + z0.x + ' ' + z0.y + ' L ' + z1.x + ' ' + z1.y + 
+      ' ' + z2.x + ' ' + z2.y + ' ' + z3.x + ' ' + z3.y + 
+      ' ' + z0.x + ' ' + z0.y;
+     this.box[k].setAttribute('d',p);
+     this.main_svg.appendChild(this.box[k]);
+     this.partial[k] = document.createElement('div');
+     this.partial[k].className = 'partial';
+     this.partial[k].style.display = 'none';
+     s = '$$1'; 
+     for (j = 2; j <k; j++) { s += '+' + j; }
+     s += '=\\left(\\begin{matrix}' + k + '\\\\2\\end{matrix}\\right)$$';
+     this.partial[k].innerHTML = s;
+     this.partial_div.appendChild(this.partial[k]);
+    }
+   }
+
+   demo.set_handlers = function(e,k) {
+    var me = this;
+    e.onmouseover = function() { me.handle_mouseover(k); }
+    e.onmouseout  = function() { me.handle_mouseout(k);  }
+   }
+
+   demo.handle_mouseover = function(k) {
+    this.bc[k].style.color = 'red';
+    this.box[k].setAttribute('visibility','visible');
+    this.partial[k].style.display = 'block';
+   }
+
+   demo.handle_mouseout = function(k) {
+    this.bc[k].style.color = 'black';
+    this.box[k].setAttribute('visibility','hidden');
+    this.partial[k].style.display = 'none';
+   }
+
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <div class="text" style="left:20px;top:20px;">What is the sum of all numbers in the triangle?</div>
+   <div id="partial" class="text" style="left:800px;top:100px;"></div>
+   <svg id="main_svg" width="1200" height="650"></svg>
+   <div id="b2" style="position:absolute; left:328px; top:540px; font-size:20px;">$\left(\begin{matrix}2\\2\end{matrix}\right)$</div>
+   <div id="b3" style="position:absolute; left:410px; top:540px; font-size:20px;">$\left(\begin{matrix}3\\2\end{matrix}\right)$</div>
+   <div id="b4" style="position:absolute; left:492px; top:540px; font-size:20px;">$\left(\begin{matrix}4\\2\end{matrix}\right)$</div>
+   <div id="b5" style="position:absolute; left:574px; top:540px; font-size:20px;">$\left(\begin{matrix}5\\2\end{matrix}\right)$</div>
+   <div id="b6" style="position:absolute; left:656px; top:540px; font-size:20px;">$\left(\begin{matrix}6\\2\end{matrix}\right)$</div>
+   <div id="b7" style="position:absolute; left:738px; top:540px; font-size:20px;">$\left(\begin{matrix}7\\2\end{matrix}\right)$</div>
+   <div id="b8" style="position:absolute; left:820px; top:540px; font-size:20px;">$\left(\begin{matrix}8\\2\end{matrix}\right)$</div>
+   <div id="c"  style="position:absolute; left:902px; top:540px; font-size:20px;">$\left(\begin{matrix}9\\3\end{matrix}\right)$</div>
+
+   <div style="position:absolute; left:387px; top:559px; font-size:20px;">$+$</div>
+   <div style="position:absolute; left:469px; top:559px; font-size:20px;">$+$</div>
+   <div style="position:absolute; left:551px; top:559px; font-size:20px;">$+$</div>
+   <div style="position:absolute; left:633px; top:559px; font-size:20px;">$+$</div>
+   <div style="position:absolute; left:715px; top:559px; font-size:20px;">$+$</div>
+   <div style="position:absolute; left:797px; top:559px; font-size:20px;">$+$</div>
+   <div style="position:absolute; left:879px; top:562px; font-size:20px;">$=$</div>
+   <div id="vals_div"></div>
+   <div id="controls_div">
+   </div>
+   <div id="msg_div">
+    In general, for a triangle as above with $N$ rows, the total will be $\left(\begin{matrix}N+2\\3\end{matrix}\right)$.
+   </div>
+  </div>
+ </body>
+</html>

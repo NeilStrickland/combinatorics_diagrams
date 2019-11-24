@@ -1,0 +1,124 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <style type="text/css">
+   img.ball { width: 90px; }
+
+   div#ball_div {
+    width: 1000px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin: auto;
+   }
+
+   div#main_div {
+    position: absolute;
+    top:600px;
+    left: 0;
+    right: 0;
+    margin: auto;
+    font-size:24px;
+    text-align:center;
+   }
+  </style>
+ </head>
+ <body>
+  <div id="frame">
+   <div id="ball_div">
+    <table id="ball_table">
+     <tr>
+      <td></td>
+      <td><img class="ball" src="../images/b01.png"/></td>
+      <td><img class="ball" src="../images/b02.png"/></td>
+      <td><img class="ball" src="../images/b03.png"/></td>
+      <td><img class="ball" src="../images/b04.png"/></td>
+      <td><img class="ball" src="../images/b05.png"/></td>
+      <td><img class="ball" src="../images/b06.png"/></td>
+      <td><img class="ball" src="../images/b07.png"/></td>
+      <td><img class="ball" src="../images/b08.png"/></td>
+      <td><img class="ball" src="../images/b09.png"/></td>
+     </tr>
+     <tr>
+      <td><img class="ball" src="../images/b10.png"/></td>
+      <td><img class="ball" src="../images/b11.png"/></td>
+      <td><img class="ball" src="../images/b12.png"/></td>
+      <td><img class="ball" src="../images/b13.png"/></td>
+      <td><img class="ball" src="../images/b14.png"/></td>
+      <td><img class="ball" src="../images/b15.png"/></td>
+      <td><img class="ball" src="../images/b16.png"/></td>
+      <td><img class="ball" src="../images/b17.png"/></td>
+      <td><img class="ball" src="../images/b18.png"/></td>
+      <td><img class="ball" src="../images/b19.png"/></td>
+     </tr>
+     <tr>
+      <td><img class="ball" src="../images/b20.png"/></td>
+      <td><img class="ball" src="../images/b21.png"/></td>
+      <td><img class="ball" src="../images/b22.png"/></td>
+      <td><img class="ball" src="../images/b23.png"/></td>
+      <td><img class="ball" src="../images/b24.png"/></td>
+      <td><img class="ball" src="../images/b25.png"/></td>
+      <td><img class="ball" src="../images/b26.png"/></td>
+      <td><img class="ball" src="../images/b27.png"/></td>
+      <td><img class="ball" src="../images/b28.png"/></td>
+      <td><img class="ball" src="../images/b29.png"/></td>
+     </tr>
+     <tr>
+      <td><img class="ball" src="../images/b30.png"/></td>
+      <td><img class="ball" src="../images/b31.png"/></td>
+      <td><img class="ball" src="../images/b32.png"/></td>
+      <td><img class="ball" src="../images/b33.png"/></td>
+      <td><img class="ball" src="../images/b34.png"/></td>
+      <td><img class="ball" src="../images/b35.png"/></td>
+      <td><img class="ball" src="../images/b36.png"/></td>
+      <td><img class="ball" src="../images/b37.png"/></td>
+      <td><img class="ball" src="../images/b38.png"/></td>
+      <td><img class="ball" src="../images/b39.png"/></td>
+     </tr>
+     <tr>
+      <td><img class="ball" src="../images/b40.png"/></td>
+      <td><img class="ball" src="../images/b41.png"/></td>
+      <td><img class="ball" src="../images/b42.png"/></td>
+      <td><img class="ball" src="../images/b43.png"/></td>
+      <td><img class="ball" src="../images/b44.png"/></td>
+      <td><img class="ball" src="../images/b45.png"/></td>
+      <td><img class="ball" src="../images/b46.png"/></td>
+      <td><img class="ball" src="../images/b47.png"/></td>
+      <td><img class="ball" src="../images/b48.png"/></td>
+      <td><img class="ball" src="../images/b49.png"/></td>
+     </tr>
+     <tr>
+      <td><img class="ball" src="../images/b50.png"/></td>
+      <td><img class="ball" src="../images/b51.png"/></td>
+      <td><img class="ball" src="../images/b52.png"/></td>
+      <td><img class="ball" src="../images/b53.png"/></td>
+      <td><img class="ball" src="../images/b54.png"/></td>
+      <td><img class="ball" src="../images/b55.png"/></td>
+      <td><img class="ball" src="../images/b56.png"/></td>
+      <td><img class="ball" src="../images/b57.png"/></td>
+      <td><img class="ball" src="../images/b58.png"/></td>
+      <td><img class="ball" src="../images/b59.png"/></td>
+     </tr>
+    </table>
+   </div>
+   <div id="main_div">
+    In the National Lottery, 6 balls are drawn randomly from 59 balls.
+    The number of possible outcomes is
+    $$ \left(\begin{matrix} 59 \\ 6\end{matrix}\right) =
+    \frac{59!}{6!\;53!} =
+    \frac{59.58.57.56.55.54}{6.5.4.3.2.1} = 45057474
+    \simeq 4.5\times 10^7.
+    $$
+   </div>
+  </div>
+ </body>
+</html>

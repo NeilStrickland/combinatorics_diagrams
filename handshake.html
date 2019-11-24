@@ -1,0 +1,276 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <style type="text/css">
+
+   div#controls_div {
+    position:absolute;
+    left: 1100px;
+    top: 50px;
+   }
+
+   div#controls_div td {
+    display: inline-block;
+    width: 90px;
+   }
+
+   div#count_div {
+    position: absolute;
+    left: 1100px;
+    top: 200px;
+   }
+
+   div#count_div td {
+    width:70px;
+   }
+
+   div#main_div {
+    position:absolute;
+    left: 50px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position:absolute;
+    top: 500px;
+    text-align:center;
+    font-size: 24px;
+    margin: 40px;
+   }
+
+   table#shake_table td {
+    width: 60px;
+    height: 60px;
+   }
+   
+   td.shake:hover {
+    cursor: pointer;
+   }
+   
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/utils/Draggable.min.js"></script>
+  <script type="text/javascript">
+   
+   var person = {
+    name : '',
+    index : null,
+    num_shakes : 0,
+    tr : null
+   }
+   
+   var cell = {
+    i : 0,
+    j : 0,
+    mirror : null,
+    is_on : false,
+    td : null,
+    img : null
+   }
+   
+   var demo = {};
+
+   demo.board_x0 = 50;
+   demo.board_y0 = 50;
+   demo.board_size = 50;
+   demo.board_cols = 20;
+   demo.board_rows = 10;
+   demo.num       = 0;
+   demo.num_white = 0;
+   demo.num_red   = 0;
+   demo.mode = 'show';
+   
+   demo.f = function(i,j) {
+    return Math.round(this.board_x0 + i * this.board_size);
+   }
+
+   demo.g = function(i,j) {
+    return Math.round(this.board_y0 + j * this.board_size);
+   }
+
+   demo.fg = function(i,j) {
+    return {'x' : this.f(i,j), 'y' : this.g(i,j) };
+   }
+
+   demo.init = function() {
+    var i,j,p,dh,dv,me;
+
+    me = this;
+
+    this.names = ['Anna','Bill','Cate','Doug','Erin','Fred'];
+    
+    this.shake_table = document.getElementById('shake_table');
+    
+    tr = document.createElement('tr');
+    this.shake_table.appendChild(tr);
+    
+    td = document.createElement('td');
+    tr.appendChild(td);
+    
+    this.people = [];
+    
+    for (i in this.names) {
+     p = Object.create(person);
+     this.people.push(p);
+     p.index = i;
+     p.name = this.names[i];
+     td = document.createElement('td');
+     tr.appendChild(td);
+     td.className = 'top_header';
+     td.innerHTML = p.name;
+     p.top_header = td;
+    }
+    
+    td = document.createElement('td');
+    td.style = "width:180px";
+    tr.appendChild(td);
+    
+    this.cell = {};
+    
+    for (i in this.people) {
+     p = this.people[i];
+     tr = document.createElement('tr');
+     this.shake_table.appendChild(tr);
+    
+     td = document.createElement('td');
+     tr.appendChild(td);
+     td.innerHTML = p.name;
+     p.side_header = td;
+     
+     this.cell[i] = {};
+     
+     for (j in this.people) {
+      q = this.people[j];
+      td = document.createElement('td');
+      tr.appendChild(td);
+      if (i == j) {
+       this.cell[i][j] = null;
+       td.style.background = 'grey';
+      } else {
+       c = Object.create(cell);
+       this.cell[i][j] = c;
+       c.td = td;
+       td.className = 'shake';
+       this.set_click_handler(td,i,j);
+       img = document.createElement('img');
+       c.img = img;
+       img.style.visibility = 'hidden';
+       td.appendChild(img);
+       img.src = '../images/handshake.png';
+      }
+     }
+     td = document.createElement('td');
+     p.count_td = td;
+     tr.appendChild(td);
+       
+     td.innerHTML = p.name + ' shakes no hands';
+    }
+   }
+
+   demo.set_click_handler = function(c,i,j) {
+    var me = this;
+    c.onclick = function() { me.handle_click(i,j); }
+   }
+   
+   demo.handle_click = function(i,j) {
+    c = this.cell[i][j];
+    d = this.cell[j][i];
+    
+    if (c.is_on) {
+     c.is_on = 0;
+     d.is_on = 0;
+     c.img.style.visibility = 'hidden';
+     d.img.style.visibility = 'hidden';
+    } else {
+     c.is_on = 1;
+     d.is_on = 1;
+     c.img.style.visibility = 'visible';
+     d.img.style.visibility = 'visible';    
+    }
+    
+    this.count();
+   }
+   
+   demo.count = function() {
+    for (i in this.people) {
+     p = this.people[i];
+     p.num_shakes = 0;
+     for (j in this.people) {
+      if (j != i && this.cell[i][j].is_on) {
+       p.num_shakes++;
+      }
+     }
+     
+     if (p.num_shakes == 0) {
+      p.count_td.innerHTML = p.name + ' shakes no hands ';
+     } else if (p.num_shakes == 1) {
+      p.count_td.innerHTML = p.name + ' shakes one hand ';
+     } else {
+      p.count_td.innerHTML = p.name + ' shakes ' + p.num_shakes + ' hands';
+     }
+     
+     p.count_td.style.background = 'white';
+    }
+    
+    t = {};
+    p = null;
+    q = null;
+    for (i in this.people) {
+     p = this.people[i];
+     if (t[p.num_shakes]) {
+      q = t[p.num_shakes];
+      break;
+     } else {
+      t[p.num_shakes] = p;
+     }
+    }
+    
+    p.count_td.style.background = 'yellow';
+    q.count_td.style.background = 'yellow';
+
+    document.getElementById('msg_div').innerHTML = 
+     q.name + ' and ' + p.name + ' shake the same number of hands.';
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <div id="main_div">
+    <table id="shake_table" class="edged">
+    </table>
+   </div>
+   <div id="count_div" style="display:none">
+    <table class="edged">
+     <tr>
+      <td>Red</td>
+      <td id="num_red">0</td>
+     </tr>
+     <tr>
+      <td>White</td>
+      <td id="num_white">0</td>
+     </tr>
+     <tr>
+      <td>Total</td>
+      <td id="num">0</td>
+     </tr>
+    </table>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

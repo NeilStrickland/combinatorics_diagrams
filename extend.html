@@ -1,0 +1,203 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <style type="text/css">
+
+   div#msg_div {
+    font-size: 24px;
+    margin: 40px;
+    position:absolute;
+    left: 50px;
+    top:500px;
+   }
+
+   div#solutions_div {
+    position: absolute;
+    left: 640;
+    top: 540;
+    width : 600;
+   }
+   
+   div.solution_key {
+    display: inline-block;
+    padding: 5px;
+    margin: 4px;
+    font-size: 24px;
+   }
+   
+   div.solution_key:hover {
+    cursor:pointer; 
+   }
+   
+   div.solution_key_selected {
+    display: inline-block;
+    padding: 5px;
+    margin: 4px;
+    font-size: 24px;
+    background: orange;
+   }
+   
+   div.solution_key_selected:hover {
+    cursor:pointer; 
+   }
+
+   tspan.row_option {
+    fill : black;
+    font-weight : normal;   
+   }
+
+   tspan.row_option_selected {
+    fill : blue;
+    font-weight : bold;
+   }
+
+   tspan.row_option_col_blocked {
+    fill : #AAAAAA;
+    font-weight : normal;   
+   }
+   
+   tspan.row_option_row_blocked {
+    fill : cyan;
+    font-weight : normal;   
+   }
+
+   tspan.row_option:hover             { cursor : pointer; }
+   tspan.row_option_selected:hover    { cursor : pointer; }
+   tspan.row_option_col_blocked:hover { cursor : pointer; }
+   tspan.row_option_row_blocked:hover { cursor : pointer; }
+
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  <script type="text/javascript">
+
+   var demo = {};
+   
+   demo.init = function() {
+    var w,x,y,s,i,j,a,b;
+    this.main_svg = document.getElementById('main_svg');
+    this.solutions_div = document.getElementById('solutions_div');
+    this.msg_div = document.getElementById('msg_div');
+    
+    this.L = latin_rectangle.setup(
+     [[1,2,3,4,5],[2,4,5,3,1],[4,3,1,5,2]]
+    );
+
+    this.L.grid_x0 = 100;
+    this.L.grid_y0 = 100;
+    this.L.grid_w = 100;
+    this.L.grid_h = 60;
+
+    this.L.col_label = ['a','b','c','d','e'];
+    
+    this.main_svg.appendChild(this.L.make_row_extension_grid().svg);
+
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.main_svg]);
+
+    this.board = this.L.make_row_extension_problem();
+    
+    this.board.grid_x0 = 640;
+    this.board.grid_y0 = 10;
+    this.board.grid_w = 80;
+    this.board.grid_h = 80;
+    this.board.make_grid();
+    this.main_svg.appendChild(this.board.grid.svg);
+
+    for (i in this.board.left_set) {
+     a = this.board.left_set[i];
+     for (j in this.board.right_set) {
+      b = this.board.right_set[j];
+      
+      if (this.board.relation_table[a][b]) {
+       this.set_square_handler(this.board.grid.square[a][b],a,b);
+       this.set_square_handler(this.board.grid.rook_icon[a][b],a,b);
+       x = this.L.grid.row_option_tspan[i][b];
+       this.set_option_handler(x,a,b);
+      }
+     }
+    }
+   };
+
+   demo.set_square_handler = function(x,a,b) {
+    var me = this;
+    x.onclick = function() { me.handle_square_click(a,b); };
+   };
+   
+   demo.set_option_handler = function(x,a,b) {
+    var me = this;
+    x.onclick = function() { me.handle_square_click(a,b); };
+   };
+   
+   demo.handle_square_click = function(a,b) {
+    this.board.toggle_rook(a,b);
+    this.board.paint_grid();
+    this.paint_row();
+    if (this.board.cell[a][b].is_filled) {
+     this.msg_div.innerHTML =
+      'Placing a rook at position ' + a + b +
+      ' corresponds to choosing ' + b +
+      ' as the new entry in column ' + a + '.' 
+     ;
+    } else {
+     this.msg_div.innerHTML = '';
+    }
+
+    if (this.board.num_rooks == this.board.max_rooks) {
+     this.msg_div.innerHTML =
+      'We now have a full set of rooks on the board on the right, ' +
+      'and correspondingly, we have finished choosing a new row ' +
+      'for the table on the left.';      
+    }
+   };
+      
+   demo.paint_row = function() {
+    var i,j,o,x,y;
+    
+    for(i = 0; i < this.L.q; i++) {
+     o = this.L.col_gap[i];
+     for (m = 0; m < o.length; m++) {
+      j = o[m];
+      x = this.L.grid.row_option_tspan[i][j];
+      y = this.board.cell[this.L.col_label[i]][j];
+      if (y.is_filled) {
+       x.setAttribute("class","row_option_selected");
+      } else if (y.is_row_blocked) {
+       x.setAttribute("class","row_option_row_blocked");
+      } else if (y.is_col_blocked) {
+       x.setAttribute("class","row_option_col_blocked");
+      } else {
+       x.setAttribute("class","row_option");
+      }
+     }
+    }
+   };
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="600">
+   </svg>
+   <div id="solutions_div">
+   </div>
+   <div id="msg_div">
+    We want to add an extra row to the table on the left, by selecting
+    one element from each pair of curly brackets.  This should be done
+    in such a way that there are no repetitions in the new row.  This
+    problem is equivalent to the problem of placing a full set of
+    rooks on the board on the right.  You can experiment with this by
+    clicking on the board, or by clicking on the entries in the extra
+    row. 
+   </div>
+  </div>
+ </body>
+</html>

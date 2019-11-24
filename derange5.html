@@ -1,0 +1,184 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <style type="text/css">
+   div#main_div {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    font-size: 24px;
+   }
+   
+   div#msg_div {
+    position: absolute;
+    left: 50px;
+    top: 460px;
+    text-align:center;
+    font-size: 20px;
+   }
+
+   table#perms td {
+    width: 85px;
+    height: 40px;
+    font-size: 18px;
+   }
+
+   table#perms td.deranged {
+    background-color: #B0C4DE;
+   }
+
+   table#perms span {
+    padding: 1px;
+    margin: 1px;
+    border-radius: 5px;
+   }
+
+   span.fixed1 {
+    background-color: #87CEFA;
+   }
+
+   span.fixed2 {
+    background-color: #90EE90;
+   }
+
+   span.fixed3 {
+    background-color: #FFA500;
+   }
+
+   span.fixed4 {
+    background-color: #FF69B4;
+   }
+   
+   span.fixed5 {
+    background-color: #7B68EE;
+   }
+
+   span.faded1 {
+    background-color: #D7FFFF;
+   }
+
+   span.faded2 {
+    background-color: #E0FFE0;
+   }
+
+   span.faded3 {
+    background-color: #EFFF80;
+   }
+
+   span.faded4 {
+    background-color: #FFD9FF;
+   }
+
+   span.faded5 {
+    background-color: #DCC8FF;
+   }
+
+  </style>
+  <script type="text/javascript">
+
+   var perm = {
+    index: 0,
+    r : 0,
+    c : 0,
+    val : {},
+    fixed : [],
+    is_fixed : {},
+    td : null,
+    span : {}
+   }
+
+   var demo = {};
+
+   demo.init = function() {
+    this.perm_table = document.getElementById('perms');
+
+    r = 0;
+    c = 0;
+    n = 0;
+
+    this.perms = {};
+
+    for (i = 1; i <= 5; i++) {
+     for (j = 1; j <= 5; j++) {
+      if (j == i) { continue; }
+      for (k = 1; k <= 5; k++) {
+       if (k == i || k == j) { continue; }
+       for (l = 1; l <= 5; l++) {
+        if (l == i || l == j || l == k) { continue; }
+        for (m = 1; m <= 5; m++) {
+         if (m == i || m == j || m == k || m == l) { continue; }
+         p = Object.create(perm);
+         p.index = n;
+         this.perms[n] = p;
+         p.r = r;
+         p.c = c;
+         if (c == 0) {
+          tr = document.createElement('tr');
+          this.perm_table.appendChild(tr);
+         }
+
+         td = document.createElement('td');
+         tr.appendChild(td);
+         p.td = td;
+         p.val = {1 : i, 2 : j, 3 : k, 4 : l, 5 : m};
+         p.fixed = [];
+         p.is_fixed = {};
+         p.span = {};
+
+         for (t = 1; t <= 5; t++) {
+          p.is_fixed[t] = (p.val[t] == t);
+          if (p.is_fixed[t]) { p.fixed.push(t); }
+          p.span[t] = document.createElement('span');
+          p.span[t].innerHTML = p.val[t];
+          if (p.is_fixed[t]) {
+           p.span[t].className = 'fixed' + t;
+          }
+          td.appendChild(p.span[t]);
+         }
+         
+         if (p.fixed.length == 0) {
+          td.className = 'deranged';
+         }
+
+         m++;
+         c++;
+         if (c == 12) { c = 0; r++; }
+        }
+       }
+      }
+     }
+    }
+   }
+
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <div id="main_div">
+    <table id="perms" class="edged"></table>
+   </div>
+   <div id="msg_div">
+    For each set $I\subseteq\{1,2,3,4,5\}$ with $|I|=k$ we have $|P_I|=(5-k)!$.
+    The number of such subsets is
+    $ \left(\begin{matrix}5\\ k\end{matrix}\right) = \frac{5!}{k!(5-k)!}$,
+    so
+    $$ \sum_I |P_I| = \frac{5!}{k!(5-k)!} (5-k)! = \frac{5!}{k!}.  $$
+    Thus, the inclusion-exclusion principle gives
+    $$ |D| = \sum_k (-1)^k \frac{5!}{k!}
+           = 5!\left(  \frac{1}{0!} - \frac{1}{1!} + \frac{1}{2!}
+                     - \frac{1}{3!} + \frac{1}{4!} - \frac{1}{5!}
+                \right) = 120 - 120 + 60 - 20 + 5 - 1 = 44.
+    $$
+   </div>
+  </div>
+ </body>
+</html>

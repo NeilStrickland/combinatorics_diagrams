@@ -1,0 +1,405 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <style type="text/css">
+   div#main_div {
+    position: absolute;
+    top: 10px;
+    left: 600px;
+    font-size: 20px;
+   }
+   
+   td.A { 
+    font-size: 20px;
+    width: 480px;
+   }
+   
+   td.B { 
+    font-size: 20px;
+    width: 170px;
+   }
+   
+   ul#eqs {
+    list-style: none;
+   }
+   
+   ul#eqs li {
+    margin: 0 0 15px 0;
+   }
+   
+   div#controls_div { 
+    position:absolute; 
+    right: 30px;
+    top: 30px;
+   }
+
+  </style>
+  <script type="text/javascript">
+   
+   var region = {
+    I : [],
+    col : '',
+    x0 : 0,
+    y0 : 0,
+    svg : null,
+    text : null,
+    eq : null
+   };
+   
+   region.set_color = function(c) {
+    this.col = c;
+    this.svg.setAttribute('fill',c);
+   };
+      
+   var arc = {
+    svg : null,
+    eq : null
+   };
+   
+   var point = {
+    svg : null,
+    eq : null
+   };
+   
+   var demo = {};
+
+   demo.x0 = 300;
+   demo.y0 = 350;
+   demo.r = 120;
+   demo.a =  90;
+   
+   demo.init = function() {
+    var x0,y0,a,b,r,i,s,p;
+
+    this.main_svg = document.getElementById('main_svg');
+
+    this.step = 0;
+
+    x0 = this.x0;
+    y0 = this.y0;
+    r = this.r;
+    a = this.a;
+    b = Math.sqrt(4*r*r - 3*a*a);
+    a2 = 3 * a;
+    
+    this.c = {};
+    this.cs = {};
+
+    this.c[ 1] = [0,a];
+    this.c[ 2] = [-0.865*a,-0.5*a];
+    this.c[ 3] = [ 0.865*a,-0.5*a];
+    
+    for (i = 1; i <= 3; i++) {
+     x = Math.round(this.x0 + this.c[i][0]);
+     y = Math.round(this.y0 - this.c[i][1]);
+     this.cs[i] = ' ' + x + ' ' + y;
+    }
+
+    this.p = {};
+    this.ps = {};
+
+    this.p[ 0] = [ 0,0];
+    this.p[ 1] = [ 0,-0.5*(a+b)];
+    this.p[ 2] = [ 0.432*(a+b),0.25*(a+b)];
+    this.p[ 3] = [-0.432*(a+b),0.25*(a+b)];
+    this.p[ 4] = [0, 0.5*(b-a)];
+    this.p[ 5] = [ 0.432*(a-b),0.25*(a-b)];
+    this.p[ 6] = [-0.432*(a-b),0.25*(a-b)];
+    this.p[ 7] = [0,-a2];
+    this.p[ 8] = [0, a2];
+
+    for (i = 0; i <= 8; i++) {
+     x = Math.round(this.x0 + this.p[i][0]);
+     y = Math.round(this.y0 - this.p[i][1]);
+     this.ps[i] = ' ' + x + ' ' + y;
+    }
+
+    this.cols = {
+     0 : '#FFE119',
+     1 : '#F58231',
+     2 : '#BFEF45',
+     3 : '#3CB44B',
+     4 : '#42D4F4',
+     5 : '#4363D8',
+     6 : '#911EB4',
+     7 : '#F032E6'
+    };
+     
+    this.eqs = {};
+    
+    this.region = {};
+    
+    this.make_region(0,[4,0,0,5]            ,[]     , 177,  93,'star',13);
+    this.make_region(1,[1,0,1,5,0,1,3,1,0,1],[1]    ,-110, -66,'t_star',3);
+    this.make_region(2,[2,0,1,6,0,1,1,1,0,2],[2]    , 110, -66,'s_star',9);
+    this.make_region(3,[3,0,1,4,0,1,2,1,0,3],[3]    ,   0, 110,'b_star',7);
+    this.make_region(4,[6,0,1,5,0,0,1,0,0,6],[1,2]  ,   0, -70,'ts_star',3);
+    this.make_region(5,[4,0,1,6,0,0,2,0,0,4],[2,3]  ,  59,  31,'sb_star',1);
+    this.make_region(6,[5,0,1,4,0,0,3,0,0,5],[1,3]  , -59,  31,'tb_star',2);
+    this.make_region(7,[4,0,0,5,0,0,6,0,0,4],[1,2,3],   0,   0,'tsb',2);
+
+    s = 'M ' + this.ps[7] + 
+     ' A ' + a2 + ' ' + a2 + ' 0 0 0 ' + this.ps[8] + 
+     ' A ' + a2 + ' ' + a2 + ' 0 0 0 ' + this.ps[7] + 
+     ' L ' + this.ps[1] + 
+     ' A ' + r + ' ' + r + ' 0 1 0 ' + this.ps[2] +
+     ' A ' + r + ' ' + r + ' 0 1 0 ' + this.ps[3] +
+     ' A ' + r + ' ' + r + ' 0 1 0 ' + this.ps[1] +
+     ' L ' + this.ps[7] + ' z ';
+     
+    this.region[0].svg.setAttribute('d',s);
+    
+    for (i = 0; i <= 7; i++) {
+     this.add_region_text(i,this.region[i].num_members);
+     this.add_handlers(this.region[i]);
+    }
+    
+    this.arc = {};
+    
+    this.make_arc( 1,3,1,0,1,[1],'t_star');
+    this.make_arc( 2,1,1,0,2,[2],'s_star');
+    this.make_arc( 3,2,1,0,3,[3],'b_star');
+    this.make_arc( 4,5,0,0,1,[1,4],'t_not_b');
+    this.make_arc( 5,6,0,0,2,[2,5],'s_not_t');
+    this.make_arc( 6,4,0,0,3,[3,6],'b_not_s');
+    this.make_arc( 7,1,0,0,6,[2,4],'s_not_b');
+    this.make_arc( 8,2,0,0,4,[3,5],'b_not_t');
+    this.make_arc( 9,3,0,0,5,[1,6],'t_not_s');
+    this.make_arc(10,4,0,0,5,[6,7],'tb');
+    this.make_arc(11,5,0,0,6,[4,7],'ts');
+    this.make_arc(12,6,0,0,4,[5,7],'sb');
+
+    for (i = 1; i <= 12; i++) {
+     this.add_handlers(this.arc[i]);
+    }
+    
+    this.point = {};
+    
+    this.make_point(0,[1,2,3,4,5,6,7],'some');
+    this.make_point(1,[1,2,4,5,6,7],'t_or_s');
+    this.make_point(2,[2,3,4,5,6,7],'s_or_b');
+    this.make_point(3,[1,3,4,5,6,7],'t_or_b');
+    this.make_point(4,[3,5,6,7],'b');
+    this.make_point(5,[1,6,4,7],'t');
+    this.make_point(6,[2,4,5,7],'s');
+
+    for (i = 0; i <= 6; i++) {
+     this.add_handlers(this.point[i]);
+    }
+    
+    this.text = {};
+    demo.make_text(1,'tennis',-a,-2*a);
+    demo.make_text(2,'squash', a,-2*a);
+    demo.make_text(1,'badminton',0,2.5*a);
+   }
+   
+   demo.make_region = function(i,u,I,x0,y0,e,n) {
+    var n,j,A,s,p,r;
+    
+    r = Object.create(region);
+    this.region[i] = r;
+    r.R = [i];
+    r.label = 'r' + i;
+    r.col = this.cols[i];
+    r.I = I;
+    r.x0 = x0;
+    r.y0 = y0;
+    r.eq = e;
+    el = document.getElementById('eq_' + e);
+    if (el) { this.eqs[e] = el; }
+    r.num_members = n;
+    
+    n = u.length;
+    A = ' A ' + this.r + ' ' + this.r + ' 0 ';
+    s = 'M ' + this.ps[u[0]];
+    
+    for(j = 1; j < n; j+= 3) {
+     s += A + u[j] + ' ' + u[j+1] + ' ' + this.ps[u[j+2]];
+    }
+    
+    p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d',s);
+    p.setAttribute('stroke','none');
+    p.setAttribute('fill','grey');
+    p.setAttribute('fill-rule','evenodd');
+    this.main_svg.appendChild(p);
+    r.svg = p;
+    
+    return r;
+   }
+   
+   demo.make_arc = function(i,p,f,g,q,R,e) {
+    a = Object.create(arc);
+    this.arc[i] = a;
+    a.index = i;
+    a.label = 'a' + i;
+    a.R = R;
+    a.eq = e;
+    el = document.getElementById('eq_' + e);
+    if (el) { this.eqs[e] = el; }
+    
+    s = 'M ' + this.ps[p] + ' A ' + this.r + ' ' + this.r + ' 0 ' +
+     f + ' ' + g + ' ' + this.ps[q];
+    p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d',s);
+    p.setAttribute('stroke','white');
+    p.setAttribute('stroke-opacity','0');
+    p.setAttribute('stroke-width','5px');
+    p.setAttribute('fill','none');
+    this.main_svg.appendChild(p);
+    a.svg = p;
+    
+    return a;
+   }
+   
+   demo.make_point = function(i,R,e) {
+    m = Object.create(point);
+    this.point[i] = m;
+    m.index = i;
+    m.label = 'p' + i;
+    m.R = R;
+    m.eq = e;
+    el = document.getElementById('eq_' + e);
+    if (el) { this.eqs[e] = el; }
+    
+    p = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    p.setAttribute('cx',this.x0 + this.p[i][0]);
+    p.setAttribute('cy',this.y0 - this.p[i][1]);
+    p.setAttribute('r',10);
+    p.setAttribute('stroke','none');
+    p.setAttribute('fill','white');
+    p.setAttribute('fill-opacity','0');
+    this.main_svg.appendChild(p);
+    m.svg = p;
+    
+    return m;
+   }
+   
+   demo.make_text = function(i,s,x,y) {
+    var q;
+    
+    q = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    q.setAttribute('text-anchor','middle');
+    q.setAttribute('alignment-baseline','middle');
+    q.setAttribute('font-size','24px');
+    q.setAttribute('fill','black');
+    q.setAttribute('x',this.x0 + x);
+    q.setAttribute('y',this.y0 - y);
+    q.textContent = s;
+    this.main_svg.appendChild(q);
+    this.text[i] = q;
+   }
+
+   demo.add_region_text = function(i,t) {
+    r = this.region[i];
+    q = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    q.setAttribute('text-anchor','middle');
+    q.setAttribute('alignment-baseline','middle');
+    q.setAttribute('font-size','24px');
+    q.setAttribute('fill','black');
+    q.setAttribute('x',this.x0 + r.x0);
+    q.setAttribute('y',this.y0 - r.y0);
+    q.textContent = t;
+    this.main_svg.appendChild(q);
+    r.text = q;    
+   }
+   
+   demo.add_handlers = function(x) {
+    var me = this;
+    x.svg.onmouseover  = function() { me.handle_over(x); }
+    x.svg.onmouseout   = function() { me.handle_out(x); }
+    if (x.text) {
+     x.text.onmouseover = function() { me.handle_over(x); }
+     x.text.onmouseout  = function() { me.handle_out(x); }
+    }
+   }
+   
+   demo.handle_over = function(x) {
+    var i,j,r;
+    
+    for(i in x.R) {
+     j = x.R[i];
+     r = this.region[j];
+     r.svg.setAttribute('fill',r.col);
+     if (r.text) {
+      r.text.setAttribute('fill','blue');
+     }
+    }
+    
+    for (e in this.eqs) {
+     u = this.eqs[e];
+     u.style.color = (e == x.eq) ? 'red' : 'black';
+    }
+   }
+   
+   demo.handle_out = function(x) {
+    for(i in x.R) {
+     r = this.region[x.R[i]];
+     r.svg.setAttribute('fill','grey');
+     if (r.text) {
+      r.text.setAttribute('fill','black');
+     }
+    }
+   }
+   
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="650" height="650">
+   </svg>
+   <div id="main_div">
+    <ul id="eqs">
+     <li id="given">
+      <span id="eq_all">$m=40$</span>,
+      <span id="eq_t">$m_t=10$</span>,
+      <span id="eq_s">$m_s=15$</span>,
+      <span id="eq_b">$m_b=12$</span>,
+      <br/>
+      <span id="eq_ts">$m_{ts}=5$</span>, 
+      <span id="eq_tb">$m_{tb}=4$</span>, 
+      <span id="eq_sb">$m_{sb}=3$</span>, 
+      <span id="eq_tsb">$m_{tsb}=2$</span>.
+     </li>
+     <li id="eq_ts_star">$m_{ts}^*=\text{number playing tennis and squash only}$<br/>
+      $m_{ts}^*=m_{ts}-m_{tsb}=5-2=3$</li>
+     <li><span id="eq_tb_star">$m_{tb}^*=m_{tb}-m_{tsb}=4-2=2$;</span><br/>
+         <span id="eq_sb_star">$m_{sb}^*=m_{sb}-m_{tsb}=3-2=1$</span>.
+     </li>
+     <li id="eq_t_star">$m_t^*=\text{number playing tennis only}$<br/>
+      $m_t^*=m_t-(m^*_{ts}+m^*_{tb}+m_{tsb})
+        = m_t-m_{ts}-m_{tb}+m_{tsb}$<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $=10-5-4+2=3$
+     </li>
+     <li id="eq_s_star">$m_s^*=m_s-m_{ts}-m_{sb}+m_{tsb}=15-5-3+2=9$</li>
+     <li id="eq_b_star">$m_b^*=m_b-m_{tb}-m_{sb}+m_{tsb}=12-4-3+2=7$</li>
+     <li id="eq_some">$m'=\text{number playing some sport}$<br/>
+      $m'=m_t^*+m_s^*+m_b^*+m_{ts}^*+m_{tb}^*+m_{sb}^*+m_{tsb}=27$
+     </li>
+     <li id="eq_star">$m^*=\text{number playing no sport}$<br/>
+      $m^*=m-m_t^*-m_s^*-m_b^*-m_{ts}^*-m_{tb}^*-m_{sb}^*-m_{tsb}=13$
+      <br/><br/>
+      $m^*=m-m_t-m_s-m_b+m_{ts}+m_{tb}+m_{sb}-m_{tsb}=13$
+     </li>
+     <li id="eq_t_or_s">$\text{number playing tennis or squash}=m_t+m_s-m_{ts}=20$</li>
+     <li id="eq_t_or_b">$\text{number playing tennis or badminton}=m_t+m_b-m_{tb}=18$</li>
+     <li id="eq_s_or_b">$\text{number playing squash or badminton}=m_s+m_b-m_{sb}=24$</li>
+    </ul>
+   </div>
+  </div>
+ </body>
+</html>
+
+this.eq_labels = [
+
+]

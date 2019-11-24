@@ -1,0 +1,290 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <style type="text/css">
+
+   div#main_div { 
+    position:absolute; 
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 510px;
+    margin-left: 30px;
+    font-size: 24px;
+   }
+
+   span.h_step {
+    font-weight: bold;
+    color: #0000FF
+   }
+
+  </style>
+  <script type="text/javascript">
+
+   var point = {};
+   point.index = 0;
+   point.i = 0;
+   point.j = 0;
+   point.x = 0;
+   point.y = 0;
+   point.is_corner = 0;
+
+   var grid_route = {};
+
+   grid_route.f = function(i,j) {
+    return Math.round((1.5 + i) * this.scale);    
+   }
+
+   grid_route.g = function(i,j) {
+    return Math.round((this.m + 0.5 - j) * this.scale);
+   }
+
+   grid_route.fg = function (i,j) {
+    return {'x' : this.f(i,j), 'y' : this.g(i,j)};
+   }
+
+   grid_route.set_coords = function(p,i,j) {
+    p.i = i;
+    p.j = j;
+    p.x = this.f(i,j);
+    p.y = this.g(i,j);
+    if (p.ball) {
+     p.ball.setAttribute('cx',p.x);
+     p.ball.setAttribute('cy',p.y);
+    }
+    return p;
+   }
+
+   grid_route.latex_binom = function(n,k) {
+    return "\\left(\\begin{matrix}" + n + "\\\\" + k + "\\end{matrix}\\right)";
+   }
+
+   grid_route.init = function() {
+    var i,j,k,n,x,x0,x1,y0,y1,p;
+    this.n = 6;
+    this.m = 3;   
+    this.nm = this.n + this.m;
+    this.scale = 120;
+
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div  = document.getElementById('msg_div');
+    this.h_line = {};
+    this.v_line = {};
+
+    this.h_set = [];
+    this.v_set = [];
+    this.is_h = {};
+    this.points = {};
+
+    p = Object.create(point);
+    grid_route.set_coords(p,0,0);
+    p.index = 0;
+    this.points[0] = p;
+
+    for (i = 1; i <= this.n; i++) {
+     this.h_set.push(i); 
+     this.is_h[i] = 1;
+     p = Object.create(point);
+     grid_route.set_coords(p,i,0);
+     p.index = i;
+     p.is_corner = 0;
+     this.points[i] = p;
+    }
+
+    for (i = 1; i <= this.m; i++) {
+     j = this.n + i;
+     this.v_set.push(j); 
+     this.is_h[j] = 0;
+     p = Object.create(point);
+     grid_route.set_coords(p,this.n,j);
+     p.index = j;
+     p.is_corner = 0;
+     this.points[j] = p;
+    }
+
+    this.points[this.n].is_corner = 1;
+
+    this.h_line = {};
+
+    for (i = 0; i <= this.m; i++) {
+     x0 = this.f(0,i);
+     y0 = this.g(0,i);
+     x1 = this.f(this.n,i);
+     p = 'M ' + x0 + '  ' + y0 + ' L ' + x1 + ' ' + y0;
+     this.h_line[i] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.h_line[i].setAttribute('stroke','#888888');
+     this.h_line[i].setAttribute('stroke_width',1);
+     this.h_line[i].setAttribute('d',p);
+     this.main_svg.appendChild(this.h_line[i]);
+    }
+
+    this.v_line = {};
+
+    for (i = 0; i <= this.n; i++) {
+     x0 = this.f(i,0); 
+     y0 = this.g(i,0);
+     y1 = this.g(i,this.m);
+     p = 'M ' + x0 + '  ' + y0 + ' L ' + x0 + ' ' + y1;
+     this.v_line[i] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.v_line[i].setAttribute('stroke','#888888');
+     this.v_line[i].setAttribute('stroke_width',1);
+     this.v_line[i].setAttribute('d',p);
+     this.main_svg.appendChild(this.v_line[i]);
+    }
+
+
+    for (i = 0; i <= this.nm; i++) {
+     p = this.points[i];
+     p.bar  = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.main_svg.appendChild(p.bar);
+
+     p.bar.setAttribute('stroke','#008B8B');
+     p.bar.setAttribute('stroke-width','5');
+    }
+
+    for (i = 0; i <= this.nm; i++) {
+     p = this.points[i];
+     p.ball = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+     this.main_svg.appendChild(p.ball);
+
+     p.ball.setAttribute('stroke','#008B8B');
+     p.bar.setAttribute('stroke-width','5');
+     p.ball.setAttribute('fill','#FFFFFF');
+     p.ball.setAttribute('r','8');
+    }
+
+    for (i = 1; i <= this.nm; i++) {
+     p = this.points[i];
+     p.label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+     p.label.setAttribute('font-weight','bold');
+     p.label.setAttribute('text-anchor','middle');
+     p.label.textContent = i;
+     this.main_svg.appendChild(p.label);
+    }
+
+    for (i = 0; i <= this.nm; i++) {
+     p = this.points[i];
+     this.set_handlers(p.ball,p);
+    }
+
+    this.show_path();
+   }
+
+   grid_route.show_path = function() {
+    var i,j,k,p,q,s;
+    i = 0;
+    j = 0;
+    this.set_coords(this.points[0],i,j);
+    this.h_set = [];
+    this.v_set = [];
+
+    for (k = 1; k <= this.nm; k++) {
+     p = this.points[k-1];
+     q = this.points[k];
+     if (this.is_h[k]) {
+      i++;
+      this.h_set.push(k);
+     } else {
+      j++;
+      this.v_set.push(k);
+     }
+     this.set_coords(q,i,j);
+
+     s = 'M ' + p.x + ' ' + p.y + ' L ' + q.x + ' ' + q.y;
+     q.bar.setAttribute('d',s);
+    }
+
+    this.points[0].is_corner = 0;
+    this.points[this.nm].is_corner = 0;
+
+    for (k = 1; k <= this.nm; k++) {
+     p = this.points[k];
+     p.is_corner = (this.is_h[k] != this.is_h[k+1]);
+     if (p.is_corner) {
+      p.ball.setAttribute('fill','#FFFFFF');
+     } else {
+      p.ball.setAttribute('fill','#008B8B');
+     }
+     l = p.label;
+     if (this.is_h[k]) {
+      u = this.fg(p.i - 0.5,p.j - 0.2);
+      l.setAttribute('fill','#0000FF');
+     } else {
+      u = this.fg(p.i + 0.1,p.j - 0.5);
+      l.setAttribute('fill','#B22222');
+     }
+     l.setAttribute('x',u.x);
+     l.setAttribute('y',u.y);
+    }
+
+    this.h_string = '<span class="h_step">' + this.h_set[0] + '</span>';
+
+    for(i = 1; i < this.n - 1; i++) {
+     this.h_string += ',' + '<span class="h_step">' + this.h_set[i] + '</span>';
+    }
+
+    this.h_string += ' and <span class="h_step">' + this.h_set[this.n - 1] + '</span>';
+
+    this.h_string_latex = '\\{' + this.h_set.join() + '\\}';
+
+    msg = 'Steps ' + this.h_string + ' are horizontal, so this route corresponds ' +
+     ' to the set $' + this.h_string_latex + '$. <br/><br/>' + 
+     'In general, a grid route from $(0,0)$ to $(n,m)$ takes $n+m$ steps, of ' + 
+     'which $n$ must be horizontal.  Thus grid routes correspond to subsets ' + 
+     '$A\\subseteq\\{1,\\dotsc,n+m\\}$ with $|A|=n$, so the number of such ' + 
+     'routes is $' + this.latex_binom('n+m','n') + '$.';
+
+    this.msg_div.innerHTML = msg;
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.msg_div]);
+   }
+
+   grid_route.flip = function(k) {
+    this.is_h[k] = 1 - this.is_h[k];
+    this.is_h[k+1] = 1 - this.is_h[k+1];
+    this.show_path();
+   }
+
+   grid_route.set_handlers = function(b,p) {
+    var me = this;
+    b.onmouseover = function() { me.handle_mouseover(b,p);};
+    b.onmouseout  = function() { me.handle_mouseout(b,p);};
+    b.onclick     = function() { me.handle_click(b,p);};
+   }
+
+   grid_route.handle_mouseover = function(b,p) {
+    if (p.is_corner) {
+     b.setAttribute('stroke','#00FFFF');
+    }
+   } 
+
+   grid_route.handle_mouseout = function(b,p) {
+    if (p.is_corner) {
+     b.setAttribute('stroke','#008B8B');
+    }
+   } 
+
+   grid_route.handle_click = function(b,p) {
+    if (p.is_corner) {
+     this.flip(p.index);
+    }
+   } 
+
+  </script>
+ </head>
+ <body onload="grid_route.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1200" height="500"></svg>
+   <div id="msg_div"></div>
+  </div>
+ </body>
+</html>

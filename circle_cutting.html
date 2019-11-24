@@ -1,0 +1,462 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <style type="text/css">
+   div#main_div { 
+    position:absolute; 
+   }
+
+   div#vals_div { 
+    position:absolute; 
+    left: 30px;
+    top: 30px;
+    font-size: 24px;
+   }
+
+   div#controls_div { 
+    position:absolute; 
+    right: 30px;
+    top: 30px;
+   }
+
+   div#msg_div {
+    position:absolute;
+    top:600px;
+    left:40px;
+    font-size: 22px;
+    text-align: left;
+   }
+
+   div.switch {
+    position:absolute;
+    width: 40px;
+    height: 30px;
+    font-size: 24px;
+    text-align: 'center';
+    border-radius: 8px;
+    border: 3px solid #0000FF;
+    padding: 5px;
+   }
+
+   div.switch:hover {
+    cursor: pointer;
+   }
+
+   div.switch_on {
+    background: #8888FF;
+   }
+
+   div#counts_div {
+    position:absolute;
+    top: 300px;
+    left: 800px;
+   }
+
+   div#counts_div td {
+    font-size: 24px;
+   }
+  </style>
+  <script type="text/javascript">
+   point = {
+    i : 0,
+    t : 0,
+    x : 0,
+    y : 0,
+    marker : null,
+    label : null
+   };
+
+   point.init = function(i,t) {
+    this.i = i;
+    this.t = t;
+    this.x = demo.x0 + demo.r * Math.cos(2 * Math.PI * t);
+    this.y = demo.y0 - demo.r * Math.sin(2 * Math.PI * t);
+    this.label_x = demo.x0 + demo.label_r * Math.cos(2 * Math.PI * t);
+    this.label_y = demo.y0 - demo.label_r * Math.sin(2 * Math.PI * t);
+   }
+
+   line = {
+    i : 0,
+    j : 0,
+    path : null,
+    switch : null,
+    is_selected : 0,
+    crossings : []
+   }
+
+   crossing = {
+    i : 0,
+    j : 0,
+    k : 0,
+    l : 0,
+    line_a: null,
+    line_b: null,
+    x : 0,
+    y : 0,
+    is_selected: 0,
+    marker : null
+   }
+
+   demo = {};
+
+   demo.r = 250;
+   demo.label_r = 270;
+   demo.x0 = 300;
+   demo.y0 = 300;
+   demo.ts = [0.1,0.3,0.4,0.6,0.7,0.9];
+   demo.cols = {
+    'circle' : '#000000',
+    'outer_point' : '#FF0000',
+    'line' : '#008000',
+    'crossing' : '#FF00FF',
+   };
+   demo.faded_cols = {
+    'circle' : '#AAAAAA',
+    'outer_point' : '#FFAAAA',
+    'line' : '#AADDAA',
+    'crossing' : '#FF88FF'
+   }
+
+
+   demo.init = function() {
+    var i,j,k,l,n,c,m,p;
+    this.main_div = document.getElementById('main_div');
+    this.msg_div = document.getElementById('msg_div');
+    this.last_line_msg = document.getElementById('last_line_msg');
+    this.line_msg = document.getElementById('line_msg');
+    this.crossing_msg = document.getElementById('crossing_msg');
+    this.main_svg = document.getElementById('main_svg');
+
+    this.num_lines_div = document.getElementById('num_lines');
+    this.num_crossings_div = document.getElementById('num_crossings');
+    this.num_regions_div = document.getElementById('num_regions');
+
+    this.num_lines = 0;
+    this.num_crossings = 0;
+    this.num_regions = 1;
+
+    var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    this.circle = c;
+    c.setAttribute('cx',this.x0);
+    c.setAttribute('cy',this.y0);
+    c.setAttribute('r',250);
+    c.setAttribute('fill','none');
+    c.setAttribute('stroke',this.cols.circle);
+    c.setAttribute('stroke-width',3);
+    this.main_svg.appendChild(c);
+
+    var n = this.ts.length;
+    this.n = n;
+    this.S2 = [];
+    for (i = 1; i <= n-1; i++) {
+     for (j = i+1; j <= n; j++) {
+      this.S2.push([i,j]);
+     }
+    }
+
+    this.S4 = [];
+    for (i = 1; i <= n-3; i++) {
+     for (j = i+1; j <= n-2; j++) {
+      for (k = j+1; k <= n-1; k++) {
+       for (l = k+1; l <= n; l++) {
+        this.S4.push([i,j,k,l]);
+       }
+      }
+     }
+    }
+
+    this.outer_point = {};
+    this.outer_point_list = [];
+
+    for (i = 1; i <= n; i++) {
+     p = Object.create(point);
+     this.outer_point[i] = p;
+     this.outer_point_list.push(p);
+     p.init(i,this.ts[i-1]);
+     m = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+     p.marker = m;
+     m.setAttribute('cx',p.x);
+     m.setAttribute('cy',p.y);
+     m.setAttribute('r',6);
+     m.setAttribute('fill',this.cols.outer_point);
+     b = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+     p.label = b;
+     b.setAttribute('x',p.label_x);
+     b.setAttribute('y',p.label_y);
+     b.setAttribute('text-anchor','middle');
+     b.setAttribute('alignment-baseline','middle');
+     b.setAttribute('font-size','24px');
+     b.textContent = i;
+    }
+
+    this.line = {}
+    this.line_list = [];
+
+    for (i = 1; i <= n; i++) {
+     this.line[i] = {};
+    }
+
+    k = -1;
+
+    for (j = 2; j <= n; j++) {
+     for (i = 1; i < j; i++) {
+      k++;
+      p = Object.create(line);
+      p.i = i;
+      p.j = j;
+      q = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.path = q;
+      q.setAttribute('stroke',this.cols.line);
+      q.setAttribute('stroke-width',5);
+      z0 = this.outer_point[i];
+      z1 = this.outer_point[j];
+      q.setAttribute('d','M ' + z0.x + ' ' + z0.y + ' L ' + z1.x + ' ' + z1.y);
+      q.setAttribute('visibility','hidden');
+      this.main_svg.appendChild(q);
+      s = document.createElement('div');
+      p.switch = s;
+      s.className = 'switch';
+      s.innerHTML = '' + i + j;
+      s.style.left = (800 + (k % 5) * 80) + 'px';
+      s.style.top = (50 + Math.floor(k / 5) * 60) + 'px';
+      this.main_div.appendChild(s);
+      this.set_switch_handlers(s,i,j);
+      this.line[i][j] = p;
+      this.line[j][i] = p;
+      this.line_list.push(p);
+      this.set_line_handlers(p,i,j);
+     }
+    }
+
+    this.crossing = {};
+    this.crossing_list = [];
+
+    for (i = 1; i <= n; i++) {
+     this.crossing[i] = {};
+     for (j = 1; j <= n; j++) {
+      this.crossing[i][j] = {};
+      for (k = 1; k <= n; k++) {
+       this.crossing[i][j][k] = {};
+       for (l = 1; l <= n; l++) {
+        this.crossing[i][j][k][l] = null;                                
+       }
+      }
+     }
+    }
+
+    for (i = 1; i <= n-3; i++) {
+     for (j = i+1; j <= n-2; j++) {
+      for (k = j+1; k <= n-1; k++) {
+       for (l = k+1; l <= n; l++) {
+        u0 = this.outer_point[i];
+        u1 = this.outer_point[j];
+        u2 = this.outer_point[k];
+        u3 = this.outer_point[l];
+        vx = (((u2.y-u3.y)*u1.x+u3.x*(u1.y-u2.y))*u0.x-((u0.y-u3.y)*u1.x-u3.x*(u0.y-u1.y))*u2.x)/
+         ((u1.y-u3.y)*u0.x+(-u0.y+u2.y)*u1.x+(u3.y-u1.y)*u2.x+(u0.y-u2.y)*u3.x);
+
+        vy = (((u3.x-u2.x)*u1.y-u3.y*(u1.x-u2.x))*u0.y+((u0.x-u3.x)*u1.y-u3.y*(u0.x-u1.x))*u2.y)/
+         ((u3.x-u1.x)*u0.y+(u0.x-u2.x)*u1.y+(u1.x-u3.x)*u2.y-u3.y*(u0.x-u2.x));
+        p = Object.create(crossing);
+        p.i = i;
+        p.j = j;
+        p.k = k;
+        p.l = l;
+        p.line_a = this.line[i][k];
+        p.line_b = this.line[j][l];
+        p.x = vx;
+        p.y = vy;
+        m = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        p.marker = m;
+        m.setAttribute('cx',p.x);
+        m.setAttribute('cy',p.y);
+        m.setAttribute('r',6);
+        m.setAttribute('fill',this.cols.crossing);
+        m.setAttribute('visibility','hidden');
+        this.crossing[i][j][k][l] = p;
+        this.crossing_list.push(p);
+        p.line_a.crossings.push(p);
+        p.line_b.crossings.push(p);
+        this.set_crossing_handlers(p,i,j,k,l);
+       }
+      }
+     }
+    }
+
+    for (i = 1; i <= n; i++) {
+     this.main_svg.appendChild(this.outer_point[i].marker);
+     this.main_svg.appendChild(this.outer_point[i].label);
+    }
+
+    for (i in this.crossing_list) {
+     this.main_svg.appendChild(this.crossing_list[i].marker);
+    }
+   }
+
+   demo.set_switch_handlers = function(s,i,j) {
+    var me = this;
+    s.onclick = function() { me.handle_click(i,j); }
+   }
+
+   demo.set_line_handlers = function(p,i,j) {
+    var me = this;
+    p.path.onmouseover = function() { me.handle_line_over(i,j); }
+    p.path.onmouseout  = function() { me.handle_line_out(i,j); }
+   }
+
+   demo.set_crossing_handlers = function(p,i,j,k,l) {
+    var me = this;
+    p.marker.onmouseover = function() { me.handle_crossing_over(i,j,k,l); }
+    p.marker.onmouseout  = function() { me.handle_crossing_out(i,j,k,l); }
+   }
+
+   demo.handle_click = function(i,j) {
+    var p = this.line[i][j];
+    if (p.is_selected) {
+     p.is_selected = 0;
+     p.switch.className = 'switch';
+     p.path.setAttribute('visibility','hidden');
+     this.repaint(0);
+     this.last_line_msg.innerHTML = '';
+    } else {
+     p.is_selected = 1;
+     p.switch.className = 'switch switch_on';
+     p.path.setAttribute('visibility','visible');
+     old_crossings = this.num_crossings;
+     this.repaint(0);
+     d = this.num_crossings - old_crossings;
+     if (d == 0) {
+      msg = 'By adding the line $\\{' + i + ',' + j + '\\}$, we did not ' +
+       ' create any new crossings, but we split one region in half. <br/> ' + 
+       'So $L$ and $R$ went up by $1$, and $C$ was unchanged, so ' +
+       '$R-C-L$ was unchanged.';
+     } else if (d == 1) {
+      msg = 'By adding the line $\\{' + i + ',' + j + '\\}$, we ' +
+       ' created one new crossing.  We also split two regions in half. <br/> ' + 
+       'So $L$ and $C$ went up by $1$, and $R$ went up by $2$, so ' +
+       '$R-C-L$ was unchanged.';                        
+     } else {
+      msg = 'By adding the line $\\{' + i + ',' + j + '\\}$, we ' +
+       ' created $' + d + '$ new crossings.  We also split ' + (d+1) +
+       ' regions in half.  <br/>' + 'So $L$ went up by $1$, and $C$ ' + 
+       ' went up by $' + d + '$, and $R$ went up by $' + (d+1) + '$, so ' +
+       '$R-C-L$ was unchanged.';               
+     }
+
+     if (this.num_lines == 15) {
+      msg = 'We have now finished.  We have $L=\\left(\\begin{matrix}6\\\\2\\end{matrix}\\right)$ lines and $C=\\left(\\begin{matrix}6\\\\4\\end{matrix}\\right)$ crossings. <br/> We started with $R-C-L=1$ and this has not changed so $R=1+\\left(\\begin{matrix}6\\\\2\\end{matrix}\\right)+\\left(\\begin{matrix}6\\\\4\\end{matrix}\\right)$.';
+     }
+
+     this.last_line_msg.innerHTML = msg;
+     MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.last_line_msg]);
+     this.last_line_msg.style.display = 'block';
+    }
+   }
+
+   demo.handle_line_over = function(i,j) {
+    this.repaint(1);
+    this.line[i][j].path.setAttribute('stroke',this.cols.line);
+    this.last_line_msg.style.display = 'none';
+    this.line_msg.innerHTML = 'Lines correspond to subsets of size $2$ in $\\{1,\\dotsc,6\\}$.  This line corresponds to the set $\\{' + i + ',' + j + '\\}$.';
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.line_msg]);
+   }
+
+   demo.handle_line_out = function(i,j) {
+    this.repaint(0);
+    this.line_msg.innerHTML = '';
+    this.last_line_msg.style.display = 'block';
+   }
+
+   demo.handle_crossing_over = function(i,j,k,l) {
+    this.repaint(1);
+    this.last_line_msg.style.display = 'none';
+    var p = this.crossing[i][j][k][l];
+    p.marker.setAttribute('fill',this.cols.crossing);
+    p.line_a.path.setAttribute('stroke',this.cols.line);
+    p.line_b.path.setAttribute('stroke',this.cols.line);
+    this.crossing_msg.innerHTML = 'Crossings correspond to subsets of size $4$ in ' + 
+     '$\\{1,\\dotsc,6\\}$.  This crossing corresponds to the set $\\{' + 
+     i + ',' + j + ',' + k + ',' + l + '\\}$.';
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.crossing_msg]);
+   }
+
+   demo.handle_crossing_out = function(i,j) {
+    this.repaint(0);
+    this.crossing_msg.innerHTML = '';
+    this.last_line_msg.style.display = 'block';
+   }
+
+   demo.repaint = function(f) {
+    var cols,t,p;
+    cols = f ? this.faded_cols : this.cols;
+
+    this.num_lines = 0;
+    this.num_crossings = 0;
+
+    this.circle.setAttribute('stroke',cols.circle);
+    for (t in this.outer_point_list) {
+     p = this.outer_point_list[t];
+     p.marker.setAttribute('fill',cols.outer_point);
+    }
+
+    for (t in this.line_list) {
+     p = this.line_list[t];
+     if (p.is_selected) {
+      p.path.setAttribute('stroke',cols.line);
+      p.path.setAttribute('visibility','visible');
+      this.num_lines++;
+     } else {
+      p.path.setAttribute('visibility','hidden');
+     }
+    }
+
+    for (t in this.crossing_list) {
+     p = this.crossing_list[t];
+     p.is_selected = p.line_a.is_selected && p.line_b.is_selected;
+     if (p.is_selected) {
+      p.marker.setAttribute('fill',cols.crossing);
+      p.marker.setAttribute('visibility','visible');
+      this.num_crossings++;
+     } else {
+      p.marker.setAttribute('visibility','hidden');
+     }                    
+    }
+
+    this.num_regions = 1 + this.num_lines + this.num_crossings;
+
+    this.num_lines_div.innerHTML = this.num_lines;
+    this.num_crossings_div.innerHTML = this.num_crossings;
+    this.num_regions_div.innerHTML = this.num_regions;
+   }
+
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <div id="main_div"></div>
+   <svg id="main_svg" width="600" height="600"></svg>
+   <div id="counts_div">
+    <table class="edged">
+     <tr><td width="200">Lines ($L$)</td><td width="100" id="num_lines">0</td></tr>
+     <tr><td>Crossings ($C$)</td><td id="num_crossings">0</td></tr>
+     <tr><td>Regions ($R$)</td><td id="num_regions">1</td></tr>
+     <tr><td>$R-C-L$</td><td>1</td></tr>
+    </table>
+   </div>
+   <div id="msg_div">
+    <div id="last_line_msg"></div>
+    <div id="line_msg"></div>
+    <div id="crossing_msg"></div>
+   </div>
+  </div>        
+ </body>
+</html>

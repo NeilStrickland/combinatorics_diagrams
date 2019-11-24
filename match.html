@@ -1,0 +1,250 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    left: 1220px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 680px;
+    margin-left: 80px;
+    margin-right: 80px;
+    font-size: 24px;
+   }
+   
+   td.lhs {
+    text-align: right;
+    font-size: 24px;
+   }
+   
+   td.rhs {
+    text-align: left;
+    font-size: 24px;
+   }
+   
+   tr.row_equation td {
+    padding-top: 10px;
+   }
+   
+   tr.col_equation td {
+    padding-top: 10px;
+   }
+   
+  </style>
+  <script type="text/javascript">
+   var demo = {};
+   
+   demo.init = function() {
+    var i,j,k,l,A,B,x,y,b,t;
+    var me = this;
+
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div = document.getElementById('msg_div');
+    
+    this.left_set_full = {
+      a : 'Ann',
+      b : 'Bob',
+      c : 'Cath',
+      d : 'Dave',
+      e : 'Ella'
+    };
+    
+    this.right_set_full = {
+     l : 'Librarian',
+     m : 'Musician',
+     n : 'Nurse',
+     o : 'Optician',
+     p : 'Pilot'
+    };
+    
+    this.P = matching_problem.from_eqs({
+     'a' : ['l','m','p'],
+     'b' : ['l','n','o'],
+     'c' : ['l'],
+     'd' : ['m','n','o','p'],
+     'e' : ['l','o','p']
+    });
+    
+    this.P.match = [
+     ['a','m'],['b','n'],['c','l'],['d','p'],['e','o'] 
+    ];
+    
+    this.P.grid_x0 = 50;
+    this.P.grid_y0 = 50;
+    
+    this.P.make_grid();
+    
+    this.P.grid_x0 = 450;
+    this.P.make_matrix();
+    this.P.grid_x0 = 50;
+    
+    this.main_svg.appendChild(this.P.grid.svg);
+    this.main_svg.appendChild(this.P.matrix.svg);
+    
+    this.P.make_equations(0);
+    this.P.make_equations(1);
+    
+    E = this.P.row_equations;
+    E.table.style.position = 'absolute';
+    E.table.style.left = '100px';
+    E.table.style.top = '400px';
+    document.getElementById('frame').appendChild(E.table);
+
+    E = this.P.col_equations;
+    E.table.style.position = 'absolute';
+    E.table.style.left = '500px';
+    E.table.style.top = '400px';
+    document.getElementById('frame').appendChild(E.table);
+
+    this.P.left_graph_pos = {
+     'a' : [ 880,450],
+     'b' : [1220,450],
+     'c' : [1050,640],
+     'd' : [1050,140],
+     'e' : [1050,470]
+    };
+    
+    this.P.right_graph_pos = {
+     'l' : [1050,560],
+     'm' : [ 880,250],
+     'n' : [1220,250],
+     'o' : [1130,320],
+     'p' : [ 970,320]
+    }
+    
+    this.P.make_graph();
+    this.main_svg.appendChild(this.P.graph.svg);
+    
+    this.set_all_handlers(1);
+   }
+   
+   demo.set_all_handlers = function(t) {
+    var P,i,ab,a,b;
+    P = this.P;
+    for (i in P.relation) {
+     ab = P.relation[i];
+     a = ab[0];
+     b = ab[1];
+     this.set_handlers(P.grid.square[a][b],a,b,t);
+     this.set_handlers(P.matrix.square[a][b],a,b,t);
+     this.set_handlers(P.matrix.cell_text[a][b],a,b,t);
+     this.set_handlers(P.row_equations.entry[a][b],a,b,t);
+     this.set_handlers(P.col_equations.entry[b][a],a,b,t);
+     this.set_handlers(P.graph.edge[a][b],a,b,t);
+    }
+   };
+   
+   demo.set_handlers = function(x,a,b,t) {
+    var me = this;
+    
+    if (t) {
+     x.onmouseover = function() { me.show_link(a,b,1); }
+     x.onmouseout  = function() { me.show_link(a,b,0); }
+    } else {
+     x.onmouseover = null;
+     x.onmouseout = null;
+    }
+   }
+   
+   demo.show_link = function(a,b,t) {
+    var P = this.P;
+    var c = t ? 'orange' : 'white';
+    
+    P.grid.square[a][b].setAttribute('fill',c);
+    P.matrix.square[a][b].setAttribute('fill',c);
+    P.row_equations.entry[a][b].style.background = c;
+    P.col_equations.entry[b][a].style.background = c;
+    P.graph.edge[a][b].setAttribute('stroke',t ? 'orange' : 'green');
+    
+    if (t) {
+     this.msg_div.innerHTML = 
+      this.left_set_full[a] + 
+      ' is qualified to be a ' + 
+      this.right_set_full[b].toLowerCase() + '.';
+    } else {
+     this.msg_div.innerHTML = '';
+    }
+   }
+   
+   demo.show_solution = function() {
+    var P,s,a,b,ab,i,j,k;
+    this.set_all_handlers(0);
+    
+    P = this.P;
+    
+    s = '';
+    
+    for (i in P.match) {
+     ab = P.match[i];
+     a = ab[0];
+     b = ab[1];
+     this.show_link(a,b,1);
+     
+     if(i > 0) {
+      s += ', ';
+      if (i == 4) {
+       s += ' and ';
+      }
+     }
+     
+     s += this.left_set_full[a] + ' is the ' +
+      this.right_set_full[b].toLowerCase();
+    }
+    
+    s += '.';
+    this.msg_div.innerHTML = s;
+
+    for (k in P.match) {
+     ab = this.P.match[k];
+     a = ab[0];
+     b = ab[1];
+     i = P.left_index[a];
+     j = P.right_index[b];
+     r = comb.svg.rook();
+     x = P.grid_x0 + j * P.grid_w;
+     y = P.grid_y0 + i * P.grid_h;
+     r.setAttribute('transform','translate(' + x + ',' + y + ')');
+     this.main_svg.appendChild(r);
+    }
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="700">
+   </svg>
+   <div id="controls_div">
+    <div class="control" onclick="demo.show_solution()"
+         style="width: 60px; font-size: 20px;">Solve</div>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

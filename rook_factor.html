@@ -1,0 +1,534 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TimelineMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    left: 1220px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    left: 500px;
+    top: 400px;
+    width: 800px;
+    font-size: 24px;
+   }
+
+   td.lhs {
+    text-align: right;
+    font-size: 24px;
+   }   
+
+   div#rook_polynomial_div {
+    position: absolute;
+    left: 60px;
+    top: 360px;
+    font-size: 24px;
+   }
+
+   div#blocked_rook_polynomial_div {
+    position: absolute;
+    left: 560px;
+    top: 360px;
+    font-size: 24px;
+   }
+
+   div#deleted_rook_polynomial_div {
+    position: absolute;
+    left: 60px;
+    top: 680px;
+    font-size: 24px;
+   }
+
+   div#relation_div {
+    visibility: hidden;
+    position: absolute;
+    left: 560px;
+    top: 500px;
+    font-size: 24px;
+   }
+
+   div#C_button {
+    visibility: hidden;
+   }
+
+   div#D_button {
+    visibility: hidden;
+   }
+
+   text.marker {
+    font-weight: bold;
+   }
+
+   text.marker:hover {
+    cursor: pointer;
+   }
+
+  </style>
+  <script type="text/javascript">
+   var demo = {};
+
+   demo.init = function() {
+    var i,R,div,t,h,x;
+    var me = this;
+
+    this.frame = document.getElementById('frame');
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div = document.getElementById('msg_div');
+    this.rook_polynomial_div = document.getElementById('rook_polynomial_div');
+    this.relation_div = document.getElementById('relation_div');
+    this.C_button = document.getElementById('C_button');
+    this.D_button = document.getElementById('D_button');
+
+    R = matching_problem.from_eqs(
+     {A : ['a','b','e'], B : ['c','d'], C : ['a','e'], D : ['c'], E : ['a','b','e']}
+    );
+
+    R.find_sols();
+
+    this.board = R;
+
+    R.grid_x0 = 0;
+    R.grid_y0 = -20;
+    R.grid_w = 50;
+    R.grid_h = 50;
+    R.make_grid();
+    R.remove_labels();
+
+    this.board_copy = {};
+    this.is_extracted = {0 : 0, 1 : 0};
+
+    this.main_svg.appendChild(R.grid.svg);
+
+    for (i in this.board.left_set) {
+     a = this.board.left_set[i];
+
+     for (j in this.board.right_set) {
+      b = this.board.right_set[j];
+
+      c = this.board.cell[a][b];
+
+      if (c.is_free) {
+       c.half = 0;
+       c.marker = {};
+
+       x = R.grid_x0 + (parseInt(j) + 1.5) * R.grid_w;
+       y = R.grid_y0 + (parseInt(i) + 1.5) * R.grid_h;
+       m = comb.svg.text('C',x,y);
+       m.setAttribute('fill','blue');
+       m.className.baseVal = 'marker';
+       this.board.grid.svg.appendChild(m);
+       c.marker[0] = m;
+
+       m = comb.svg.text('D',x,y);
+       m.setAttribute('visibility','hidden');
+       m.setAttribute('fill','green');
+       m.className.baseVal = 'marker';
+       this.board.grid.svg.appendChild(m);
+       c.marker[1] = m;
+
+       this.set_square_handler(c.square,a,b);
+       this.set_square_handler(c.marker[0],a,b);
+       this.set_square_handler(c.marker[1],a,b);
+      }
+     }
+    }
+
+    this.board.paint_grid();
+   }
+
+   demo.set_square_handler = function(x,a,b) {
+    var me = this;
+    x.onclick = function() { me.handle_square_click(a,b); };
+   }
+
+   demo.handle_square_click = function(a,b) {
+    var i,j,x,y;
+
+    c = this.board.cell[a][b];
+    h = c.half;
+    c.half = 1-h;
+    c.marker[  h].setAttribute('visibility','hidden');
+    c.marker[1-h].setAttribute('visibility','visible');    
+    this.check_factor();
+   }
+
+   demo.check_factor = function() {
+    var R,A,B,nA,nB,i,j,a,b,all_selected,none_selected,ok;
+
+    this.row_occupant = {};
+    this.col_occupant = {};
+    R = this.board;
+    A = R.shifted_left_set;
+    B = R.shifted_right_set;
+    nA = R.left_order;
+    nB = R.right_order;
+
+    for (i = 1; i <= nA; i++) {
+     this.row_occupant[A[i]] = null;
+    }
+
+    for (j = 1; j <= nB; j++) {
+     this.col_occupant[B[j]] = null;
+    }
+
+    all_selected = 1;
+    none_selected = 1;
+
+    for (i = 1; i <= nA; i++) {
+     for (j = 1; j <= nB; j++) {
+      a = A[i];
+      b = B[j];
+      c = R.cell[a][b];
+      if (c.is_free) {
+       c.square.setAttribute('fill','white');
+       if (c.half == 1) {
+        none_selected = 0;
+        this.row_occupant[a] = b;
+        this.col_occupant[b] = a;
+       } else {
+        all_selected = 0;
+       }
+      }
+     }
+    }
+
+    if (all_selected) {
+     ok = 0;
+     this.msg_div.innerHTML =
+      'We cannot factor the board as shown because all the squares are marked D.';
+    } else if (none_selected) {
+     'We cannot factor the board as shown because all the squares are marked C.';    
+    } else {
+     ok = 1;
+     for (i = 1; i <= nA && ok; i++) {
+      for (j = 1; j <= nB && ok; j++) {
+       a = A[i];
+       b = B[j];
+       c = R.cell[a][b];
+       if (R.relation_table[a][b] && R.cell[a][b].half == 0) {
+        a0 = this.col_occupant[b];
+        b0 = this.row_occupant[a];
+        if (b0) {
+         ok = 0;
+         c.square.setAttribute('fill','#FFDDDD');
+         R.cell[a][b0].square.setAttribute('fill','#FFDDDD');
+         this.msg_div.innerHTML = 'We cannot factor the board as shown because there is a C and a D in the same row.';
+        } else if (a0) {
+         ok = 0;
+         c.square.setAttribute('fill','#FFDDDD');
+         R.cell[a0][b].square.setAttribute('fill','#FFDDDD');
+         this.msg_div.innerHTML = 'We cannot factor the board as shown because there is a C and a D in the same column.';
+        }
+       }
+      }
+     }
+    }
+
+    if (ok) {
+     this.msg_div.innerHTML = 'We can factor the board as shown.'; 
+    }
+
+    this.can_factor = ok;
+    this.C_button.style.visibility = ok ? 'visible' : 'hidden';
+    this.D_button.style.visibility = ok ? 'visible' : 'hidden';
+   }
+
+   demo.show_relation = function() {
+    var me = this;
+    this.relation_div.innerHTML = 
+     '\\begin{align*}&' + 
+     this.board.rook_polynomial_string + '\\\\=&' + 
+     this.blocked_board.rook_polynomial_string + '+\\\\&' +
+     'x(' + this.deleted_board.rook_polynomial_string + ')' +
+     '\\end{align*}';
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.relation_div]);
+
+    setTimeout(function() {
+     me.relation_div.style.visibility = 'visible';
+    },1000);
+
+   };
+
+   demo.extract = function(x) {
+    var R,S,A,B,nA,nB,i,j,a,b,C0,C;
+    
+    R = this.board;
+    S = {};
+    
+    if (this.board_copy[x]) {
+     this.main_svg.removeChild(this.board_copy[x].svg);
+    }
+
+    this.board_copy[x] = S;
+
+    A = R.shifted_left_set;
+    B = R.shifted_right_set;
+    nA = R.left_order;
+    nB = R.right_order;
+
+    S.rows = [];
+    S.cols = [];
+    S.row_shift = {};
+    S.col_shift = {};
+    S.cell = {};
+    S.svg = comb.svg.group();
+    this.main_svg.appendChild(S.svg);
+
+    if (x == 0) {
+     u = 0;
+     for (i = 1; i <= nA; i++) {
+      if (! this.row_occupant[A[i]]) {
+       S.row_shift[A[i]] = u;
+      } else {
+       u++;
+      }
+     }
+
+     u = 0;
+     for (j = 1; j <= nB; j++) {
+      if (! this.col_occupant[B[j]]) {
+       S.col_shift[B[j]] = u;
+      } else {
+       u++;
+      }
+     }
+
+     for (j = 1; j <= nB; j++) {
+      S.cols.push[B[j]];
+     }
+     for (i = 1; i <= nA; i++) {
+      a = A[i];
+      if (! this.row_occupant[a]) {
+       S.rows.push[a];
+       S.cell[a] = {};
+       for (j = 1; j <= nB; j++) {
+        b = B[j];
+        C0 = R.cell[a][b];
+        C = {a: a, b: b};
+        S.cell[a][b] = C;
+
+        C.square = C0.square.cloneNode();
+        S.svg.appendChild(C.square);
+        TweenMax.to(C.square,2,{x: "+=400"});
+
+        if (C0.is_free) {
+         C.marker = C0.marker[0].cloneNode();
+         C.marker.textContent = C0.marker[0].textContent;
+         S.svg.appendChild(C.marker);
+         TweenMax.to(C.marker,2,{x: "+=400"});
+        }
+        
+        if (this.col_occupant[b]) {
+         TweenMax.to(C.square,2,{fillOpacity: 0, strokeOpacity: 0, delay: 2});
+        } else {
+         t = { delay : 4};
+         t.x = '-=' + (S.col_shift[b] * R.grid_w);
+         t.y = '-=' + (S.row_shift[a] * R.grid_h);
+         TweenMax.to(C.square,2,t);
+         if (C0.is_free) {
+          TweenMax.to(C.marker,2,t);
+         }
+        }
+       }
+      }
+     }
+    } else {
+     u = 0;
+     for (i = 1; i <= nA; i++) {
+      if (this.row_occupant[A[i]]) {
+       S.row_shift[A[i]] = u;
+      } else {
+       u++;
+      }
+     }
+
+     u = 0;
+     for (j = 1; j <= nB; j++) {
+      if (this.col_occupant[B[j]]) {
+       S.col_shift[B[j]] = u;
+      } else {
+       u++;
+      }
+     }
+
+     for (i = 1; i <= nA; i++) {
+      S.rows.push(A[i]);
+      S.cell[A[i]] = {};
+     }
+
+     for (j = 1; j <= nB; j++) {
+      b = B[j];
+      if (this.col_occupant[b]) {
+       S.cols.push[b];
+       S.cell[a] = {};
+       for (i = 1; i <= nA; i++) {
+        a = A[i];
+        C0 = R.cell[a][b];
+        C = {a: a, b: b};
+        S.cell[a][b] = C;
+        C.square = C0.square.cloneNode();
+        S.svg.appendChild(C.square);
+        TweenMax.to(C.square,2,{y: "+=300"});
+
+        if (C0.is_free) {
+         C.marker = C0.marker[1].cloneNode();
+         C.marker.textContent = C0.marker[1].textContent;
+         S.svg.appendChild(C.marker);
+         TweenMax.to(C.marker,2,{y: "+=300"});
+        }
+
+        if (! this.row_occupant[a]) {
+         TweenMax.to(C.square,2,{fillOpacity: 0, strokeOpacity: 0, delay: 2});
+        } else {
+         t = { delay : 4};
+         t.x = '-=' + (S.col_shift[b] * R.grid_w);
+         t.y = '-=' + (S.row_shift[a] * R.grid_h);
+         TweenMax.to(C.square,2,t);
+         if (C0.is_free) {
+          TweenMax.to(C.marker,2,t);
+         }
+        }
+       }
+      }
+     }
+    }
+    
+    this.is_extracted[x] = 1;
+    if (this.is_extracted[1-x]) {
+     this.show_relation();
+    }
+   }
+
+   demo.show_relation = function() {
+    var R,A,B,AC,BC,EC,AD,BD,ED,i,j;
+    var me = this;
+    
+    this.msg_div.style.visibility = 'hidden';
+    this.msg_div.innerHTML = '';
+    
+    AC = [];
+    BC = [];
+    EC = [];
+    AD = [];
+    BD = [];
+    ED = [];
+    
+    R = this.board;
+    A = R.shifted_left_set;
+    B = R.shifted_right_set;
+    nA = R.left_order;
+    nB = R.right_order;
+
+    for (i = 1; i <= nA; i++) {
+     if (this.row_occupant[A[i]]) {
+      AD.push(A[i]);
+     } else {
+      AC.push(A[i]);
+     }
+    }
+    
+    for (j = 1; j <= nB; j++) {
+     if (this.col_occupant[B[j]]) {
+      BD.push(B[j]);
+     } else {
+      BC.push(B[j]);
+     }
+    }
+    
+    for (i = 1; i <= nA; i++) {
+     for (j = 1; j <= nB; j++) {
+      if (this.board.indexed_relation_table[i][j]) {
+       if (this.row_occupant[A[i]]) {
+        ED.push([A[i],B[j]]);
+       } else {
+        EC.push([A[i],B[j]]);
+       }
+      }
+     }
+    }
+    
+    RC = matching_problem.setup(AC,BC,EC);
+    RD = matching_problem.setup(AD,BD,ED);
+    R.find_sols();
+    RC.find_sols();
+    RD.find_sols();
+    
+    this.msg_div.innerHTML = 
+     '\\begin{align*} ' +
+     ' r_C(x) &= ' + RC.rook_polynomial_string + '\\\\' + 
+     ' r_D(x) &= ' + RD.rook_polynomial_string + '\\\\' + 
+     ' r_B(x) &= ' + R.rook_polynomial_string + '\\\\' + 
+     ' &= r_C(x) r_D(x)' + 
+     '\\end{align*}';
+     MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.msg_div]);
+    
+    setTimeout(function() {
+     me.msg_div.style.visibility = 'visible';
+    },6000);
+
+   }
+   
+   demo.reset = function(clear_marker) {
+    for (i = 0; i < 2; i++) {
+     if (this.board_copy[i]) {
+      this.main_svg.removeChild(this.board_copy[i].svg);
+      this.board_copy[i] = null;
+     }
+    }
+    
+    this.msg_div.innerHTML = '';
+    this.is_extracted[0] = 0;
+    this.is_extracted[1] = 0;
+   };
+
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <div id="rook_polynomial_div"></div>
+   <div id="blocked_rook_polynomial_div"></div>
+   <div id="deleted_rook_polynomial_div"></div>
+   <div id="relation_div"></div>
+   <svg id="main_svg" width="1300" height="750">
+   </svg>
+   <div id="controls_div">
+    <div class="control" onclick="demo.reset(1)">Reset</div>
+    <div id="C_button" 
+         class="control"          
+         onclick="demo.extract(0)">Extract C</div>
+    <div id="D_button" 
+         class="control"          
+         onclick="demo.extract(1)">Extract D</div>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

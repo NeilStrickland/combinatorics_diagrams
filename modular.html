@@ -1,0 +1,371 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    left: 1220px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 680px;
+    margin-left: 80px;
+    margin-right: 80px;
+    font-size: 24px;
+   }
+   
+   td.lhs {
+    text-align: right;
+    font-size: 24px;
+   }
+   
+   td.rhs {
+    text-align: left;
+    font-size: 24px;
+   }
+   
+   tr.row_equation td {
+    padding-top: 10px;
+   }
+   
+   tr.col_equation td {
+    padding-top: 10px;
+   }
+   
+  </style>
+  <script type="text/javascript">
+   var demo = {};
+   
+   demo.init = function() {
+    var i,j,k,l,A,B,x,y,b,t;
+    var me = this;
+
+    this.main_svg = document.getElementById('main_svg');
+    this.main_svg.appendChild(comb.svg.arrow_defs());
+    this.msg_div = document.getElementById('msg_div');
+
+    this.m = 3;
+    this.n = 2 * this.m + 1;
+    this.T = tournament.odd_modular(this.m);
+    this.T.grid_x0 = 100;
+    this.T.grid_y0 = 100;
+
+    this.T.graph_x0 = 900;
+    this.T.graph_y0 = 300;
+    this.T.graph_scale = 200;
+    this.T.graph_pos = [];
+    for (i = 0; i < this.n; i++) {
+     x = Math.cos(2 * Math.PI * i/this.n);
+     y = Math.sin(2 * Math.PI * i/this.n);
+     this.T.graph_pos.push([x,y]);
+    }
+    
+    this.main_svg.appendChild(this.T.make_grid(1).svg);
+    this.main_svg.appendChild(this.T.make_graph().svg);
+    
+    this.set_all_handlers(1);
+   }
+
+   demo.highlight_square = function(i,j,k) {
+    var s = this.T.grid.indexed_square[i][j];
+    var r = this.T.indexed_result[i][j];
+    s.rect.setAttribute('fill',this.T.col[r][k]);
+   }
+   
+   demo.highlight_score = function(i,k) {
+    var s = this.T.grid.indexed_score[i];
+    s.rect.setAttribute('fill',k ? '#ffbbbb' : '#ffffff');
+   }
+
+   demo.highlight_arrow = function(i,j,k) {
+    if (i == j) { return; }
+    
+    var a = this.T.graph.arrow[i][j];
+    if (k == 0) {
+     a.setAttribute('stroke','#888888');
+     a.setAttribute('stroke-width',1);
+    } else if (k == 1) {
+     a.setAttribute('stroke','#000000');
+     a.setAttribute('stroke-width',1);
+    } else {
+     if (this.T.indexed_result[i][j] == 1) {
+      a.setAttribute('stroke','#0000ff');
+     } else {
+      a.setAttribute('stroke','#00ff00');
+     }
+     a.setAttribute('stroke-width',3);
+    }
+   }
+   
+   demo.set_all_handlers = function(t) {
+    for (i = 0; i < this.n; i++) {
+     this.set_player_handlers(i);
+     
+     for (j = 0; j < this.n; j++) {
+      this.set_square_handler(i,j);
+     }
+    }
+   };
+   
+   demo.set_player_handlers = function(i) {
+    var me = this;
+
+    this.T.grid.indexed_col_header[i].rect.onmouseover =
+     function() { me.handle_col_header_mouseover(i); }
+    this.T.grid.indexed_col_header[i].text.onmouseover =
+     function() { me.handle_col_header_mouseover(i); }
+    this.T.grid.indexed_col_header[i].rect.onmouseout =
+     function() { me.handle_mouseout(); }
+    this.T.grid.indexed_row_header[i].rect.onmouseover =
+     function() { me.handle_row_header_mouseover(i); }
+    this.T.grid.indexed_row_header[i].text.onmouseover =
+     function() { me.handle_row_header_mouseover(i); }
+    this.T.grid.indexed_row_header[i].rect.onmouseout =
+     function() { me.handle_mouseout(); }
+    this.T.grid.indexed_score[i].rect.onmouseover =
+     function() { me.handle_score_mouseover(i); }
+    this.T.grid.indexed_score[i].text.onmouseover =
+     function() { me.handle_score_mouseover(i); }
+    this.T.grid.indexed_score[i].rect.onmouseout =
+     function() { me.handle_mouseout(); }
+   }
+
+   demo.set_square_handler = function(i,j) {
+    var me = this;
+    var u = this.T.grid;
+    var v = u.indexed_square[i][j];
+    
+    v.text.onmouseover = function() { me.handle_square_mouseover(i,j); };
+    v.rect.onmouseover = function() { me.handle_square_mouseover(i,j); };
+    v.rect.onmouseout  = function() { me.handle_mouseout(); };
+   }
+
+   demo.handle_col_header_mouseover = function(i) {
+    var T,j,k,p,s;
+
+    T = this.T;
+    p = T.players[i];
+    
+    for (j = 0; j < this.n; j++) {
+     for (k = 0; k < this.n; k++) {
+      if (j != k) {
+       this.highlight_square(j,k,(i == k) ? 2 : 0);
+       this.highlight_arrow(j,k,0);       
+      }
+     }
+    }
+
+    for (j = 0; j < this.n; j++) {
+     this.highlight_arrow(j,i,2);
+    }
+
+    s = 'This column shows the results of games against player ' + p + '. ';
+
+    if (T.wins_for[p].length == 0) {
+     s += 'Every other player wins against player ' + p + ', so every entry in this column is W.';
+    } else if (T.wins_for[p].length == 1) {
+     q = T.wins_for[p][0];
+     s += 'Player ' + q + ' loses to ' + p + ', so we have an L in the (' +
+      q + ',' + p + ') position.  Every other player wins against ' + p +
+      ', so all other entries in this column are W.';
+    } else if (T.wins_for[p].length == T.n - 2) {
+     q = T.losses_for[p][0];
+     s += 'Player ' + q + ' wins against ' + p + ', so we have a W in the (' +
+      q + ',' + p + ') position.  Every other player loses to ' + p +
+      ', so all other entries in this column are L.';
+    } else if (T.wins_for[p].length == T.n - 1) {
+     s += 'Every other player loses to ' + p + ', so every entry in this column is L.';
+    } else {
+     s +=
+      'Players ' +
+      T.wins_for[p].slice(0,-1).join(',') + ' and ' + T.wins_for[p].slice(-1)[0] +
+      ' lose to ' + p + '. ' + 
+      'Players ' +
+      T.losses_for[p].slice(0,-1).join(',') + ' and ' + T.losses_for[p].slice(-1)[0] +
+      ' win against ' + p + '.'; 
+    }
+
+    this.msg_div.innerHTML = s;
+   }
+   
+   demo.handle_row_header_mouseover = function(i) {
+    var T,j,k,p,s;
+
+    T = this.T;
+    p = T.players[i];
+    
+    for (j = 0; j < this.n; j++) {
+     for (k = 0; k < this.n; k++) {
+      if (j != k) {
+       this.highlight_square(j,k,(i == j) ? 2 : 0);
+       this.highlight_arrow(j,k,0);
+      }
+     }
+
+     this.highlight_score(j, i == j ? 1 : 0);
+    }
+
+    for (j = 0; j < this.n; j++) {
+     this.highlight_arrow(i,j,2);
+    }
+    
+    s = 'This row shows the results of games played by ' + p + '. ';
+
+    if (T.wins_for[p].length == 0) {
+     s += 'Player ' + p + ' loses to every other player, so every entry in this row is L. ';
+    } else if (T.wins_for[p].length == 1) {
+     q = T.wins_for[p][0];
+     s += 'Player ' + p + ' wins against ' + q + ', so we have a W in the (' +
+      p + ',' + q + ') position.  Player ' + p + ' loses to every other player, so all other entries in this row are L.';
+    } else if (T.wins_for[p].length == T.n - 2) {
+     q = T.losses_for[p][0];
+     s += 'Player ' + p + ' loses to ' + q + ', so we have an L in the (' +
+      p + ',' + q + ') position.  Player ' + p + ' wins against every other player, so all other entries in this row are W.';
+    } else if (T.wins_for[p].length == T.n - 1) {
+     s += 'Player ' + p + ' wins against every other player, so every entry in this row is W.';
+    } else {
+     s +=
+      'Player ' + p + ' wins against ' +
+      T.wins_for[p].slice(0,-1).join(',') + ' and ' + T.wins_for[p].slice(-1)[0] + '. ' + 
+      'Player ' + p + ' loses to ' +
+      T.losses_for[p].slice(0,-1).join(',') + ' and ' + T.losses_for[p].slice(-1)[0] + '.';
+    }
+
+    s += ' The score for player ' + p + ' is ' + T.wins_for[p].length + '. ' +
+     '(This is an odd modular tournament so all scores are the same.)';
+    
+    this.msg_div.innerHTML = s;
+
+   }
+
+   demo.handle_score_mouseover = function(i) {
+    var T,R,p,j,k;
+    
+    T = this.T;
+    R = T.indexed_result;
+    p = T.players[i];
+    
+    
+    for (j = 0; j < this.n; j++) {
+     this.highlight_score(j, i == j ? 1 : 0);
+     for (k = 0; k < this.n; k++) {
+      this.highlight_square(j,k,0);
+      this.highlight_arrow(j,k,0);
+     }
+    }
+
+    for (k = 0; k < this.n; k++) {
+     if (R[i][k] == 1) {
+      this.highlight_square(i,k,2);
+      this.highlight_arrow(i,k,2);
+     } else {
+      this.highlight_square(i,k,1);
+     }
+    }
+
+    s = ' The score for player ' + p + ' is ' + T.wins_for[p].length + '. ' + 
+     '(This is an odd modular tournament so all scores are the same.)';
+    
+    this.msg_div.innerHTML = s;
+    
+   }
+   
+   demo.handle_square_mouseover = function(i,j) {
+    var k,l;
+
+    for (k = 0; k < this.n; k++) {
+     this.highlight_score(k,0);
+     
+     for (l = 0; l < this.n; l++) {
+      if (k != l) {
+       this.highlight_square(k,l,0);
+       this.highlight_arrow(k,l,0);
+      }
+     }
+    }
+
+    this.highlight_arrow(i,j,2);
+    this.highlight_square(i,j,2);
+    this.highlight_square(j,i,1);
+
+    p = this.T.players[i];
+    q = this.T.players[j];
+    
+    if (this.T.indexed_result[i][j] == 1) {
+     s = 'Player ' + p + ' wins against player ' + q + '. <br/> ' +
+      '(Equivalently, player ' + q + ' loses to player ' + p + '.)';
+    } else {
+     s = 'Player ' + p + ' loses to player ' + q + '. <br/> ' +
+      '(Equivalently, player ' + q + ' wins against player ' + p + '.)';
+    }
+
+    this.msg_div.innerHTML = s;
+   }
+
+   demo.handle_mouseout = function() {
+    var j,k;
+
+    for (j = 0; j < this.n; j++) {
+     this.highlight_score(j,0);
+     
+     for (k = 0; k < this.n; k++) {
+      if (j != k) {
+       this.highlight_square(j,k,0);
+       this.highlight_arrow(j,k,1);
+      }
+     }
+    }
+    this.msg_div.innerHTML = '';
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <h1 style="padding-left:50px">An odd modular tournament</h1>
+   <svg id="main_svg" width="1300" height="700">
+   </svg>
+   <div id="msg_div">
+   </div>
+   <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+     <defs id="main_defs">
+      <marker
+       id="head"
+       orient="auto"
+       markerUnits="userSpaceOnUse"
+       markerWidth="10"
+       markerHeight="14"
+       refX="1"
+       refY="5" 
+       viewBox="0 0 10 10"
+       >
+	 <path d="M 0 0 L 10 5 L 0 10 z" fill="#000000"/>
+       </marker>
+     </defs>
+   </svg>
+  </div>
+ </body>
+</html>

@@ -1,0 +1,285 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+
+  <style type="text/css">
+   @font-face {font-family: MathJax_Main;
+    src: url('/MathJax/fonts/HTML-CSS/TeX/woff/MathJax_Main-Regular.woff') format('woff'),
+     url('/MathJax/fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf') format('opentype')}
+   @font-face {font-family: MathJax_Math-italic;
+    src: url('/MathJax/fonts/HTML-CSS/TeX/woff/MathJax_Math-Italic.woff') format('woff'),
+     url('/MathJax/fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf') format('opentype')}
+
+   span.maths {
+    text-align:center; 
+    font-size:50px; 
+    font-family:MathJax_Math-italic;
+   } 
+
+   span.factor_label {
+    font-size:25px;
+    font-family: MathJax_Main-Regular;
+    color: #888888;
+    padding: 3px;
+   }
+
+   span.factor_label:hover { 
+    cursor: pointer;
+   }
+
+   span.factor_x {
+    border-radius: 3px;
+    border: 2px solid #AED6F1;
+   }
+
+   span.factor_o {
+    color: #AAAAAA;                
+   }
+
+   span.x_on { background: #AED6F1; }
+   span.o_on { background: #F7DC6F; }
+   span.x_off { color: #888888; }
+   span.o_off { color: #888888; }
+
+   div#main_eq {
+    margin-left: 40px;
+    height:200px;
+   }
+
+   div#msg_div {
+    margin-left: 30px;
+    width: 1360px;
+    height: 300px;
+    font-size: 25px;
+   }
+
+   div#conclusion_toggle {
+    width: 200px;
+    margin-left: 30px;
+    border-radius: 5px;
+    border: 4px solid #AED6F1;
+    padding: 5px;
+    font-size: 25px;
+   }
+
+   div#conclusion_toggle:hover { 
+    cursor: pointer;
+   }
+
+   div#conclusion {
+    width: 1360px;
+    font-size: 28px;                
+   }
+  </style>
+  <script type="text/javascript">
+   var expander = {};
+
+   expander.get_offset = function( el ) {
+    var _x = 0;
+    var _y = 0;
+    while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
+     _x += el.offsetLeft - el.scrollLeft;
+     _y += el.offsetTop - el.scrollTop;
+     el = el.offsetParent;
+    }
+    return { top: _y, left: _x };
+   }
+
+   expander.init = function() {
+    var i,sp,p;
+    var me = this;
+
+    this.main_eq = document.getElementById('main_eq');
+    this.main_eq_offset = this.get_offset(this.main_eq);
+    this.msg_div = document.getElementById('msg_div');
+    this.conclusion_toggle = document.getElementById('conclusion_toggle');
+    this.conclusion_div = document.getElementById('conclusion');
+
+    this.o_span = {};
+    this.x_span = {};
+    this.f_span = {};
+    this.t_span = {};
+    for (i = 1; i <= 7; i++) {
+     this.f_span[i] = document.getElementById('f' + i);
+     this.o_span[i] = document.getElementById('o' + i);
+     this.x_span[i] = document.getElementById('x' + i);
+     sp = document.createElement('span');
+     this.t_span[i] = sp;
+     sp.className = 'factor_label';
+     sp.innerHTML = 'factor ' + i;
+     sp.style.position = 'absolute';
+     p = this.get_offset(this.o_span[i]);
+     sp.style.left = (p.left - this.main_eq_offset.left + 20) + 'px';
+     sp.style.top =  (p.top - this.main_eq_offset.top + 80) + 'px';
+     this.main_eq.appendChild(sp);
+
+     this.set_onclick_flip(this.f_span[i],i);
+     this.set_onclick_flip(this.t_span[i],i);
+    }
+
+    this.x_set = [];
+    this.o_set = [];
+    this.is_in_set = {};
+    this.set_size = 0;
+    this.binomial = 0;
+
+    this.choose_random_term();
+    this.show_term();
+
+    this.conclusion_toggle.onclick = function() {
+     if (me.conclusion_div.style.display == 'none') {
+      me.conclusion_div.style.display = 'block';
+     } else {
+      me.conclusion_div.style.display = 'none';
+     }
+    }
+   };
+
+   expander.set_onclick_flip = function(s,i) {
+    var me = this;
+    s.onclick = function() { me.flip_term(i); };
+   }
+
+   expander.choose_random_term = function() {
+    this.is_in_set = {};
+    for (i = 1; i <= 7; i++) {
+     this.is_in_set[i] = (Math.random() > 0.5) ? 1 : 0;
+    }
+    this.fix_term();
+    this.show_term();
+   };
+
+   expander.flip_term = function (i) {
+    this.is_in_set[i] = this.is_in_set[i] ? 0 : 1;
+    this.fix_term();
+    this.show_term();
+   };
+
+   expander.fix_term = function () {
+    this.x_set = [];
+    this.o_set = [];
+    this.set_size = 0;
+    this.binomial = 0;
+    for (i = 1; i <= 7; i++) {
+     if (this.is_in_set[i]) {
+      this.x_set.push(i);
+      this.set_size++;
+     } else {
+      this.o_set.push(i);
+     }
+    }
+
+    m = this.set_size;
+    this.x_set_string = '\\{' + this.x_set.join() + '\\}';
+    this.o_set_string = '\\{' + this.o_set.join() + '\\}';
+
+    this.binomial = 1;
+    for (i = 0; i < m; i++) { this.binomial *= (7-i); }
+    for (i = 0; i < m; i++) { this.binomial /= (i+1); }                
+   };
+
+   expander.show_term = function() {
+    for (i = 1; i <= 7; i++) {
+     if (this.is_in_set[i]) {
+      this.t_span[i].className = 'factor_label factor_x';
+      this.o_span[i].className = 'maths o_off';
+      this.x_span[i].className = 'maths x_on';
+     } else {
+      this.t_span[i].className = 'factor_label factor_o';
+      this.o_span[i].className = 'maths o_on';
+      this.x_span[i].className = 'maths x_off';                        
+     }
+    }
+
+    u = '';
+    m = this.x_set.length;
+    for (j = 0; j < m - 1; j++) {
+     u += this.x_set[j];
+     if (j < m - 1) { u += ','; }
+    }
+    u += ' and ' + this.x_set[m-1];
+
+    nn = ['zero','one','two','three','four','five','six','seven'];
+
+    if (m == 0) {
+     msg = 'When we expand this out, we take $1$ or $x$ from each of the seven factors. <br/>' +
+      'One possibility (corresponding to the set $\\{\\}=\\emptyset$) is to ' +
+      'take <span class="o_on">$1$</span> from every factor, so that the product is just $1$.';
+
+     msg += '<br/><br/>';
+
+     msg += 'There is only one factor of this type, so the constant term in our expansion is ' +
+      "just 1. <br/> We can also think of this as $\\left(\\begin{matrix} 7\\\\ 0\\end{matrix}\\right)x^0$.";
+    } else if (m == 1) {
+     msg = 'When we expand this out, we take $1$ or $x$ from each of the seven factors.  <br/>' +
+      'One possibility (corresponding to the set $' + this.x_set_string + '$ ) is to ' +
+      'take an <span class="x_on">$x$</span> from factor ' + this.x_set[0] + ',<br/> and a <span class="o_on">$1$</span> from all other factors. ' +
+      'As there is only one $x$, the product is just $x$.';
+
+     msg += '<br/><br/>';
+
+     msg += 'We get a term like this for each set of size $1$.<br/>  The number of sets of size 1 is ' + 
+      "$\\left(\\begin{matrix} 7\\\\ 1\\end{matrix}\\right)=7$, so the linear term in our expansion " + 
+      " is $7x$, or $\\left(\\begin{matrix} 7\\\\ 1\\end{matrix}\\right)x^1$.";
+    } else if (m < 7) {
+     msg = 'When we expand this out, we take $1$ or $x$ from each of the seven factors.  <br/>' +
+      'One possibility (corresponding to the set $' + this.x_set_string + '$ ) is to ' +
+      'take an <span class="x_on">$x$</span> from factors ' + u + ', <br/> and a <span class="o_on">$1$</span> from all other factors.  This ' + 
+      'gives us ' + nn[m] + " $x$'s, so the product is $x^" + m + '$.';
+
+     msg += '<br/><br/>';
+
+     msg += 'We get a term like this for each set of size $' + m +
+      '$.  <br/> The number of sets of size $' + m + '$ is ' + 
+      "$\\left(\\begin{matrix} 7\\\\ " + m + "\\end{matrix}\\right)=" + this.binomial + "$," +
+      " so the $x^" + m + "$ term in our expansion " + 
+      " is $" + this.binomial + "x^" + m + "$.";
+    } else {
+     msg = 'When we expand this out, we take $1$ or $x$ from each of the seven factors.  <br/>' +
+      'One possibility (corresponding to the set $' + this.x_set_string + '$) is to ' +
+      'take an <span class="x_on">$x$</span> from every factor. <br/>' + " This gives us seven $x$'s, so the product is $x^7$.";                    
+
+     msg += '<br/><br/>';
+
+     msg += 'There is only one factor of this type, so the last term in our expansion is ' +
+      "just $x^7$. <br/> We can also think of this as $\\left(\\begin{matrix} 7\\\\ 7\\end{matrix}\\right)x^7$.";
+    }
+
+    this.msg_div.innerHTML = msg;  
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.msg_div]);
+   }
+  </script>
+ </head>
+ <body onload="expander.init()">
+  <div id="frame">
+   <div id="main_eq">
+    <span class="maths">(1<span style="padding-left:0.2em; padding-right: 0.2em;">+</span>x)<sup>7</sup></span>
+    <span class="maths">=</span>
+    <span id="f1" class="maths">(<span id="o1">1</span><span style="padding-left:0.2em; padding-right: 0.2em;">+</span><span id="x1">x</span>)</span>
+    <span id="f2" class="maths">(<span id="o2">1</span><span style="padding-left:0.2em; padding-right: 0.2em;">+</span><span id="x2">x</span>)</span>
+    <span id="f3" class="maths">(<span id="o3">1</span><span style="padding-left:0.2em; padding-right: 0.2em;">+</span><span id="x3">x</span>)</span>
+    <span id="f4" class="maths">(<span id="o4">1</span><span style="padding-left:0.2em; padding-right: 0.2em;">+</span><span id="x4">x</span>)</span>
+    <span id="f5" class="maths">(<span id="o5">1</span><span style="padding-left:0.2em; padding-right: 0.2em;">+</span><span id="x5">x</span>)</span>
+    <span id="f6" class="maths">(<span id="o6">1</span><span style="padding-left:0.2em; padding-right: 0.2em;">+</span><span id="x6">x</span>)</span>
+    <span id="f7" class="maths">(<span id="o7">1</span><span style="padding-left:0.2em; padding-right: 0.2em;">+</span><span id="x7">x</span>)</span>
+   </div>
+   <div id="msg_div">
+   </div>
+   <div id="conclusion_toggle">Conclusion</div>
+   <div id="conclusion" style="display:none">
+    $$ (1+x)^7 = \sum_{A\subseteq\{1,\dotsc,7\}}x^{|A|} = \sum_{k=0}^7\left(\begin{matrix}7 \\ k\end{matrix}\right)x^k
+    = 1 + 7x + 21 x^2 + 35 x^3 + 35x^4 + 21 x^5 + 7 x^6 + x^7
+    $$
+   </div>
+  </div>
+ </body>
+</html>

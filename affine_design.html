@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Affine design</title>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script src="https://preview.babylonjs.com/babylon.js"></script>
+  <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+  <script src="comb.js"></script>
+  <script src="comb_babylon.js"></script>
+
+  <style>
+   html, body {
+       width: 100%;
+       margin: 0;
+       padding: 0;
+       background: white;
+   }
+   
+   canvas {
+       width: 100%;
+       height: 600;
+       touch-action: none;
+   }
+
+   
+  </style>
+ </head>
+ <body>
+  <h1>The affine plane design over $\mathbb{Z}/3$</h1>
+  <div style="width:100%; margin: 0 auto; text-align:center;">
+   <div style="width:100%; margin-left: 200px;"> 
+    <table>
+     <tr>
+      <td>
+       <canvas width="600" height="600" id="main_canvas"></canvas><br/>
+      </td>
+      <td style="vertical-align:top">
+       <table class="edged">
+	<tbody id="blocks_tbody">
+	 <tr><td colspan="2">Blocks</td></tr>
+	</tbody>
+       </table>
+      </td>
+      <td style="vertical-align:top">
+       <table class="edged">
+	<tbody id="varieties_tbody">
+	 <tr><td colspan="2">Varieties</td></tr>
+	</tbody>
+       </table>
+      </td>
+     </tr>
+    </table>
+   </div>
+   <br>
+   <div id="msg_div" style="width:900px; text-align: left; margin-left: 200px;">
+   </div>
+  </div>
+ <script>
+  var demo = {
+   
+  };
+
+  demo.f = function(u,v,w) {
+   var x,y,z;
+   x = (2 + w * Math.cos(2*Math.PI*v)) * Math.cos(2*Math.PI*u);
+   y = (2 + w * Math.cos(2*Math.PI*v)) * Math.sin(2*Math.PI*u);
+   z =  2 * w * Math.sin(2*Math.PI*v);
+   return [x,y,z];
+  }
+
+  demo.mod3 = function(n) {
+   var m = n % 3;
+   if (m ==  2) { m = -1; }
+   if (m == -2) { m =  1; }
+   return m;
+  }
+  
+  demo.overview_msg =
+   'This shows a block design with parameters $(v,b,r,k,\\lambda)=(9,12,4,3,1)$. ' +
+   'Each of the $v=9$ varieties is marked by a black sphere. ' +
+   'Each of the $b=12$ blocks is indicated by a coloured curve. ' +
+   'Each black sphere lies on $r=4$ different curves. ' +
+   'Each curve passes through $k=3$ different spheres. ' +
+   'Each pair of spheres lies on precisely one curve, corresponding to $\\lambda=1$.';
+
+  demo.set_message = function(m) {
+   this.msg_div.innerHTML = m;
+   MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.msg_div]);
+  }
+  
+  demo.init = function () {
+   var me = this;
+
+   this.canvas = document.getElementById('main_canvas');
+   this.blocks_tbody = document.getElementById('blocks_tbody');
+   this.varieties_tbody = document.getElementById('varieties_tbody');
+   this.msg_div = document.getElementById('msg_div');
+
+   this.set_message(this.overview_msg);
+   
+   this.all_blocks_tr = document.createElement('tr');
+   this.blocks_tbody.appendChild(this.all_blocks_tr);
+   this.all_blocks_label_td = document.createElement('td');
+   this.all_blocks_tr.appendChild(this.all_blocks_label_td);
+   this.all_blocks_label_td.innerHTML = 'All';
+   this.all_blocks_checkbox_td = document.createElement('td');
+   this.all_blocks_tr.appendChild(this.all_blocks_checkbox_td);
+   this.all_blocks_checkbox = document.createElement('input');
+   this.all_blocks_checkbox.type = 'checkbox';
+   this.all_blocks_checkbox_td.appendChild(this.all_blocks_checkbox);
+   this.all_blocks_checkbox.checked = true;
+   
+   this.no_blocks_tr = document.createElement('tr');
+   this.blocks_tbody.appendChild(this.no_blocks_tr);
+   this.no_blocks_label_td = document.createElement('td');
+   this.no_blocks_tr.appendChild(this.no_blocks_label_td);
+   this.no_blocks_label_td.innerHTML = 'None';
+   this.no_blocks_checkbox_td = document.createElement('td');
+   this.no_blocks_tr.appendChild(this.no_blocks_checkbox_td);
+   this.no_blocks_checkbox = document.createElement('input');
+   this.no_blocks_checkbox.type = 'checkbox';
+   this.no_blocks_checkbox_td.appendChild(this.no_blocks_checkbox);
+   
+   this.all_varieties_tr = document.createElement('tr');
+   this.varieties_tbody.appendChild(this.all_varieties_tr);
+   this.all_varieties_label_td = document.createElement('td');
+   this.all_varieties_tr.appendChild(this.all_varieties_label_td);
+   this.all_varieties_label_td.innerHTML = 'All';
+   this.all_varieties_checkbox_td = document.createElement('td');
+   this.all_varieties_tr.appendChild(this.all_varieties_checkbox_td);
+   this.all_varieties_checkbox = document.createElement('input');
+   this.all_varieties_checkbox.type = 'checkbox';
+   this.all_varieties_checkbox_td.appendChild(this.all_varieties_checkbox);
+   this.all_varieties_checkbox.checked = true;
+   
+   this.no_varieties_tr = document.createElement('tr');
+   this.varieties_tbody.appendChild(this.no_varieties_tr);
+   this.no_varieties_label_td = document.createElement('td');
+   this.no_varieties_tr.appendChild(this.no_varieties_label_td);
+   this.no_varieties_label_td.innerHTML = 'None';
+   this.no_varieties_checkbox_td = document.createElement('td');
+   this.no_varieties_tr.appendChild(this.no_varieties_checkbox_td);
+   this.no_varieties_checkbox = document.createElement('input');
+   this.no_varieties_checkbox.type = 'checkbox';
+   this.no_varieties_checkbox_td.appendChild(this.no_varieties_checkbox);
+
+   this.varieties = {};
+   this.num_varieties = 9;
+    
+   for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j++) {
+     k = 1 + j + 3*i;
+     v = {};
+     this.varieties[k] = v;
+     v.i = i;
+     v.j = j;
+     v.k = k;
+     v.x = this.f(i/3,j/3,1);
+     v.x_label = comb.bab.vect(this.f(i/3,j/3,1.2));
+     v.coblock = [];
+
+     v.tr = document.createElement('tr');
+     this.varieties_tbody.appendChild(v.tr);
+     v.label_td = document.createElement('td');
+     v.tr.appendChild(v.label_td);
+     v.label_td.innerHTML = k;
+     v.checkbox_td = document.createElement('td');
+     v.tr.appendChild(v.checkbox_td);
+     v.checkbox = document.createElement('input');
+     v.checkbox.type = 'checkbox';
+     v.checkbox_td.appendChild(v.checkbox);
+    }
+   }
+   
+   blocks0 = {
+    1  : [1,2,3],
+    2  : [4,5,6],
+    3  : [7,8,9],  
+    4  : [1,4,7],
+    5  : [2,5,8],
+    6  : [3,6,9],  
+    7  : [1,5,9],
+    8  : [2,6,7],
+    9  : [3,4,8], 
+    10 : [1,6,8],
+    11 : [2,4,9],
+    12 : [3,5,7]
+   };
+
+   this.blocks = {};
+   this.num_blocks = 12;
+   this.block_size = 3;
+   
+   for (i = 1; i <= this.num_blocks; i++) {
+    b = {};
+    this.blocks[i] = b;
+    b.els = blocks0[i];
+    b.els_string = '\\{' + b.els.join(',') + '\\}';
+
+    if (i <= 3) {
+     b.col = new BABYLON.Color3(1.0,0.3,0.3);
+    } else if (i <= 6) {
+     b.col = new BABYLON.Color3(0.3,0.6,0.3);
+    } else if (i <= 9) {
+     b.col = new BABYLON.Color3(0.3,0.3,1.0);
+    } else {
+     b.col = new BABYLON.Color3(1.0,0.3,1.0);
+    }
+
+    b.hex_col = b.col.toHexString();
+    
+    i0 = this.varieties[b.els[0]].i;
+    i1 = this.varieties[b.els[1]].i;
+    i2 = this.varieties[b.els[2]].i;
+    j0 = this.varieties[b.els[0]].j;
+    j1 = this.varieties[b.els[1]].j;
+    j2 = this.varieties[b.els[2]].j;
+
+    b.c = [i0/3,j0/3];
+    b.m = [this.mod3(i1-i0),this.mod3(j1-j0)];
+
+    b.tr = document.createElement('tr');
+    this.blocks_tbody.appendChild(b.tr);
+    b.label_td = document.createElement('td');
+    b.tr.appendChild(b.label_td);
+    b.label_td.innerHTML = i;
+    b.checkbox_td = document.createElement('td');
+    b.checkbox_td.style.background = b.hex_col;
+    b.tr.appendChild(b.checkbox_td);
+    b.checkbox = document.createElement('input');
+    b.checkbox.type = 'checkbox';
+    b.checkbox_td.appendChild(b.checkbox);
+   }
+   
+   for (i = 1; i <= this.num_blocks; i++) {
+    for (j = 0; j < this.block_size; j++) {
+     this.varieties[this.blocks[i].els[j]].coblock.push(i);
+    }
+   }
+
+   for (i = 1; i <= this.num_varieties; i++) {
+    v = this.varieties[i];
+    v.coblock_string = '\\{' + v.coblock.join(',') + '\\}';
+   }
+    
+   this.size = 600;
+   
+   this.canvas.width  = this.size;
+   this.canvas.height = this.size;
+
+   this.engine =
+    new BABYLON.Engine(this.canvas, true, { preserveDrawingBuffer: true, stencil: true });
+   
+   this.scene = comb.basic_scene(this.engine,this.canvas);
+
+   this.v0 = 0;
+   this.v1 = 0;
+   
+   for (i = 1; i <= this.num_varieties; i++) {
+    v = this.varieties[i];
+    v.point = comb.bab.point(v.x,[0,0,0],0.2,this.scene);
+    var n = v.x_label.subtract(this.scene.camera.position);
+    v.source_plane = new BABYLON.Plane(-n.x,-n.y,-n.z,0);
+    v.source_plane.normalize();
+     
+    var opts = {
+     sourcePlane : v.source_plane,
+     updatable : true
+    };
+     
+    v.label_plane = BABYLON.MeshBuilder.CreatePlane('plane_' + i,opts,this.scene);
+    v.label_plane.position = v.x_label;
+    v.label_plane.sourcePlane = v.source_plane;
+    v.plane_texture = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(v.label_plane);
+    v.button = BABYLON.GUI.Button.CreateSimpleButton('button_' + i, '' + i);
+    v.button.width  = 0.2;
+    v.button.height = 0.2;
+    v.button.color  = 'black';
+    v.button.background = 'white';
+    v.button.fontSize = 200;
+    v.plane_texture.addControl(v.button);
+   }
+
+   for (i = 1; i <= this.num_blocks; i++) {
+    this.add_curve(i);
+    this.set_block_handler(i);
+   }
+
+   for (i = 1; i <= this.num_varieties; i++) {
+    this.set_variety_handler(i);
+   }
+   
+   this.all_blocks_checkbox.onchange = function() {
+    if (me.all_blocks_checkbox.checked) {
+     me.no_blocks_checkbox.checked = false;
+     me.set_message(me.overview_msg);
+     
+     for (i = 1; i <= me.num_blocks; i++) {
+      me.blocks[i].checkbox.checked = false;
+      me.show_block(i,1);
+     }
+    } else {
+     me.no_blocks_checkbox.checked = true;
+     me.set_message(me.overview_msg);
+
+     for (i = 1; i <= me.num_blocks; i++) {
+      me.blocks[i].checkbox.checked = false;
+      me.show_block(i,0);
+     }
+    }
+   }
+   
+   this.no_blocks_checkbox.onchange = function() {
+    if (me.no_blocks_checkbox.checked) {
+     me.all_blocks_checkbox.checked = false;
+     me.set_message(me.overview_msg);
+
+     for (i = 1; i <= me.num_blocks; i++) {
+      me.blocks[i].checkbox.checked = false;
+      me.show_block(i,0);
+     }
+    } else {
+     me.all_blocks_checkbox.checked = true;
+     me.set_message(me.overview_msg);
+
+     for (i = 1; i <= me.num_blocks; i++) {
+      me.blocks[i].checkbox.checked = false;
+      me.show_block(i,1);
+     }
+    }
+   }
+
+   this.engine.runRenderLoop(function () {
+    if (me.scene) {
+     me.orient_labels();
+     me.scene.render();
+    }});
+   
+   window.addEventListener("resize", function () {
+    me.engine.resize();
+   });
+  };
+
+  demo.add_curve = function(i) {
+   var b,c,me;
+
+   me = this;
+   b = this.blocks[i];
+   c = Object.create(comb.thick_curve);
+   c.n = 128;
+   b.curve = c;
+   c.colour = b.col;
+   c.embedding = function(t) {
+    return me.f(b.c[0] + t * b.m[0],b.c[1] + t * b.m[1],1);
+   };
+   c.make_mesh(this.scene);
+  }
+
+  demo.set_block_handler = function(i) {
+   var me = this;
+
+   this.blocks[i].checkbox.onchange = function() {
+    if (me.blocks[i].checkbox.checked) {
+     me.all_blocks_checkbox.checked = false;
+     me.no_blocks_checkbox.checked = false;
+     me.show_block(i,1);
+     
+     for (j = 1; j <= me.num_blocks; j++) {
+      if (j != i) {
+       me.blocks[j].checkbox.checked = false;
+       me.show_block(j,0);
+      }
+     }
+
+     me.set_message(
+      'This shows the block $C_{' + i + '}=' + me.blocks[i].els_string + '$. ' +
+       'It has size $k=3$ as expected.');
+    } else {
+     me.all_blocks_checkbox.checked = false;
+     me.no_blocks_checkbox.checked = true;
+     me.set_message(me.overview_msg);
+     
+     for (j = 1; j <= me.num_blocks; j++) {
+      me.blocks[j].checkbox.checked = false;
+      me.show_block(j,0);
+     }
+    }
+    me.v0 = 0;
+    me.v1 = 0;
+    for (j = 1; j <= me.num_varieties; j++) {
+     me.varieties[j].checkbox.checked = false;
+    }
+   }
+  }
+
+  demo.set_variety_handler = function(i) {
+   var me = this;
+
+   this.varieties[i].checkbox.onchange = function() {
+    if (me.varieties[i].checkbox.checked) {
+     if (me.v1) {
+      me.v0 = me.v1;
+      me.v1 = i;
+     } else if (me.v0) {
+      me.v1 = i;
+     } else {
+      me.v0 = i;
+      me.v1 = 0;
+     }
+    } else {
+     if (me.v0 == i) {
+      me.v0 = me.v1;
+      me.v1 = 0;
+     } else if (me.v1 == i) {
+      me.v1 = 0;
+     }
+    }
+    
+    for (j = 1; j <= me.num_blocks; j++) {
+     b = me.blocks[j];
+     u = true;
+     if (me.v0) {
+      u = u && b.els.includes(me.v0);
+     }
+     if (me.v1) {
+      u = u && b.els.includes(me.v1);
+     }
+     b.checkbox.checked = u;
+     me.show_block(j, u ? 1 : 0);
+    }
+
+    for (j = 1; j <= me.num_varieties; j++) {
+     v = me.varieties[j];
+     v.checkbox.checked = (j == me.v0 || j == me.v1);
+    }
+
+    me.all_varieties_checkbox.checked = false;
+    
+    if (! me.v0 && ! me.v1) {
+     me.no_varieties_checkbox.checked = true;
+    }
+
+    if (me.v0 && me.v1) {
+     c0 = me.varieties[me.v0];
+     c1 = me.varieties[me.v1];
+     w = [];
+     for (j in c0.coblock) {
+      if (c1.coblock.includes(c0.coblock[j])) {
+       w.push(c0.coblock[j]);
+      }
+     }
+     
+     msg =
+      'This shows the intersection $R_{' + me.v0 + '}\\cap R_{' +
+      me.v1 + '}=' +
+      c0.coblock_string + '\\cap' +
+      c1.coblock_string + '=\\{' + w[0] + '\\}$. ' +
+      'As expected, it has size $\\lambda=1$ (corresponding to the single curve in the picture).';
+      
+     me.set_message(msg);
+    } else if (me.v0) {
+     c0 = me.varieties[me.v0];
+     msg =
+      'This shows the coblock $R_{' + me.v0 + '}=' +
+      c0.coblock_string + '$.  As expected, it has size $r=4$ (corresponding to the $4$ curves shown).';
+     me.set_message(msg);
+    } else {
+     me.set_message(me.overview_msg);
+    }
+   }
+  }
+  
+  demo.show_block = function(i,u) {
+   var b = this.blocks[i];
+
+   if (u) {
+    b.curve.mesh.material.alpha = 1.0;
+   } else {
+    b.curve.mesh.material.alpha = 0.1;
+   }
+  }
+
+  demo.orient_labels = function() {
+   for (i = 1; i <= this.num_varieties; i++) {
+    var v = this.varieties[i];
+    var n = v.label_plane.position.subtract(this.scene.camera.position);
+    v.source_plane = new BABYLON.Plane(-n.x,-n.y,-n.z,0);
+    v.source_plane.normalize();
+    v.label_plane.setDirection(v.source_plane.normal.scale(-1));     
+   }
+  }
+  
+  demo.init();
+ </script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <style type="text/css">
+   div#main_div { 
+    position:absolute; 
+   }
+
+   div.text {
+    position:absolute; 
+    font-size: 24px;
+   }
+
+   div.partial {
+    font-size: 24px;
+   }
+
+   div#vals_div { 
+    position:absolute; 
+    left: 30px;
+    top: 30px;
+    font-size: 24px;
+   }
+
+   div#controls_div { 
+    position:absolute; 
+    right: 30px;
+    top: 30px;
+   }
+
+   div#msg_div {
+    text-align:center;
+    font-size: 22px;
+   }
+
+  </style>
+  <script type="text/javascript">
+
+   var bin = {};
+   bin.n = 0;
+   bin.k = 0;
+   bin.m = 0;
+   bin.val = 0;
+
+   var demo = {};
+
+   demo.f = function(n,k,m,x) {
+    return Math.round((0.5 * k - 0.5 * m + 0.5 * this.n_max + 4.5 + x) * this.scale); 
+   }
+
+   demo.g = function(n,k,m,x) {
+    return Math.round((0.866 * (k + m + n + 0.5)) * this.scale);
+   }
+
+   demo.fg = function(n,k,m,x) {
+    return {'x' : this.f(n,k,m,x),
+            'y' : this.g(n,k,m,x)};
+   }
+
+   demo.latex_binom = function(n,k) {
+    return "\\left(\\begin{matrix}" + n + "\\\\" + k + "\\end{matrix}\\right)";
+   }
+
+   demo.init = function() {
+    var i,j,k,n,x,x0,x1,y0,y1,p;
+    var me = this;
+    this.n_max = 6;
+    this.scale = 80;
+    this.mode = 'random';
+
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div  = document.getElementById('msg_div');
+    this.partial_div = document.getElementById('partial');
+
+    this.random_button = document.getElementById('random');
+    this.count_button = document.getElementById('count');
+    this.random_button.onclick = function() { me.set_random_mode(); }
+    this.count_button.onclick = function() { me.set_count_mode(); }
+
+    this.random_msg = document.getElementById('random_msg');
+    this.count_msg = document.getElementById('count_msg');
+
+    this.bins = {};
+    this.bins_list = [];
+    this.tri = {};
+    this.tri_list = [];
+    this.msg = {};
+
+    this.n_line = {};
+    this.k_line = {};
+    this.m_line = {};
+
+    for (n = 1; n <= this.n_max + 1; n++) {
+     x0 = this.f(0,n,0,0);
+     x1 = this.f(0,0,n,0);
+     y0 = this.g(0,0,n,0);
+     p = 'M ' + x0 + ' ' + y0 + ' L ' + x1 + ' ' + y0;
+     this.n_line[n] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.n_line[n].setAttribute('stroke','#DDDDDD');
+     this.n_line[n].setAttribute('stroke-width',4);
+     this.n_line[n].setAttribute('d',p);
+     this.main_svg.appendChild(this.n_line[n]);
+    }
+
+    for (k = 0; k <= this.n_max + 1; k++) {
+     x0 = this.f(0,k,0,0);
+     y0 = this.g(0,k,0,0);
+     x1 = this.f(0,k,this.n_max+1-k,0);
+     y1 = this.g(0,k,this.n_max+1-k,0);
+     p = 'M ' + x0 + ' ' + y0 + ' L ' + x1 + ' ' + y1;
+     this.k_line[k] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.k_line[k].setAttribute('stroke','#DDDDDD');
+     this.k_line[k].setAttribute('stroke-width',4);
+     this.k_line[k].setAttribute('d',p);
+     this.main_svg.appendChild(this.k_line[k]);
+    }
+
+    for (m = 0; m <= this.n_max + 1; m++) {
+     x0 = this.f(0,0,m,0);
+     y0 = this.g(0,0,m,0);
+     x1 = this.f(0,this.n_max+1-m,m,0);
+     y1 = this.g(0,this.n_max+1-m,m,0);
+     p = 'M ' + x0 + ' ' + y0 + ' L ' + x1 + ' ' + y1;
+     this.m_line[m] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+     this.m_line[m].setAttribute('stroke','#DDDDDD');
+     this.m_line[m].setAttribute('stroke-width',4);
+     this.m_line[m].setAttribute('d',p);
+     this.main_svg.appendChild(this.m_line[m]);
+    }
+
+    for (n = 0; n <= this.n_max; n++) {
+     this.bins[n] = {};
+     for (k = 0; k <= n; k++) {
+      x = Object.create(bin);
+      this.bins[n][k] = x;
+      this.bins_list.push(x);
+      x.n = n;
+      x.k = k;
+      x.m = n - k;
+      x.val = k+1;
+      x.text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      x.text.setAttribute('x',this.f(0.7,k,n-k,0) + 'px');
+      x.text.setAttribute('y',this.g(0.7,k,n-k,0) + 'px');
+      x.text.setAttribute('text-anchor','middle');
+      x.text.setAttribute('font-size','24px');
+      x.text.setAttribute('visibility','hidden');
+      x.text.textContent = x.val;
+      this.main_svg.appendChild(x.text);
+
+      x.box = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      u0 = this.fg(0,k,n-k,0);
+      u1 = this.fg(0,k+1,n-k,0);
+      u2 = this.fg(0,k,n+1-k,0);
+      p = 'M ' + u2.x + ' ' + u2.y + ' L ' + u1.x + ' ' + u1.y + 
+       ' L ' + u1.x + ' ' + u0.y + ' L ' + u2.x + ' ' + u0.y + 
+       ' L ' + u2.x + ' ' + u2.y + ' Z';
+      x.box.setAttribute('d',p);
+      x.box.setAttribute('fill','#000000');
+      x.box.setAttribute('fill-opacity','0');
+     }
+    }
+
+    for (n = 1; n <= this.n_max + 1; n++) {
+     this.tri[n] = {};
+     this.msg[n] = {};
+     for (k = 1; k <= n; k++) {
+      this.tri[n][k] = {};
+      for (j = 0; j < k; j++) {
+       x = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+       this.tri[n][k][j] = x;
+       this.tri_list.push(x);
+       x.setAttribute('stroke','green');
+       x.setAttribute('stroke-width',4);
+       if (j == 0) {
+        x.setAttribute('fill','#00FF00');
+        x.setAttribute('fill-opacity',0.3);
+       } else {
+        x.setAttribute('fill','none')
+       }
+       z0 = this.fg(0,k,n-k,0);
+       z1 = this.fg(0,k-j-1,n-k+j+1,0);
+       z2 = this.fg(0,k-j-1,n-k,0);
+       p = 'M ' + z0.x + ' ' + z0.y + ' L ' + 
+        z1.x + ' ' + z1.y + ' ' + z2.x + ' ' + z2.y + ' ' +
+        z0.x + ' ' + z0.y;
+       x.setAttribute('d',p);
+       x.setAttribute('visibility','hidden');
+       this.main_svg.appendChild(x);
+      }
+
+      this.msg[n][k] = document.createElement('div');
+      this.msg[n][k].style.display = 'none';
+      if (k == 1) {
+       this.msg[n][k].innerHTML =
+        'There is only one nested triangle with the marked triangle at the bottom right';
+      } else {
+       this.msg[n][k].innerHTML =
+        'There are ' + k + ' nested triangles with the marked triangle at the bottom right';
+      }
+      this.partial_div.appendChild(this.msg[n][k]);
+     }
+    }
+
+    for (n = 0; n <= this.n_max; n++) {
+     for (k = 0; k <= n; k++) {
+      x = this.bins[n][k];
+      this.main_svg.appendChild(x.box);
+      this.set_handlers(x.box,n+1,k+1);
+     }
+    }
+
+    this.set_random_mode();
+   }
+
+   demo.set_handlers = function(e,n,k) {
+    var me = this;
+    e.onmouseover = function() { me.handle_mouseover(n,k); }
+    e.onmouseout  = function() { me.handle_mouseout(n,k);  }
+   }
+
+   demo.handle_mouseover = function(n,k) {
+    if (this.mode == 'count') {
+     this.msg[n][k].style.display = 'block';
+     for (j = 0; j < k; j++) {
+      this.tri[n][k][j].setAttribute('visibility','visible');
+     }
+    }
+   }
+
+   demo.handle_mouseout = function(n,k) {
+    if (this.mode == 'count') {
+     this.msg[n][k].style.display = 'none';
+     for (j = 0; j < k; j++) {
+      this.tri[n][k][j].setAttribute('visibility','hidden');
+     }
+    }
+   }
+
+   demo.set_random_mode = function() {
+    this.mode = 'random';
+    this.random_msg.style.display = 'block';
+    this.count_msg.style.display = 'none';
+    var n = this.tri_list.length;
+    var k = Math.floor(n * Math.random());
+    for (var i in this.tri_list) {
+     var x = this.tri_list[i];
+     x.setAttribute('visibility',i == k ? 'visible' : 'hidden');
+    }
+    for (i in this.bins_list) {
+     this.bins_list[i].text.setAttribute('visibility','hidden');
+    }
+   }
+
+   demo.set_count_mode = function() {
+    this.mode = 'count';
+    this.random_msg.style.display = 'none';
+    this.count_msg.style.display = 'block';
+    for (var i in this.tri_list) {
+     this.tri_list[i].setAttribute('visibility','hidden');
+    }
+    for (i in this.bins_list) {
+     this.bins_list[i].text.setAttribute('visibility','visible');
+    }
+   }
+
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <div class="text" style="left:20px;top:20px;">How many nested subtriangles?</div>
+   <div id="partial" class="text" style="left:800px;top:200px;"></div>
+   <svg id="main_svg" width="1200" height="650"></svg>
+   <div id="vals_div"></div>
+   <div id="controls_div">
+    <div class="control" id="random">Random</div>
+    <div class="control" id="count">Count</div>
+   </div>
+   <div id="msg_div">
+    <div id="random_msg">We want to find the number of upward-pointing subtriangles (of any size) nested inside the big triangle.
+    </div>
+    <div id="count_msg" style="display:none">
+     In each subtriangle $T$ of size one, we have written the number of subtriangles that have $T$ as the bottom right corner.  Thus, the total number of subtriangles is the sum of all the numbers.  We saw before that that sum is $\left(\begin{matrix}N+2\\3\end{matrix}\right)$, where $N$ is the number of rows.
+    </div>
+   </div>
+  </div>
+ </body>
+</html>

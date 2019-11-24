@@ -1,0 +1,421 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+  </style>
+  <script type="text/javascript">
+   var demo = {};
+   
+   demo.init = function() {
+    var i,j,k,l,A,B,x,y,b,t;
+    var me = this;
+
+    this.n = 26;
+    
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div = document.getElementById('msg_div');
+    this.unscramble_button = document.getElementById('unscramble');
+    
+    this.x0 = 50;
+    this.y0 = 50;
+    this.w = 25;
+    this.h = 25;
+
+    this.matrix0 = [
+     ["t","c","v","i","y","m","j","u","x","w","a","p","b","k","e","f","l","g","n","q","h","o","z","d","s","r"],
+     ["q","z","p","t","a","w","s","f","h","l","o","y","k","j","i","e","v","b","m","x","c","u","n","r","g","d"],
+     ["a","q","d","b","t","f","g","s","y","x","h","r","l","p","w","n","u","o","e","j","v","m","k","c","i","z"],
+     ["n","y","s","p","z","t","f","l","m","r","j","v","w","e","x","o","h","u","k","b","d","c","g","i","a","q"],
+     ["g","a","u","k","d","i","o","b","q","t","z","n","m","y","v","w","s","l","r","e","j","x","h","f","p","c"],
+     ["i","o","h","j","c","r","w","a","n","k","s","m","y","z","t","d","x","f","u","g","b","v","e","l","q","p"],
+     ["z","p","l","s","j","b","h","q","u","n","g","i","c","f","a","m","o","d","x","v","y","e","r","w","k","t"],
+     ["c","f","b","r","m","h","t","i","k","y","l","d","o","s","q","u","g","n","z","w","p","a","j","v","e","x"],
+     ["p","u","y","g","v","e","d","z","f","c","x","q","i","t","r","b","a","h","w","k","s","j","m","o","l","n"],
+     ["h","t","k","f","l","q","v","j","r","s","e","o","x","i","z","g","d","m","a","c","w","p","b","n","u","y"],
+     ["v","k","c","h","u","l","y","d","i","z","n","x","t","o","g","r","f","j","q","m","a","w","s","p","b","e"],
+     ["m","n","o","z","s","j","a","w","b","f","k","u","d","l","c","h","r","p","i","y","e","q","t","x","v","g"],
+     ["w","h","r","l","o","z","c","e","g","d","b","a","p","m","u","x","k","s","f","n","q","t","v","j","y","i"],
+     ["x","s","i","q","r","n","k","m","o","h","u","e","j","c","f","p","t","y","d","l","g","b","w","a","z","v"],
+     ["d","e","w","o","b","x","i","k","a","g","r","t","q","h","y","v","n","z","l","p","m","f","u","s","c","j"],
+     ["l","m","f","y","e","d","r","o","w","p","c","k","g","v","n","s","j","i","b","t","u","z","x","q","h","a"],
+     ["s","w","z","u","x","p","m","h","l","v","q","c","n","g","j","i","b","e","o","a","t","y","d","k","r","f"],
+     ["o","r","a","m","g","v","l","x","t","e","f","j","h","b","d","k","i","q","c","z","n","s","p","y","w","u"],
+     ["b","l","n","c","p","s","u","g","j","q","d","z","e","r","k","a","m","x","v","i","f","h","y","t","o","w"],
+     ["e","j","q","a","h","k","n","v","z","o","i","s","f","x","m","c","p","w","y","u","r","d","l","g","t","b"],
+     ["f","x","m","e","w","a","z","t","v","j","y","b","r","d","p","l","q","c","g","h","o","k","i","u","n","s"],
+     ["u","v","j","d","k","o","b","n","s","i","w","f","z","a","h","y","c","t","p","r","x","g","q","e","m","l"],
+     ["y","d","t","w","i","g","x","c","p","a","v","h","u","n","b","q","e","r","s","o","z","l","f","m","j","k"],
+     ["r","g","e","v","n","u","p","y","d","m","t","w","a","q","s","j","z","k","h","f","l","i","c","b","x","o"],
+     ["j","i","g","x","q","y","e","r","c","b","p","l","s","u","o","z","w","v","t","d","k","n","a","h","f","m"],
+     ["k","b","x","n","f","c","q","p","e","u","m","g","v","w","l","t","y","a","j","s","i","r","o","z","d","h"]
+    ];
+
+    this.cells = {};
+    this.cells_by_value = {};
+    for (i = 0; i < this.n; i++) {
+     this.cells_by_value[i] = [];
+    }
+    this.row_button = {};
+    this.col_button = {};
+
+    this.sorted_x = this.x0 + (this.n + 1.5) * this.w;
+    this.sorted_y = this.y0 + (this.n + 1.5) * this.h;
+    
+    for (i = 0; i < this.n; i++) {
+     this.col_button[i] = comb.svg.disc(this.x0 + (i + 0.5) * this.w,
+				        this.y0 - 0.5 * this.h,
+				        0.3 * this.h, '#FF0000');
+     this.row_button[i] = comb.svg.disc(this.x0 - 0.5 * this.w,
+				        this.y0 + (i + 0.5) * this.h,
+				        0.3 * this.h, '#FF0000');
+     this.main_svg.appendChild(this.row_button[i]);
+     this.main_svg.appendChild(this.col_button[i]);
+
+     this.cells[i] = {};
+     for (j = 0; j < this.n; j++) {
+      c = {};
+      this.cells[i][j] = c;
+      c.i = i;
+      c.j = j;
+      c.t = this.matrix0[i][j];
+      c.k = c.t.charCodeAt(0) - 97;
+      this.cells_by_value[c.k].push(c);
+      c.x0 = this.x0 + this.w * j;
+      c.y0 = this.y0 + this.h * i;
+      c.x1 = c.x0 + this.w * 0.5;
+      c.y1 = c.y0 + this.h * 0.5;
+      c.x2 = this.x0 + this.w * (0.5 + c.k);
+      c.y2 = this.y0 + this.h * (0.5 + c.k);
+
+      c.unscramble_col_path = [];
+      c.rescramble_col_path = [];
+      c.unscramble_row_path = [];
+      c.rescramble_row_path = [];
+      for (k = 0; k <= 20; k++) {
+       t = k/20;
+       x = (1 - t) * c.x1 + t * this.sorted_x + (c.y1 - c.y2) * 0.5 * Math.sin(Math.PI * t);
+       y = (c.y1 + c.y2) * 0.5 + (c.y1 - c.y2) * 0.5 * Math.cos(Math.PI * t);
+       
+       c.unscramble_col_path.push({x : x - c.x1, y : y - c.y1});
+       c.rescramble_col_path.push({x : x - c.x1, y : y - c.y1});
+
+       x = (c.x1 + c.x2) * 0.5 + (c.x1 - c.x2) * 0.5 * Math.cos(Math.PI * t);
+       y = (1 - t) * c.y1 + t * this.sorted_y + (c.x1 - c.x2) * 0.5 * Math.sin(Math.PI * t);
+       
+       c.unscramble_row_path.push({x : x - c.x1, y : y - c.y1});
+       c.rescramble_row_path.push({x : x - c.x1, y : y - c.y1});
+      }
+
+      c.rescramble_col_path.reverse();
+      c.rescramble_row_path.reverse();
+      
+      c.rect = comb.svg.rect(c.x0,c.y0,this.w,this.h,'#00BB00',3);
+      c.rect.setAttribute('rx',4);
+      c.rect.setAttribute('ry',4);
+      c.rect.setAttribute('visibility','hidden');
+      c.rect.setAttribute('pointer-events','none');
+      c.text = comb.svg.text(c.t,c.x1,c.y1);
+      c.text.setAttribute('pointer-events','none');
+      c.pane = comb.svg.rect(c.x0,c.y0,this.w,this.h,'#FFFFFF',3);
+      c.pane.setAttribute('opacity',0);
+      c.pane.setAttribute('pointer-events','all');
+      this.main_svg.appendChild(c.rect);
+      this.main_svg.appendChild(c.text);
+      this.main_svg.appendChild(c.pane);
+      this.set_cell_handler(i,j);
+     }
+    }
+
+    this.selected_row = null;
+    this.selected_col = null;
+    this.selected_k   = null;
+    this.unscrambled = false;
+    
+    for (i = 0; i < this.n; i++) {
+     this.set_line_handlers(i);
+    }
+
+    this.unscramble_button.onclick = function() {
+     if (me.unscrambled) {
+      if (me.selected_col != null) {
+       me.rescramble_col();
+      } else if (me.selected_row != null) {
+       me.rescramble_row();
+      }
+     } else {
+      if (me.selected_col != null) {
+       me.unscramble_col();
+      } else if (me.selected_row != null) {
+       me.unscramble_row();
+      }
+     }
+    }
+   }
+   
+   demo.set_cell_handler = function(i,j) {
+    var me = this;
+    var c = this.cells[i][j];
+    c.pane.onclick     = function() { me.show_value(c); }
+    c.pane.onmouseover = function() { me.focus_cell(i,j); }
+    c.pane.onmouseout  = function() { me.unfocus(); }
+   };
+
+   demo.set_line_handlers = function(i) {
+    var me = this;
+
+    this.row_button[i].onclick = function() { me.focus_row(i); }
+    this.col_button[i].onclick = function() { me.focus_col(i); }
+   }
+
+   demo.focus_cell = function(i0,j0) {
+    var i,j,c,col;
+
+    if (this.selected_row != null || this.selected_col != null || this.unscrambled) {
+     return;
+    }
+    
+    for (i = 0; i < this.n; i++) {
+     for (j = 0; j < this.n; j++) {
+      c = this.cells[i][j];
+      if (i == i0) {
+       if (j == j0) {
+	col = '#000000';
+       } else {
+	col = '#FF0000';
+       }
+      } else {
+       if (j == j0) {
+	col = '#0000FF';
+       } else {
+	col = '#CCCCCC';
+       }
+      }
+      
+      c.text.setAttribute('fill',col);
+     }
+    }    
+   }
+
+   demo.unfocus = function() {
+    var i,j,c;
+    
+    if (this.selected_row != null || this.selected_col != null || this.unscrambled) {
+     return;
+    }
+
+    for (i = 0; i < this.n; i++) {
+     this.row_button[i].setAttribute('opacity',1);
+     this.col_button[i].setAttribute('opacity',1);
+    }
+
+    for (i = 0; i < this.n; i++) {
+     for (j = 0; j < this.n; j++) {
+      c = this.cells[i][j];
+      c.text.setAttribute('fill','#000000');
+      c.text.setAttribute('visibility','visible');
+     }
+    }
+   }
+   
+   demo.show_value = function(c0) {
+    var i,j,c;
+
+    if (this.selected_row != null || this.selected_col != null || this.unscrambled) {
+     return;
+    }
+
+    if (c0.k == this.selected_k) {
+     this.selected_k = null;
+    } else {
+     this.selected_k = c0.k;
+    }
+    
+    for (i = 0; i < this.n; i++) {
+     for (j = 0; j < this.n; j++) {
+      c = this.cells[i][j];
+      c.rect.setAttribute('visibility', c.k == this.selected_k ? 'visible' : 'hidden');
+     }
+    }
+
+    this.msg_div.innerHTML =
+     'All the ' + c0.t + "'s are shown.  There is precisely one " + c0.t +
+     " in every row, and there is precisely one " + c0.t + " in every column. ";
+   }
+
+   demo.show_default = function() {
+    var i,j,c;
+    
+    if (this.selected_row != null || this.selected_col != null || this.unscrambled) {
+     return;
+    }
+
+    for (i = 0; i < this.n; i++) {
+     for (j = 0; j < this.n; j++) {
+      c = this.cells[i][j];
+      c.rect.setAttribute('visibility','hidden');
+     }
+    }
+
+    this.msg_div.innerHTML = '';
+   }
+
+   demo.focus_row = function(i0) {
+    var i,j,c;
+
+    if (this.unscrambled) { return; }
+
+    if (this.selected_row == i0) {
+     this.selected_row = null;
+     this.selected_col = null;
+     this.unfocus();
+     this.unscramble_button.style.visibility = 'hidden';
+     return;
+    }
+    
+    this.selected_row = i0;
+    this.selected_col = null;
+    this.selected_k   = null;
+    this.unscramble_button.style.visibility = 'visible';
+
+    this.show_default();
+    
+    for (i = 0; i < this.n; i++) {
+     this.row_button[i].setAttribute('opacity',i == i0 ? 1 : 0.2);
+     this.col_button[i].setAttribute('opacity',0.2);
+    }
+    
+    for (i = 0; i < this.n; i++) {
+     for (j = 0; j < this.n; j++) {
+      c = this.cells[i][j];
+      c.rect.setAttribute('visibility','hidden');
+      c.text.setAttribute('visibility',i == i0 ? 'visible' : 'hidden');
+     }
+    }
+
+    this.msg_div.innerHTML =
+     'This row contains precisely one of each letter, as you can see by unscrambling it.';
+   }
+   
+   demo.focus_col = function(j0) {
+    var i,j,c;
+
+    if (this.unscrambled) { return; }
+
+    if (this.selected_col == j0) {
+     this.selected_row = null;
+     this.selected_col = null;
+     this.unscramble_button.style.visibility = 'hidden';
+     this.unfocus();
+     return;
+    }
+    
+    this.selected_row = null;
+    this.selected_col = j0;
+    this.selected_k   = null;
+    this.unscramble_button.style.visibility = 'visible';
+
+    this.show_default();
+    
+    for (i = 0; i < this.n; i++) {
+     this.row_button[i].setAttribute('opacity',0.2);
+     this.col_button[i].setAttribute('opacity',i == j0 ? 1 : 0.2);
+    }
+    
+    for (i = 0; i < this.n; i++) {
+     for (j = 0; j < this.n; j++) {
+      c = this.cells[i][j];
+      c.rect.setAttribute('visibility','hidden');
+      c.text.setAttribute('visibility',j == j0 ? 'visible' : 'hidden');
+     }
+    }
+
+    this.msg_div.innerHTML =
+     'This column contains precisely one of each letter, as you can see by unscrambling it.';
+   }
+   
+   demo.unscramble_col = function() {
+    var i,c;
+    
+    this.unscrambled = true;
+    this.unscramble_button.innerHTML = 'Scramble';
+    for (i = 0; i < this.n; i++) {
+     c = this.cells[i][this.selected_col];
+     TweenMax.to(c.text,3,{bezier : c.unscramble_col_path});
+    }
+
+    this.msg_div.innerHTML =
+     'You need to rescramble the column before you can do anything else.';
+   }
+
+   demo.rescramble_col = function() {
+    var i,c;
+    
+    this.unscrambled = false;
+    this.unscramble_button.innerHTML = 'Unscramble';
+    for (i = 0; i < this.n; i++) {
+     c = this.cells[i][this.selected_col];
+     TweenMax.to(c.text,3,{bezier : c.rescramble_col_path});
+    }
+    this.msg_div.innerHTML = '';
+   }
+
+   demo.unscramble_row = function() {
+    var i,c;
+    
+    this.unscrambled = true;
+    this.unscramble_button.innerHTML = 'Scramble';
+    for (i = 0; i < this.n; i++) {
+     c = this.cells[this.selected_row][i];
+     TweenMax.to(c.text,3,{bezier : c.unscramble_row_path});
+    }
+
+    this.msg_div.innerHTML =
+     'You need to rescramble the row before you can do anything else.';
+
+   }
+
+   demo.rescramble_row = function() {
+    var i,c;
+    
+    this.unscrambled = false;
+    this.unscramble_button.innerHTML = 'Unscramble';
+    for (i = 0; i < this.n; i++) {
+     c = this.cells[this.selected_row][i];
+     TweenMax.to(c.text,3,{bezier : c.rescramble_row_path});
+    }
+
+    this.msg_div.innerHTML = '';
+   }
+
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame" style="position:absolute">
+   <svg id="main_svg" width="900" height="750" style="position:absolute; left:0px; top:0px;"></svg>
+   <div id="msg_div" style="position:absolute; left:900px; top:50px; width: 350px; font-size:24px;">
+   </div>
+   <div id="controls_div" style="position:absolute; left:950px; top:700px;">
+    <table>
+     <tr>
+      <td class="control" id="unscramble" style="visibility:hidden">Unscramble</td>
+     </tr>
+    </table>
+   </div>
+  </div>
+ </body>
+</html>

@@ -1,0 +1,381 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    left: 1220px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 120px;
+    left: 680px;
+    width : 600px;
+    font-size: 20px;
+   }
+   
+   div.cols_div {
+    position : absolute;
+    padding: 2px;
+   }
+   
+   div.rows_div {
+    position : absolute;
+    padding: 2px;
+   }
+   
+   div.selected_cols_div {
+    position : absolute;
+    padding: 2px;
+    background: cyan;
+   }
+   
+   div.selected_rows_div {
+    position : absolute;
+    padding: 2px;
+    background: cyan;
+   }
+   
+   div.cols_div:hover {
+    cursor: pointer;
+   }
+
+   div.rows_div:hover {
+    cursor: pointer;
+   }
+
+   div.selected_cols_div:hover {
+    cursor: pointer;
+   }
+
+   div.selected_rows_div:hover {
+    cursor: pointer;
+   }
+
+   ul.algo li {
+    padding-bottom: 10px;
+   }
+  </style>
+  <script type="text/javascript">
+   var demo = {};
+   
+   demo.init = function() {
+    var i,j,k,l,A,B,x,y,b,t;
+    var me = this;
+
+    this.frame = document.getElementById('frame');
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div = document.getElementById('msg_div');
+    this.perms_table = document.getElementById('perms_table');
+    
+    this.board = matching_problem.full_board(5);
+    R = this.board;
+    R.grid_x0 = 150;
+    R.grid_y0 = 100;
+    R.grid_w = 80;
+    R.grid_h = 80;
+    R.make_grid();
+    this.main_svg.appendChild(R.grid.svg);
+    
+    this.subsets = [
+     '1','2','3','4','5',
+     '12','13','14','15','23','24','25','34','35','45',
+     '123','124','125','134','135','145','234','235','245','345',
+     '1234','1235','1245','1345','2345','12345'
+    ];
+    
+    this.rows_div = {};
+    this.cols_div = {};
+    
+    for (i = 1; i <= 5; i++) {
+     this.add_cols_div(i,160 + 30 * i,40);
+    }
+    
+    k = 0;
+    for (i1 = 1; i1 <= 5; i1++) {
+     for (i2 = i1+1; i2 <= 5; i2++) {
+      this.add_cols_div('' + i1 + i2,370 + 40*k,40);
+      k++;
+     }
+    }
+    
+    k = 0;
+    for (i1 = 1; i1 <= 5; i1++) {
+     for (i2 = i1+1; i2 <= 5; i2++) {
+      for (i3 = i2+1; i3 <= 5; i3++) {
+       this.add_cols_div('' + i1 + i2 + i3,210 + 50*k,70);
+       k++;
+      }
+     }
+    }
+    
+    k = 0;
+    for (i1 = 1; i1 <= 5; i1++) {
+     for (i2 = i1+1; i2 <= 5; i2++) {
+      for (i3 = i2+1; i3 <= 5; i3++) {
+       for (i4 = i3+1; i4 <= 5; i4++) {
+        this.add_cols_div('' + i1 + i2 + i3 + i4,250 + 60*k,100);
+        k++; 
+       }
+      }
+     }
+    }
+    
+    this.add_cols_div('12345',560,100);
+    
+    for (i = 1; i <= 5; i++) {
+     this.add_rows_div(i,40,120 +  30 * i);
+    }
+    
+    k = 0;
+    for (i1 = 1; i1 <= 5; i1++) {
+     for (i2 = i1+1; i2 <= 5; i2++) {
+      this.add_rows_div('' + i1 + i2,37,330 + 30 * k);
+      k++;
+     }
+    }
+
+    k = 0;
+    for (i1 = 1; i1 <= 5; i1++) {
+     for (i2 = i1+1; i2 <= 5; i2++) {
+      for (i3 = i2+1; i3 <= 5; i3++) {
+       this.add_rows_div('' + i1 + i2 + i3,94,150 + 30 * k);
+       k++;
+      }
+     }
+    }
+
+    k = 0;
+    for (i1 = 1; i1 <= 5; i1++) {
+     for (i2 = i1+1; i2 <= 5; i2++) {
+      for (i3 = i2+1; i3 <= 5; i3++) {
+       for (i4 = i3+1; i4 <= 5; i4++) {
+        this.add_rows_div('' + i1 + i2 + i3 + i4,90,480 + 30 * k);
+        k++; 
+       }
+      }
+     }
+    }
+    
+    this.add_rows_div('12345',60,640);
+    
+    this.selected_row_set = '12345';
+    this.selected_col_set = '12345';
+    
+    for (i in this.subsets) {
+     s = this.subsets[i];
+     this.set_set_handler(s,this.cols_div[s],'col');
+     this.set_set_handler(s,this.rows_div[s],'row');
+    }
+    
+    this.row_is_selected = {1 : 1, 2 : 2, 3 : 1, 4 : 1, 5 : 1};
+    this.col_is_selected = {1 : 1, 2 : 2, 3 : 1, 4 : 1, 5 : 1};
+
+    this.board.set_blocks();
+    this.show_board();
+    this.paint();
+   }
+   
+   demo.add_cols_div = function(col_set,x,y) {
+    var d = document.createElement('div');
+    this.cols_div[col_set] = d;
+    d.className = 'cols_div';
+    d.style.left = x;
+    d.style.top = y;
+    d.innerHTML = col_set;
+    this.frame.appendChild(d);
+   }
+   
+   demo.add_rows_div = function(row_set,x,y) {
+    var d = document.createElement('div');
+    this.rows_div[row_set] = d;
+    d.className = 'rows_div';
+    d.style.left = x;
+    d.style.top = y;
+    d.innerHTML = row_set;
+    this.frame.appendChild(d);
+   }
+   
+   demo.show_board = function() {
+    var m,i,a,b;
+    this.board.clear();
+    this.board.paint_grid();
+    
+    for (i in this.board.left_set) {
+     a = this.board.left_set[i];
+     for (j in this.board.right_set) {
+      b = this.board.right_set[j];
+      
+      if (this.board.relation_table[a][b]) {
+       this.set_square_handler(this.board.grid.square[a][b],a,b);
+       this.set_square_handler(this.board.grid.rook_icon[a][b],a,b);
+      }
+     }
+    }
+   }
+   
+   demo.set_set_handler = function(s,d,t) {
+    var me = this;
+    d.onclick = function() { me.handle_set_click(s,d,t); }
+   }
+   
+   demo.set_set = function(s,t,u) {
+    var o,i;
+    
+    o = (t == 'col') ? 'row' : 'col';
+
+    this['selected_' + t + '_set'] = s;
+     
+    for (i in this.subsets) { 
+     this[t + 's_div'][this.subsets[i]].className = 
+      this.subsets[i] == s ? 'selected_' + t + 's_div'  : t + 's_div';
+    }
+     
+    for (i = 1; i <= 5; i++ ) {
+     this[t + '_is_selected'][i] = 0;     
+    }
+    
+    ss = s.split('');
+    for (i in ss) {
+     this[t + '_is_selected'][ss[i]] = 1;
+    }
+    
+    if (u) {
+     n_t = this['selected_' + t + '_set'].length;
+     n_o = this['selected_' + o + '_set'].length;
+    
+     if (n_o != n_t) {
+      r = '';
+      for (i = 1; i <= n_t; i++) {
+       r += i;
+      }
+      
+      this.set_set(r,o,0);
+     }
+    }
+   }
+   
+   demo.handle_set_click = function(s,d,t) {
+    this.board.clear();
+    this.set_set(s,t,1);
+    this.board.set_blocks();
+    this.paint();
+   }
+   
+   demo.set_square_handler = function(x,a,b) {
+    var me = this;
+    x.onclick = function() { me.handle_square_click(a,b); };
+   }
+   
+   demo.handle_square_click = function(a,b) {
+    var i,s,p;
+    
+    if (this.row_is_selected[a] && this.col_is_selected[b]) { 
+     this.board.toggle_rook(a,b);
+     this.paint();
+    }
+   }
+   
+   demo.paint = function() {
+    var i,j,s,p;
+    
+    this.board.paint_grid();
+    
+    for (i = 1; i <= 5; i++) {
+     f = this.row_is_selected[i] ? '#000000' : '#DDDDDD';
+     this.board.grid.row_label[i].setAttribute('fill',f);
+    }
+    
+    for (i = 1; i <= 5; i++) {
+     f = this.col_is_selected[i] ? '#000000' : '#DDDDDD';
+     this.board.grid.col_label[i].setAttribute('fill',f);
+    }
+    
+    for (i = 1; i <= 5; i++) {
+     for (j = 1; j <= 5; j++) {
+      s = this.board.grid.square[i][j];
+      
+      if (this.row_is_selected[i] && this.col_is_selected[j]) {
+       s.setAttribute('fill','cyan');
+      } else {
+       s.setAttribute('fill','white');
+      }
+     }
+    }
+    
+    k = this.selected_col_set.length;
+    
+    cs = this.selected_col_set.split('').join(',');
+    rs = this.selected_row_set.split('').join(',');
+    if (this.board.num_rooks == 0) {
+     rook_msg = 'We have not started this yet.';
+    } else if (this.board.num_rooks < k) {
+     rook_msg = 'We have not finished this yet.';
+    } else {
+     rook_msg = 'There are $k!$ ways to do this.';
+    }
+    
+    this.msg_div.innerHTML =
+     'To specify a partial matching for a full $n\\times n$ board, ' + 
+     'we need to ' + 
+     '<ul class="algo">' +
+     '<li>Choose the number $k\\in\\{1,\\dotsc,n\\}$ of rooks <br/>' + 
+          '(which is ' + k + ' in this case)<br/></li>' +
+     '<li>Choose a set of ' + k + ' columns <br/>' +
+          '(which is $\\{' + cs + '\\}$ in this case)<br/></li>' +
+     '<li>Choose a set of ' + k + ' rows <br/>' +
+          '(which is $\\{' + rs + '\\}$ in this case)<br/></li>' +
+     '<li>Choose how to place $k$ rooks on the resulting $k\\times k$  board.<br/>' +
+     rook_msg + 
+     '</li>' +
+     '</ul><br/>' + 
+     'There are $n\\choose k$ choices for the row set and ' + 
+     '$n \\choose k$ choices for the column set, and then $k!$ ' + 
+     'ways to place the rooks in the chosen rows and columns. <br/>' +
+     'So the total number of ways of placing $k$ rooks is ' + 
+     '${n\\choose k}^2 k!$.<br/><br/>' + 
+     'Thus, the rook polynomial for the full board is' + 
+     '$$ \\sum_{k=0}^n {n\\choose k}^2 k! x^k$$.'
+     ;
+    
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.msg_div]);
+   }
+    
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="700">
+   </svg>
+   <div id="perms">
+    <table id="perms_table" class="edged">
+    </table>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

@@ -1,0 +1,413 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <style type="text/css">
+
+   div#msg_div {
+    text-align:center;
+    font-size: 24px;
+    margin: 40px;
+    position:absolute;
+    left: 50px;
+    top:640px;
+   }
+
+   div#solutions_div {
+    position: absolute;
+    left: 640;
+    top: 540;
+    width : 600;
+   }
+   
+   div.solution_key {
+    display: inline-block;
+    padding: 5px;
+    margin: 4px;
+    font-size: 24px;
+   }
+   
+   div.solution_key:hover {
+    cursor:pointer; 
+   }
+   
+   div.solution_key_selected {
+    display: inline-block;
+    padding: 5px;
+    margin: 4px;
+    font-size: 24px;
+    background: orange;
+   }
+   
+   div.solution_key_selected:hover {
+    cursor:pointer; 
+   }
+   
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  <script type="text/javascript">
+
+   var demo = {};
+
+   demo.man = {};
+   demo.woman = {};
+   
+   demo.init = function() {
+    var w,x,y,s;
+    this.main_svg = document.getElementById('main_svg');
+    this.solutions_div = document.getElementById('solutions_div');
+    this.msg_div = document.getElementById('msg_div');
+    
+    this.men = [];
+    this.men_by_code = {};
+    this.add_man('Alan');
+    this.add_man('Bob');
+    this.add_man('Carl');
+    this.add_man('Doug');
+    this.add_man('Evan');
+    
+    this.women = [];
+    this.women_by_code = {};
+    this.add_woman('Ann');
+    this.add_woman('Bea');
+    this.add_woman('Cath');
+    this.add_woman('Di');
+    this.add_woman('Ella');
+    
+    this.board = matching_problem.from_eqs({
+     A : [2,3,4],
+     B : [3,4,5],
+     C : [1,4,5],
+     D : [1,2,5],
+     E : [1,2,3]
+    });
+    
+    this.board.grid_x0 = 640;
+    this.board.grid_y0 = 10;
+    this.board.grid_w = 80;
+    this.board.grid_h = 80;
+    this.board.make_grid();
+    this.main_svg.appendChild(this.board.grid.svg);
+
+    T = {};
+    this.table = T;
+    T.cx = 300;
+    T.cy = 300;
+    T.r0 = 200;
+    T.r1 = 230;
+    T.r2 = 250;
+    
+    T.svg = comb.svg.disc(T.cx,T.cy,T.r1,'green');
+    this.main_svg.appendChild(T.svg);
+    
+    for (i = 0; i < 5; i++) {
+     w = this.women[i];
+     x = T.cx + T.r2 * Math.sin(Math.PI * 0.4 * i) - 25;
+     y = T.cy - T.r2 * Math.cos(Math.PI * 0.4 * i) - 25;
+     p = comb.svg.node('image');
+     p.setAttribute('href','../images/woman_' + w.code + '.png');
+     p.setAttribute('x',x);
+     p.setAttribute('y',y);
+     p.setAttribute('width',50);
+     p.setAttribute('height',50);
+     w.image = p;
+     this.main_svg.appendChild(p); 
+     
+     this.set_couple_handler(p,w.code);
+     
+     p = comb.svg.node('rect');
+     p.setAttribute('stroke','blue');
+     p.setAttribute('stroke-width',3);
+     p.setAttribute('fill','none');
+     p.setAttribute('x',x+1);
+     p.setAttribute('y',y-3);
+     p.setAttribute('width',48);
+     p.setAttribute('height',56);
+     p.setAttribute('rx',3);
+     p.setAttribute('ry',3);
+     p.setAttribute('visibility','hidden');
+     w.image_frame = p;
+     this.main_svg.appendChild(p); 
+     
+     x = T.cx + T.r0 * Math.sin(Math.PI * 0.4 * i);
+     y = T.cy - T.r0 * Math.cos(Math.PI * 0.4 * i);
+     p = comb.svg.node('circle');
+     p.setAttribute('cx',x);
+     p.setAttribute('cy',y);
+     p.setAttribute('r','15');
+     p.setAttribute('fill','white');
+     p.setAttribute('stroke','none');
+     w.disc = p;
+     this.main_svg.appendChild(p);
+     
+     w.label = comb.svg.text(w.code,x,y);
+     this.main_svg.appendChild(w.label);
+    }
+    
+    for (i = 0; i < 5; i++) {
+     m = this.men[i];
+     x = this.board.grid_x0 + 490;
+     y = this.board.grid_y0 + 97 + 80 * i;
+     p = comb.svg.node('image');
+     p.setAttribute('href','../images/man_' + m.code + '.png');
+     p.setAttribute('x',x);
+     p.setAttribute('y',y);
+     p.setAttribute('width','50');
+     p.setAttribute('height','50');
+     m.image = p;
+     this.main_svg.appendChild(p); 
+
+     this.set_couple_handler(p,m.code);
+
+     p = comb.svg.node('rect');
+     p.setAttribute('stroke','blue');
+     p.setAttribute('stroke-width',3);
+     p.setAttribute('fill','none');
+     p.setAttribute('x',x+1);
+     p.setAttribute('y',y-3);
+     p.setAttribute('width',48);
+     p.setAttribute('height',56);
+     p.setAttribute('rx',3);
+     p.setAttribute('ry',3);
+     p.setAttribute('visibility','hidden');
+     m.image_frame = p;
+     this.main_svg.appendChild(p);
+    }
+    
+    this.man_slots = {};
+    for (i = 1; i <= 5; i++) {
+     s = {};
+     this.man_slots[i] = s;
+     x = T.cx + T.r0 * Math.sin(Math.PI * 0.4 * (i - 0.5));
+     y = T.cy - T.r0 * Math.cos(Math.PI * 0.4 * (i - 0.5));
+     p = comb.svg.frect(x - 15,y - 15,30,30,'#CCCCCC');
+     p.setAttribute('rx',5);
+     p.setAttribute('ry',5);
+     s.box = p;
+     this.main_svg.appendChild(p);
+     
+     s.label = comb.svg.text(i,x,y);
+     this.main_svg.appendChild(s.label);
+     
+     x = T.cx + T.r2 * Math.sin(Math.PI * 0.4 * (i - 0.5)) - 25;
+     y = T.cy - T.r2 * Math.cos(Math.PI * 0.4 * (i - 0.5)) - 25;
+     p = comb.svg.node('image');
+     p.setAttribute('visibility','hidden');
+     p.setAttribute('x',x);
+     p.setAttribute('y',y);
+     p.setAttribute('width','50');
+     p.setAttribute('height','50');
+     s.image = p;
+     this.main_svg.appendChild(p); 
+     
+     s.occupant = null;
+    }
+    
+    for (i in this.board.left_set) {
+     a = this.board.left_set[i];
+     for (j in this.board.right_set) {
+      b = this.board.right_set[j];
+      
+      if (this.board.relation_table[a][b]) {
+       this.set_square_handler(this.board.grid.square[a][b],a,b);
+       this.set_square_handler(this.board.grid.rook_icon[a][b],a,b);
+      }
+     }
+    }
+    
+    sols0 = [
+     '23451','24153','24513','25413','34152','34512','34521',
+     '35412','35421','43152','43512','43521','45123'
+    ];
+    
+    this.board.solutions = [];
+    this.board.solutions_by_key = {};
+    
+    for (i in sols0) {
+     u0 = sols0[i];
+     n0 = u0.length;
+     u1 = u0.split('');
+     u = {size : n0};
+     u.key = 'A' + u1[0] + 'B' + u1[1] + 'C' + u1[2] + 'D' + u1[3] + 'E' + u1[4];
+     u.slots = [['A',u1[0]],
+                ['B',u1[1]],
+                ['C',u1[2]],
+                ['D',u1[3]],
+                ['E',u1[4]]
+               ];
+     
+     u.div = document.createElement('div');
+     u.div.className = 'solution_key';
+     u.div.innerHTML = u0;
+     this.solutions_div.appendChild(u.div);
+     
+     this.board.solutions.push(u);
+     this.board.solutions_by_key[u.key] = u;
+     this.set_solution_handler(u);
+    }
+    
+    this.selected_couple = null;
+   }
+
+   demo.add_man = function(name) {
+    x = Object.create(this.man);
+    x.index = this.men.length;
+    x.name = name;
+    x.code = name.substr(0,1);
+    this.men.push(x);
+    this.men_by_code[x.code] = x;
+   }
+
+   demo.add_woman = function(name) {
+    x = Object.create(this.woman);
+    x.index = this.women.length;
+    x.name = name;
+    x.code = name.substr(0,1);
+    this.women.push(x);
+    this.women_by_code[x.code] = x;
+   }
+
+   demo.set_square_handler = function(x,a,b) {
+    var me = this;
+    x.onclick = function() { me.handle_square_click(a,b); };
+   }
+   
+   demo.handle_square_click = function(a,b) {
+    this.clear_selected_couple();
+    this.board.toggle_rook(a,b);
+    this.board.paint_grid();
+    this.board.paint_solutions();
+    this.paint_seats();
+   }
+   
+   demo.paint_seats = function() {
+    for (i in this.board.right_set) {
+     b = this.board.right_set[i];
+     s = this.man_slots[b];
+     s.occupant = null;
+     
+     for (j in this.board.left_set) {
+      a = this.board.left_set[j];
+      
+      if (this.board.is_filled[a][b]) {
+       s.occupant = a;
+       s.image.setAttribute('href','../images/man_' + a + '.png');
+       s.image.setAttribute('visibility','visible');
+       s.label.textContent = a;
+      }
+     }
+     
+     if (! s.occupant) {
+      s.image.setAttribute('visibility','hidden');
+      s.label.textContent = b;
+     }
+    }    
+   }
+   
+   demo.set_solution_handler = function(u) {
+    var me = this;
+    
+    u.div.onclick = function() { me.handle_solution_click(u); };
+   }
+
+   demo.handle_solution_click = function(u) {
+    this.clear_selected_couple();
+    
+    if (this.board.solution_key == u.key) {
+     this.board.set_rooks([]);
+     this.board.solution_key = null;
+     this.board.solution = null;
+    } else {
+     this.board.set_rooks(u.slots);
+     this.board.solution_key = u.key;
+     this.board.solution = u;
+    }
+    this.board.paint_grid();
+    this.board.paint_solutions();
+    this.paint_seats();
+   }
+   
+   demo.set_couple_handler = function(x,code) {
+    var me = this;
+    
+    x.onclick = function() { me.handle_couple_click(code); }
+   }
+   
+   demo.handle_couple_click = function(code) {
+    if (this.selected_couple == code) {
+     this.clear_selected_couple();
+    } else {
+     this.selected_couple = code;
+     this.paint_couple();
+    }
+   }
+   
+   demo.clear_selected_couple = function() {
+    this.selected_couple = null;
+    this.paint_couple();
+   }
+   
+   demo.paint_couple = function() {
+    var c,i,w,m,v,b,u;
+    
+    c = this.selected_couple;
+    for (i in this.women) {
+     w = this.women[i];
+     v = (w.code === c) ? 'visible' : 'hidden';
+     w.image_frame.setAttribute('visibility',v);
+    }
+    
+    for (i in this.men) {
+     m = this.men[i];
+     v = (m.code === c) ? 'visible' : 'hidden';
+     m.image_frame.setAttribute('visibility',v);
+    } 
+    
+    if (c) {
+     b = this.board.block[c];
+     
+     this.msg_div.innerHTML = 'Man ' + c +
+      ' is not allowed to sit next to woman ' + c +
+      ', so he can only sit in seat ' + b[0] + ', ' + 
+      b[1] + ' or ' + b[2] + '.';
+     
+     for (i in this.man_slots) {
+      u = this.man_slots[i];
+      if (i == b[0] || i == b[1] || i == b[2]) {
+       u.box.setAttribute('fill','#CCCCCC');
+      } else {
+       u.box.setAttribute('fill','#FF5555');
+      }
+     }
+    } else {
+     this.msg_div.innerHTML = '';
+
+     for (i in this.man_slots) {
+      u = this.man_slots[i];
+      u.box.setAttribute('fill','#CCCCCC');
+     }
+    }
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="600">
+   </svg>
+   <div id="solutions_div">
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>

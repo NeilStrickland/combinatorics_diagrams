@@ -1,0 +1,328 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TimelineMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    left: 1220px;
+    top: 50px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 680px;
+    margin-left: 80px;
+    margin-right: 80px;
+    font-size: 24px;
+   }
+   
+   td.lhs {
+    text-align: right;
+    font-size: 24px;
+   }   
+   
+   div#rook_polynomial_div {
+    position: absolute;
+    left: 60px;
+    top: 360px;
+    font-size: 24px;
+   }
+   
+   div#blocked_rook_polynomial_div {
+    position: absolute;
+    left: 560px;
+    top: 360px;
+    font-size: 24px;
+   }
+   
+   div#deleted_rook_polynomial_div {
+    position: absolute;
+    left: 60px;
+    top: 680px;
+    font-size: 24px;
+   }
+   
+   div#relation_div {
+    visibility: hidden;
+    position: absolute;
+    left: 560px;
+    top: 500px;
+    font-size: 24px;
+   }
+   
+  </style>
+  <script type="text/javascript">
+   var demo = {};
+   
+   demo.init = function() {
+    var i,R,div,t,h,x;
+    var me = this;
+
+    this.frame = document.getElementById('frame');
+    this.main_svg = document.getElementById('main_svg');
+    this.msg_div = document.getElementById('msg_div');
+    this.rook_polynomial_div = document.getElementById('rook_polynomial_div');
+    this.deleted_rook_polynomial_div = document.getElementById('deleted_rook_polynomial_div');
+    this.blocked_rook_polynomial_div = document.getElementById('blocked_rook_polynomial_div');
+    this.relation_div = document.getElementById('relation_div');
+    
+    R = matching_problem.from_eqs(
+     {A : ['a','d'], B : ['b','c','d'], C : ['c'], D : ['a','b']}
+    );
+    
+    R.find_sols();
+   
+    this.board = R;
+    
+    R.grid_x0 = 20;
+    R.grid_y0 = -20;
+    R.grid_w = 70;
+    R.grid_h = 70;
+    R.make_grid();
+    R.remove_labels();
+    
+    this.main_svg.appendChild(R.grid.svg);
+    
+    for (i in this.board.left_set) {
+     a = this.board.left_set[i];
+     for (j in this.board.right_set) {
+      b = this.board.right_set[j];
+      c = this.board.cell[a][b];
+   
+      if (c.is_free) {
+       this.set_square_handler(c.square,a,b);
+       this.set_square_handler(c.rook_icon,a,b);
+      }
+     }
+    }
+
+    this.rook_polynomial_div.innerHTML = 
+     '$' + R.rook_polynomial_string + '$';
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.rook_polynomial_div]);
+    
+    this.board.paint_grid();
+    
+    this.marker_icon = comb.svg.circle(0,0,25,'blue',5);
+    this.marker_icon.setAttribute('visibility','hidden');
+    this.board.grid.svg.appendChild(this.marker_icon);
+    this.marker_row = null;
+    this.marker_col = null;
+    
+    this.block_shown = 0;
+    this.delete_shown = 0;
+   }
+   
+   demo.set_square_handler = function(x,a,b) {
+    var me = this;
+    x.onclick = function() { me.handle_square_click(a,b); };
+   }
+   
+   demo.handle_square_click = function(a,b) {
+    var i,j,x,y;
+    
+    this.reset(0);
+    this.marker_row = a;
+    this.marker_col = b;
+    i = this.board.left_index[a];
+    j = this.board.right_index[b];
+    x = this.board.grid_x0 + (j + 0.5) * this.board.grid_w;
+    y = this.board.grid_y0 + (i + 0.5) * this.board.grid_h;
+    this.marker_icon.setAttribute('cx',x);
+    this.marker_icon.setAttribute('cy',y);
+    this.marker_icon.setAttribute('visibility','visible');
+   }
+    
+   demo.block = function() {
+    var R,m,q;
+    
+    var me = this;
+    
+    if (this.marker_row === null || this.marker_col === null) {
+     return;
+    }
+    
+    R = this.board.clone();
+    this.block_board = R;
+    R.grid_x0 = this.board.grid_x0;
+    R.grid_y0 = this.board.grid_y0;
+    R.grid_w  = this.board.grid_w;
+    R.grid_h  = this.board.grid_h;
+    R.make_grid();
+    R.remove_labels();
+    m = this.marker_icon;
+    this.block_marker_icon =
+     comb.svg.circle(m.getAttribute('cx'),m.getAttribute('cy'),25,'blue',5);
+    this.block_board.grid.svg.appendChild(this.block_marker_icon);
+    this.main_svg.appendChild(R.grid.svg);
+    
+    q = R.grid.square[this.marker_row][this.marker_col];
+    TweenMax.to(R.grid.svg,2,{x: "+=500"});
+    TweenMax.to(this.block_marker_icon,2,{strokeOpacity: 0, delay: 2});
+    TweenMax.to(q,2,{fill: 'rgb(128,128,128)', delay: 2});
+
+    this.blocked_board = this.board.add_block(this.marker_row,this.marker_col);
+    this.blocked_board.find_sols();
+    setTimeout(function() {
+     me.blocked_rook_polynomial_div.innerHTML = 
+      '$' + me.blocked_board.rook_polynomial_string + '$';
+     MathJax.Hub.Queue(["Typeset",MathJax.Hub,me.blocked_rook_polynomial_div]);
+     me.block_shown = 1;
+     if (me.delete_shown) {
+      me.show_relation();
+     }
+    },4000);
+    
+   }
+   
+   demo.delete = function() {
+    var R,A,B,nA,nB,i0,j0,i,j,m,s;
+    var me = this;
+    
+    if (this.marker_row === null || this.marker_col === null) {
+     return;
+    }
+    
+    R = this.board.clone();
+    this.delete_board = R;
+
+    A = R.shifted_left_set;
+    B = R.shifted_right_set;
+    nA = R.left_order;
+    nB = R.right_order;
+
+    i0 = R.left_index[this.marker_row];
+    j0 = R.right_index[this.marker_col];
+    
+    R.grid_x0 = this.board.grid_x0;
+    R.grid_y0 = this.board.grid_y0;
+    R.grid_w  = this.board.grid_w;
+    R.grid_h  = this.board.grid_h;
+    R.make_grid();
+    R.remove_labels();
+    m = this.marker_icon;
+    this.delete_marker_icon =
+     comb.svg.circle(m.getAttribute('cx'),m.getAttribute('cy'),25,'blue',5);
+    this.delete_board.grid.svg.appendChild(this.delete_marker_icon);
+    this.main_svg.appendChild(R.grid.svg);
+    
+    TweenMax.to(R.grid.svg,2,{y: "390"});
+    TweenMax.to(this.delete_marker_icon,2,{strokeOpacity: 0,delay: 2});
+    
+    for (i = 1; i <= nA; i++) {
+     for (j = 1; j <= nB; j++) {
+      s = R.grid.square[A[i]][B[j]];
+      if (i == i0 || j == j0) {
+       TweenMax.to(s,2,{strokeOpacity: 0,fillOpacity : 0,delay: 2})
+      }
+      if (i > i0) {
+       if (j > j0) {
+        TweenMax.to(s,2,{x : "-=" + R.grid_w,y : "-=" + R.grid_h,delay: 4})
+       } else {
+        TweenMax.to(s,2,{y : "-=" + R.grid_h,delay: 4})        
+       }
+      } else {
+       if (j > j0) {
+        TweenMax.to(s,2,{x : "-=" + R.grid_w,delay: 4})
+       }
+      }
+     }
+    }
+    
+    this.deleted_board = R.delete_cross(this.marker_row,this.marker_col);
+    this.deleted_board.find_sols();
+    setTimeout(function() {
+     me.deleted_rook_polynomial_div.innerHTML = 
+      '$' + me.deleted_board.rook_polynomial_string + '$';
+     MathJax.Hub.Queue(["Typeset",MathJax.Hub,me.deleted_rook_polynomial_div]);
+     me.delete_shown = 1;
+     if (me.block_shown) {
+      me.show_relation();
+     }
+    },6000);
+   };
+   
+   demo.show_relation = function() {
+    var me = this;
+    this.relation_div.innerHTML = 
+     '\\begin{align*}&' + 
+     this.board.rook_polynomial_string + '\\\\=&' + 
+     this.blocked_board.rook_polynomial_string + '+\\\\&' +
+     'x(' + this.deleted_board.rook_polynomial_string + ')' +
+     '\\end{align*}';
+     MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.relation_div]);
+    
+    setTimeout(function() {
+     me.relation_div.style.visibility = 'visible';
+    },1000);
+    
+   };
+   
+   demo.reset = function(clear_marker) {
+    if (this.block_board) {
+     this.main_svg.removeChild(this.block_board.grid.svg);
+     this.block_board = null;
+     this.block_marker_icon = null;
+    } 
+    if (this.delete_board) {
+     this.main_svg.removeChild(this.delete_board.grid.svg);
+     this.delete_board = null;
+     this.delete_marker_icon = null;
+    } 
+    if (clear_marker) {
+     this.marker_icon.setAttribute('visibility','hidden');
+     this.marker_row = null;
+     this.marker_col = null;
+    }
+    
+    this.blocked_rook_polynomial_div.innerHTML = '';
+    this.deleted_rook_polynomial_div.innerHTML = '';
+    this.relation_div.innerHTML = '';
+    this.block_shown = 0;
+    this.delete_shown = 0;
+    this.relation_div.style.visibility = 'hidden';
+   };
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <div id="rook_polynomial_div"></div>
+   <div id="blocked_rook_polynomial_div"></div>
+   <div id="deleted_rook_polynomial_div"></div>
+   <div id="relation_div"></div>
+   <svg id="main_svg" width="1300" height="750">
+   </svg>
+   <div id="controls_div">
+    <div class="control" onclick="demo.reset(1)">Reset</div>
+    <div class="control" onclick="demo.block()">Block</div>
+    <div class="control" onclick="demo.delete()">Strip</div>
+   </div>
+   <div id="msg_div">
+   </div>
+  </div>
+ </body>
+</html>
