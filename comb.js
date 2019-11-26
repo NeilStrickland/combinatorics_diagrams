@@ -8,6 +8,8 @@ var comb = {};
 
 comb.svg = {};
 
+comb.math_font = 'MathJax_Math-italic';
+
 comb.svg.node = function (t) {
  return document.createElementNS('http://www.w3.org/2000/svg', t);
 };
@@ -120,6 +122,19 @@ comb.svg.text = function(s,x,y) {
  return n; 
 };
 
+comb.svg.math_text = function(s,x,y) {
+ var n = this.node('text');
+ n.setAttribute('text-anchor','middle');
+ n.setAttribute('alignment-baseline','middle');
+ n.setAttribute('font-size','24px');
+ n.setAttribute('font-family',comb.math_font);
+ n.setAttribute('fill','black');
+ n.setAttribute('x', x);
+ n.setAttribute('y', y);
+ n.textContent = s;
+ return n; 
+};
+
 comb.svg.append_tspan = function(t,s) {
  var u = this.node('tspan');
  u.textContent = s;
@@ -225,4 +240,50 @@ comb.svg.arrow_defs = function() {
  defs.appendChild(this.arrow_marker());
 
  return defs;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+
+comb.demo = {};
+
+comb.demo.find_ids = function(ids) {
+ var i,id,ids0,x;
+ 
+ ids0 = ids.concat(['main_div','main_svg','msg_div','youtube_button']);
+
+ for (i in ids0) {
+  id = ids0[i];
+
+  x = document.getElementById(id);
+  if (id && x) { this[id] = x; } 
+ }
+
+ this.activate_youtube_button();
+}
+
+comb.demo.activate_youtube_button = function() {
+ if (! this.name) { return; }
+
+ var key = youtube_keys[this.name];
+
+ if (! key) { return; }
+
+ var x = document.getElementById('youtube_button');
+ if (! x) { return; }
+
+ var me = this;
+
+ x.onclick = function() { window.open('https://youtu.be/' + key); };
+}
+
+comb.demo.get_offset = function( el ) {
+ var _x = 0;
+ var _y = 0;
+ while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
+  _x += el.offsetLeft - el.scrollLeft;
+  _y += el.offsetTop - el.scrollTop;
+  el = el.offsetParent;
+ }
+ return { top: _y, left: _x };
 }

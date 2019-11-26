@@ -41,18 +41,25 @@
     font-size: 20px;
    }
   </style>
+  <script type="text/javascript" src="youtube_keys.js"></script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
   <script type="text/javascript">
-   var addition = {};
-   addition.n_max = 8;
-   addition.subsets = {};
+   var demo = Object.create(comb.demo);
+   demo.n_max = 8;
+   demo.subsets = {};
 
-   addition.f = function(i,j) { return (0.8+i) * 130; }
-   addition.g = function(i,j) { return (1+j) * 40; }
+   demo.f = function(i,j) { return (0.8+i) * 130; }
+   demo.g = function(i,j) { return (1+j) * 40; }
 
-   addition.init = function() {
+   demo.init = function() {
     var i,x,A,B,xl,xt;
 
-    this.main_div = document.getElementById('main_div');
+    var me = this;
+
+    this.name = 'addition';
+
+    this.find_ids([]);
 
     for (i = 0; i <= this.n_max; i++) { 
      this.subsets[i] = {}; 
@@ -77,6 +84,7 @@
      x.div = document.createElement('div');
      x.div.className = 'left_set';
      x.div.innerHTML = '{' + x.set.join(',') + '}';
+     x.div.style['font-family'] = comb.math_font;
      xl = this.f(x.col,x.row) + 'px';
      xt = this.g(x.col,x.row) + 'px';
      x.div.style.left = xl;
@@ -93,6 +101,7 @@
      x.div = document.createElement('div');
      x.div.className = 'right_set';
      x.div.innerHTML = '{' + x.set.join(',') + ',<span class="extra">8</span>}';
+     x.div.style['font-family'] = comb.math_font;
      xl = this.f(x.col+4,x.row) + 'px';
      xt = this.g(x.col+4,x.row) + 'px';
      x.div.style.left = xl;
@@ -102,7 +111,7 @@
    }
   </script>
  </head>
- <body onload="addition.init()">
+ <body onload="demo.init()">
   <div id="frame">
    <div id="main_div"></div>
    <div id="msg_div">
@@ -117,6 +126,9 @@
     <br/><br/>
     In general, for $n\geq m>0$ we have
     $$ \left(\begin{matrix}n\\m\end{matrix}\right)=\left(\begin{matrix}n-1\\m\end{matrix}\right)+\left(\begin{matrix}n-1\\m-1\end{matrix}\right) $$
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

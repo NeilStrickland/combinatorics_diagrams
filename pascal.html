@@ -34,6 +34,9 @@
    }
 
   </style>
+  <script type="text/javascript" src="youtube_keys.js"></script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
   <script type="text/javascript">
 
    var bin = {};
@@ -42,38 +45,41 @@
    bin.m = 0;
    bin.val = 0;
 
-   var pascal = {};
+   var demo = Object.create(comb.demo);
 
-   pascal.f = function(n,k,m,x) {
+   demo.f = function(n,k,m,x) {
     return Math.round((0.5 * k - 0.5 * m + 0.5 * this.n_max + 4.5 + x) * this.scale); 
    }
 
-   pascal.g = function(n,k,m,x) {
+   demo.g = function(n,k,m,x) {
     return Math.round((0.866 * (k + m + n + 0.5)) * this.scale);
    }
 
-   pascal.fg = function(n,k,m,x) {
+   demo.fg = function(n,k,m,x) {
     return {'x' : this.f(n,k,m,x),
             'y' : this.g(n,k,m,x)};
    }
 
-   pascal.latex_binom = function(n,k) {
+   demo.latex_binom = function(n,k) {
     return "\\left(\\begin{matrix}" + n + "\\\\" + k + "\\end{matrix}\\right)";
    }
 
-   pascal.latex_bfrac = function(n,k) {
+   demo.latex_bfrac = function(n,k) {
     var m = n-k;
     return "{\\frac{" + n + "!}{" + k + "!\\;" + m + "!}}";
    }            
 
-   pascal.init = function() {
+   demo.init = function() {
     var i,j,k,n,x,x0,x1,y0,y1,p;
+
+    var me = this;
+    
+    this.name = 'pascal';
+    
     this.n_max = 7;
     this.scale = 80;
 
-    this.main_svg = document.getElementById('main_svg');
-    this.msg_div  = document.getElementById('msg_div');
-    this.vals_div = document.getElementById('vals_div');
+    this.find_ids(['vals_div']);
 
     this.modes = ['values','symmetry','addition'];
 
@@ -97,11 +103,7 @@
      x0 = this.f(0,n,0,0);
      x1 = this.f(0,0,n,0);
      y0 = this.g(0,0,n,0);
-     p = 'M ' + x0 + ' ' + y0 + ' L ' + x1 + ' ' + y0;
-     this.n_line[n] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-     this.n_line[n].setAttribute('stroke','red');
-     this.n_line[n].setAttribute('stroke-width',4);
-     this.n_line[n].setAttribute('d',p);
+     this.n_line[n] = comb.svg.line(x0,y0,x1,y0,'red',4);
      this.main_svg.appendChild(this.n_line[n]);
     }
 
@@ -110,11 +112,7 @@
      y0 = this.g(0,k,0,0);
      x1 = this.f(0,k,this.n_max+1-k,0);
      y1 = this.g(0,k,this.n_max+1-k,0);
-     p = 'M ' + x0 + ' ' + y0 + ' L ' + x1 + ' ' + y1;
-     this.k_line[k] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-     this.k_line[k].setAttribute('stroke','blue');
-     this.k_line[k].setAttribute('stroke-width',4);
-     this.k_line[k].setAttribute('d',p);
+     this.k_line[k] = comb.svg.line(x0,y0,x1,y1,'blue',4);
      this.main_svg.appendChild(this.k_line[k]);
     }
 
@@ -123,11 +121,7 @@
      y0 = this.g(0,0,m,0);
      x1 = this.f(0,this.n_max+1-m,m,0);
      y1 = this.g(0,this.n_max+1-m,m,0);
-     p = 'M ' + x0 + ' ' + y0 + ' L ' + x1 + ' ' + y1;
-     this.m_line[m] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-     this.m_line[m].setAttribute('stroke','green');
-     this.m_line[m].setAttribute('stroke-width',4);
-     this.m_line[m].setAttribute('d',p);
+     this.m_line[m] = comb.svg.line(x0,y0,x1,y1,'green',4);
      this.main_svg.appendChild(this.m_line[m]);
     }
 
@@ -144,12 +138,7 @@
       } else {
        x.val = this.bins[n-1][k-1].val + this.bins[n-1][k].val;
       }
-      x.text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      x.text.setAttribute('x',this.f(0.7,k,n-k,0) + 'px');
-      x.text.setAttribute('y',this.g(0.7,k,n-k,0) + 'px');
-      x.text.setAttribute('text-anchor','middle');
-      x.text.setAttribute('font-size','24px');
-      x.text.textContent = x.val;
+      x.text = comb.svg.math_text(x.val,this.f(0.7,k,n-k,0),this.g(0.7,k,n-k,0));
       this.main_svg.appendChild(x.text);
       x.tri = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       u0 = this.fg(0,k,n-k,0);
@@ -210,47 +199,37 @@
     this.n_labels = {};
 
     for (n = 0; n <= this.n_max; n++) {
-     x = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-     this.n_labels[n] = x;
-     x.setAttribute('x',this.f(0.7,-1,n+1,0.3) + 'px');
-     x.setAttribute('y',this.g(0.7,-1,n+1,0.3) + 'px');
-     x.setAttribute('text-anchor','middle');
+     x = comb.svg.math_text('n=' + n,this.f(0.7,-1,n+1,0.3),this.g(0.7,-1,n+1,0.3));
      x.setAttribute('fill','red');
      x.setAttribute('visibility','hidden');
-     x.textContent = 'n=' + n;
-     x.setAttribute('font-size','24px');
+     this.n_labels[n] = x;
      this.main_svg.appendChild(x);
     }
 
     this.k_labels = {};
 
     for (k = 0; k <= this.n_max; k++) {
-     x = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-     this.k_labels[k] = x;
-     x.setAttribute('x',this.f(1.4,k,this.n_max-k,0) + 'px');
-     x.setAttribute('y',this.g(1.4,k,this.n_max-k,0) + 'px');
-     x.setAttribute('text-anchor','middle');
+     x = comb.svg.math_text('k=' + k,this.f(1.4,k,this.n_max-k,0),this.g(1.4,k,this.n_max-k,0));
      x.setAttribute('fill','blue');
      x.setAttribute('visibility','hidden');
-     x.textContent = 'k=' + k;
-     x.setAttribute('font-size','24px');
+     this.k_labels[k] = x;
      this.main_svg.appendChild(x);
     }
 
    }
 
-   pascal.set_handlers = function(e,n,k) {
+   demo.set_handlers = function(e,n,k) {
     var me = this;
     e.onmouseover = function() { me.handle_mouseover(n,k); }
     e.onmouseout  = function() { me.handle_mouseout(n,k);  }
    }
 
-   pascal.set_mode_handler = function(x,m) {
+   demo.set_mode_handler = function(x,m) {
     var me = this;
     x.onclick = function () { me.set_mode(m); }
    }
 
-   pascal.handle_mouseover = function(n,k) {
+   demo.handle_mouseover = function(n,k) {
     this.bins[n][k].tri.setAttribute('fill','#0000FF');
     this.bins[n][k].tri.setAttribute('fill-opacity','0.2');
     this.n_labels[n].setAttribute('visibility','visible');
@@ -284,7 +263,7 @@
     }
    }
 
-   pascal.handle_mouseout = function(n,k) {
+   demo.handle_mouseout = function(n,k) {
     this.bins[n][k].tri.setAttribute('fill','#000000');
     this.bins[n][k].tri.setAttribute('fill-opacity','0.1');
     this.n_labels[n].setAttribute('visibility','hidden');
@@ -309,7 +288,7 @@
     }
    }
 
-   pascal.set_mode = function(m) {
+   demo.set_mode = function(m) {
     this.mode = m;
     for (i in this.modes) {
      n = this.modes[i];
@@ -329,9 +308,9 @@
 
   </script>
  </head>
- <body onload="pascal.init()">
+ <body onload="demo.init()">
   <div id="frame">
-   <svg id="main_svg" width="1200" height="650"></svg>
+   <svg id="main_svg" width="1200" height="630"></svg>
    <div id="vals_div"></div>
    <div id="controls_div">
     <div class="control" id="values_mode">Values</div>
@@ -358,6 +337,9 @@
      so $\left(\begin{matrix}n\\k\end{matrix}\right)=
      \left(\begin{matrix}n\\n-k\end{matrix}\right)$.
     </div>
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

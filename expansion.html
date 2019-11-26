@@ -10,7 +10,8 @@
     tex2jax: {inlineMath: [["$","$"]]}
    });
   </script> 
-
+  <script src="youtube_keys.js"></script>  
+  <script src="comb.js"></script>  
   <style type="text/css">
    @font-face {font-family: MathJax_Main;
     src: url('/MathJax/fonts/HTML-CSS/TeX/woff/MathJax_Main-Regular.woff') format('woff'),
@@ -75,34 +76,22 @@
     cursor: pointer;
    }
 
-   div#conclusion {
+   div#conclusion_div {
     width: 1360px;
     font-size: 28px;                
    }
   </style>
   <script type="text/javascript">
-   var expander = {};
+   var demo = Object.create(comb.demo);
 
-   expander.get_offset = function( el ) {
-    var _x = 0;
-    var _y = 0;
-    while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
-     _x += el.offsetLeft - el.scrollLeft;
-     _y += el.offsetTop - el.scrollTop;
-     el = el.offsetParent;
-    }
-    return { top: _y, left: _x };
-   }
-
-   expander.init = function() {
+   demo.init = function() {
     var i,sp,p;
     var me = this;
 
-    this.main_eq = document.getElementById('main_eq');
+    this.name = 'expansion';
+
+    this.find_ids(['main_eq','conclusion_toggle','conclusion_div']);
     this.main_eq_offset = this.get_offset(this.main_eq);
-    this.msg_div = document.getElementById('msg_div');
-    this.conclusion_toggle = document.getElementById('conclusion_toggle');
-    this.conclusion_div = document.getElementById('conclusion');
 
     this.o_span = {};
     this.x_span = {};
@@ -144,12 +133,12 @@
     }
    };
 
-   expander.set_onclick_flip = function(s,i) {
+   demo.set_onclick_flip = function(s,i) {
     var me = this;
     s.onclick = function() { me.flip_term(i); };
    }
 
-   expander.choose_random_term = function() {
+   demo.choose_random_term = function() {
     this.is_in_set = {};
     for (i = 1; i <= 7; i++) {
      this.is_in_set[i] = (Math.random() > 0.5) ? 1 : 0;
@@ -158,13 +147,13 @@
     this.show_term();
    };
 
-   expander.flip_term = function (i) {
+   demo.flip_term = function (i) {
     this.is_in_set[i] = this.is_in_set[i] ? 0 : 1;
     this.fix_term();
     this.show_term();
    };
 
-   expander.fix_term = function () {
+   demo.fix_term = function () {
     this.x_set = [];
     this.o_set = [];
     this.set_size = 0;
@@ -187,7 +176,7 @@
     for (i = 0; i < m; i++) { this.binomial /= (i+1); }                
    };
 
-   expander.show_term = function() {
+   demo.show_term = function() {
     for (i = 1; i <= 7; i++) {
      if (this.is_in_set[i]) {
       this.t_span[i].className = 'factor_label factor_x';
@@ -259,7 +248,7 @@
    }
   </script>
  </head>
- <body onload="expander.init()">
+ <body onload="demo.init()">
   <div id="frame">
    <div id="main_eq">
     <span class="maths">(1<span style="padding-left:0.2em; padding-right: 0.2em;">+</span>x)<sup>7</sup></span>
@@ -275,10 +264,13 @@
    <div id="msg_div">
    </div>
    <div id="conclusion_toggle">Conclusion</div>
-   <div id="conclusion" style="display:none">
+   <div id="conclusion_div" style="display:none">
     $$ (1+x)^7 = \sum_{A\subseteq\{1,\dotsc,7\}}x^{|A|} = \sum_{k=0}^7\left(\begin{matrix}7 \\ k\end{matrix}\right)x^k
     = 1 + 7x + 21 x^2 + 35 x^3 + 35x^4 + 21 x^5 + 7 x^6 + x^7
     $$
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

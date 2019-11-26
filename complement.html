@@ -13,6 +13,8 @@
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
   </script>
+  <script src="comb.js"></script>  
+  <script src="youtube_keys.js"></script>  
 
   <style type="text/css">
    div#main_div {
@@ -58,7 +60,8 @@
     B_svg : null
    };
    
-   var demo = {};
+   var demo = Object.create(comb.demo);
+   
    demo.n = 7;
    demo.k = 3;
    demo.subsets = {};
@@ -68,7 +71,10 @@
 
    demo.init = function() {
     var i,j,k,l,A,B,x,y,b,t;
-    this.main_svg = document.getElementById('main_svg');
+
+    this.name = 'complement';
+    
+    this.find_ids([]);
     
     this.P = [];
     this.Q = [];
@@ -90,25 +96,13 @@
     }
     
     for (i = 0; i <= 7; i++) {
-      u = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      u.setAttribute('stroke','grey');
-      u.setAttribute('stroke-width','1');
-      u.setAttribute('x1',this.f(0,i));
-      u.setAttribute('y1',this.g(0,i));
-      u.setAttribute('x2',this.f(5,i));
-      u.setAttribute('y2',this.g(5,i));
-      this.main_svg.appendChild(u);
+     u = comb.svg.line(this.f(0,i),this.g(0,i),this.f(5,i),this.g(5,i),'grey',1);
+     this.main_svg.appendChild(u);
     }
     
     for (i = 0; i <= 5; i++) {
-      u = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      u.setAttribute('stroke','grey');
-      u.setAttribute('stroke-width','1');
-      u.setAttribute('x1',this.f(i,0));
-      u.setAttribute('y1',this.g(i,0));
-      u.setAttribute('x2',this.f(i,7));
-      u.setAttribute('y2',this.g(i,7));
-      this.main_svg.appendChild(u);
+     u = comb.svg.line(this.f(i,0),this.g(i,0),this.f(i,7),this.g(i,7),'grey',1);
+     this.main_svg.appendChild(u);
     }
     
     this.box = {};
@@ -215,6 +209,9 @@
     the number of $A$'s is the same as the number of $B$'s.  The number of $A$'s is 
     $\left(\begin{matrix}7\\3\end{matrix}\right)$ and the number of $B$'s is 
     $\left(\begin{matrix}7\\4\end{matrix}\right)$.
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

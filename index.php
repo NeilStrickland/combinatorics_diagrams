@@ -3,6 +3,7 @@
 require_once('../MAS334.php');
 
 $labels = parse_aux_labels();
+$keys = parse_youtube_keys();
 
 $demos_json = <<<JSON
 [
@@ -71,10 +72,24 @@ foreach($demos0 as $d0) {
   $d->refs[] = $labels[$label];
  }
  $d->ref_string = implode(', ', $d->refs);
+
+ $d->youtube_key = '';
+ $d->youtube_url = '';
+ $d->youtube_link = '';
+
+ if (isset($keys[$d->name])) {
+  $d->youtube_key = $keys[$d->name];
+  $d->youtube_url = 'https://youtu.be/' . $d->youtube_key;
+  $d->youtube_link = <<<HTML
+<span class="video_link"><img src="video_icon.png" height="20px" onclick="location='{$d->youtube_url}'"</img></span>
+
+HTML;
+ }
+ 
  $d->html = <<<HTML
  <tr>
-  <td width="300px"><a href="{$d->name}.html">{$d->title}</a></td>
-  <td width="250px">{$d->ref_string}</td>
+  <td width="350px"><div style="position:relative"><a href="{$d->name}.html">{$d->title}</a>{$d->youtube_link}</div></td>
+  <td width="200px">{$d->ref_string}</td>
  </tr>
 
 HTML;
@@ -101,7 +116,11 @@ echo <<<HTML
     left: 680px;
     top: 70px;
    }
-     
+
+   span.video_link {
+    position:absolute;
+    right: 5px;
+   }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
    MathJax.Hub.Config({

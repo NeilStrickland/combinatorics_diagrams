@@ -10,6 +10,8 @@
     tex2jax: {inlineMath: [["$","$"]]}
    });
   </script> 
+  <script src="youtube_keys.js"></script>  
+  <script src="comb.js"></script>  
   <style type="text/css">
    div#main_div {
     position:absolute;
@@ -36,17 +38,20 @@
    }
   </style>
   <script type="text/javascript">
-   var addition = {};
-   addition.n_max = 8;
-   addition.subsets = {};
 
-   addition.f = function(i,j) { return (0.5+i) * 100; }
-   addition.g = function(i,j) { return (1+j) * 40; }
+   var demo = Object.create(comb.demo);
 
-   addition.init = function() {
+   demo.n_max = 8;
+   demo.subsets = {};
+
+   demo.f = function(i,j) { return (0.5+i) * 100; }
+   demo.g = function(i,j) { return (1+j) * 40; }
+
+   demo.init = function() {
     var i,x,A,B,xl,xt;
 
-    this.main_div = document.getElementById('main_div');
+    this.name = 'max_split';
+    this.find_ids([]);
 
     for (i = 0; i <= this.n_max; i++) { 
      this.subsets[i] = {}; 
@@ -90,6 +95,7 @@
       }
       x.div = document.createElement('div');
       x.div.className = 'set';
+      x.div.style['font-family'] = comb.math_font;
       x.div.innerHTML = '{' + x.extra.join(',') + ',<span class="max">' + m + '</span>}';
       xl = this.f(x.col,x.row) + 'px';
       xt = this.g(x.col,x.row) + 'px';
@@ -102,7 +108,7 @@
    }
   </script>
  </head>
- <body onload="addition.init()">
+ <body onload="demo.init()">
   <div id="frame">
    <div id="main_div"></div>
    <div id="msg_div">
@@ -117,6 +123,9 @@
     $$
     By counting subsets of size $k$ in $\{1,\dotsc,n\}$ in the same way, we see that
     $ \left(\begin{matrix}n\\k\end{matrix}\right) = \sum_{m=k}^n \left(\begin{matrix}m-1\\k-1\end{matrix}\right).$
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

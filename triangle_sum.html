@@ -10,6 +10,8 @@
     tex2jax: {inlineMath: [["$","$"]]}
    });
   </script> 
+  <script src="youtube_keys.js"></script>  
+  <script src="comb.js"></script>  
   <style type="text/css">
    div#main_div { 
     position:absolute; 
@@ -51,7 +53,7 @@
    bin.m = 0;
    bin.val = 0;
 
-   var demo = {};
+   var demo = Object.create(comb.demo);
 
    demo.f = function(n,k,m,x) {
     return Math.round((0.5 * k - 0.5 * m + 0.5 * this.n_max + 4.5 + x) * this.scale); 
@@ -72,12 +74,13 @@
 
    demo.init = function() {
     var i,j,k,n,x,x0,x1,y0,y1,p;
+
+    this.name = 'triangle_sum';
+    
     this.n_max = 6;
     this.scale = 80;
 
-    this.main_svg = document.getElementById('main_svg');
-    this.msg_div  = document.getElementById('msg_div');
-    this.partial_div = document.getElementById('partial');
+    this.find_ids(['partial_div']);
 
     this.bins = {};
     this.box = {};
@@ -196,7 +199,7 @@
  <body onload="demo.init()">
   <div id="frame">
    <div class="text" style="left:20px;top:20px;">What is the sum of all numbers in the triangle?</div>
-   <div id="partial" class="text" style="left:800px;top:100px;"></div>
+   <div id="partial_div" class="text" style="left:800px;top:100px;"></div>
    <svg id="main_svg" width="1200" height="650"></svg>
    <div id="b2" style="position:absolute; left:328px; top:540px; font-size:20px;">$\left(\begin{matrix}2\\2\end{matrix}\right)$</div>
    <div id="b3" style="position:absolute; left:410px; top:540px; font-size:20px;">$\left(\begin{matrix}3\\2\end{matrix}\right)$</div>
@@ -219,6 +222,9 @@
    </div>
    <div id="msg_div">
     In general, for a triangle as above with $N$ rows, the total will be $\left(\begin{matrix}N+2\\3\end{matrix}\right)$.
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

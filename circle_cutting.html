@@ -9,7 +9,9 @@
     jax: ["input/TeX","output/HTML-CSS"],
     tex2jax: {inlineMath: [["$","$"]]}
    });
-  </script> 
+  </script>
+  <script src="comb.js"></script>  
+  <script src="youtube_keys.js"></script>  
   <style type="text/css">
    div#main_div { 
     position:absolute; 
@@ -64,6 +66,7 @@
    div#counts_div td {
     font-size: 24px;
    }
+
   </style>
   <script type="text/javascript">
    point = {
@@ -106,7 +109,7 @@
     marker : null
    }
 
-   demo = {};
+   demo = Object.create(comb.demo);
 
    demo.r = 250;
    demo.label_r = 270;
@@ -129,31 +132,36 @@
 
    demo.init = function() {
     var i,j,k,l,n,c,m,p;
-    this.main_div = document.getElementById('main_div');
-    this.msg_div = document.getElementById('msg_div');
-    this.last_line_msg = document.getElementById('last_line_msg');
-    this.line_msg = document.getElementById('line_msg');
-    this.crossing_msg = document.getElementById('crossing_msg');
-    this.main_svg = document.getElementById('main_svg');
 
-    this.num_lines_div = document.getElementById('num_lines');
-    this.num_crossings_div = document.getElementById('num_crossings');
-    this.num_regions_div = document.getElementById('num_regions');
+    this.name = 'circle_cutting';
 
+    this.find_ids([
+     'main_div',
+     'msg_div',
+     'last_line_msg',
+     'line_msg',
+     'crossing_msg',
+     'main_svg',
+     'num_lines_div',
+     'num_crossings_div',
+     'num_regions_div',
+     'num_one_div'
+    ]);
+    
+    var me = this;
+    
+    this.num_lines_div.style['font-family']     = comb.math_font;
+    this.num_crossings_div.style['font-family'] = comb.math_font;
+    this.num_regions_div.style['font-family']   = comb.math_font;
+    this.num_one_div.style['font-family']       = comb.math_font;
+    
     this.num_lines = 0;
     this.num_crossings = 0;
     this.num_regions = 1;
 
-    var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    this.circle = c;
-    c.setAttribute('cx',this.x0);
-    c.setAttribute('cy',this.y0);
-    c.setAttribute('r',250);
-    c.setAttribute('fill','none');
-    c.setAttribute('stroke',this.cols.circle);
-    c.setAttribute('stroke-width',3);
-    this.main_svg.appendChild(c);
-
+    this.circle = comb.svg.circle(this.x0,this.y0,this.r,this.cols.circle,3);
+    this.main_svg.appendChild(this.circle);
+    
     var n = this.ts.length;
     this.n = n;
     this.S2 = [];
@@ -182,20 +190,8 @@
      this.outer_point[i] = p;
      this.outer_point_list.push(p);
      p.init(i,this.ts[i-1]);
-     m = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-     p.marker = m;
-     m.setAttribute('cx',p.x);
-     m.setAttribute('cy',p.y);
-     m.setAttribute('r',6);
-     m.setAttribute('fill',this.cols.outer_point);
-     b = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-     p.label = b;
-     b.setAttribute('x',p.label_x);
-     b.setAttribute('y',p.label_y);
-     b.setAttribute('text-anchor','middle');
-     b.setAttribute('alignment-baseline','middle');
-     b.setAttribute('font-size','24px');
-     b.textContent = i;
+     p.marker = comb.svg.disc(p.x,p.y,6,this.cols.outer_point);
+     p.label  = comb.svg.math_text(i,p.label_x,p.label_y);
     }
 
     this.line = {}
@@ -213,18 +209,16 @@
       p = Object.create(line);
       p.i = i;
       p.j = j;
-      q = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      p.path = q;
-      q.setAttribute('stroke',this.cols.line);
-      q.setAttribute('stroke-width',5);
       z0 = this.outer_point[i];
       z1 = this.outer_point[j];
-      q.setAttribute('d','M ' + z0.x + ' ' + z0.y + ' L ' + z1.x + ' ' + z1.y);
+      q = comb.svg.line(z0.x,z0.y,z1.x,z1.y,this.cols.line,5);
+      p.path = q;
       q.setAttribute('visibility','hidden');
       this.main_svg.appendChild(q);
       s = document.createElement('div');
       p.switch = s;
       s.className = 'switch';
+      s.style['font-family'] = comb.math_font;
       s.innerHTML = '' + i + j;
       s.style.left = (800 + (k % 5) * 80) + 'px';
       s.style.top = (50 + Math.floor(k / 5) * 60) + 'px';
@@ -275,12 +269,8 @@
         p.line_b = this.line[j][l];
         p.x = vx;
         p.y = vy;
-        m = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+	m = comb.svg.disc(p.x,p.y,6,this.cols.crossing);
         p.marker = m;
-        m.setAttribute('cx',p.x);
-        m.setAttribute('cy',p.y);
-        m.setAttribute('r',6);
-        m.setAttribute('fill',this.cols.crossing);
         m.setAttribute('visibility','hidden');
         this.crossing[i][j][k][l] = p;
         this.crossing_list.push(p);
@@ -446,16 +436,19 @@
    <svg id="main_svg" width="600" height="600"></svg>
    <div id="counts_div">
     <table class="edged">
-     <tr><td width="200">Lines ($L$)</td><td width="100" id="num_lines">0</td></tr>
-     <tr><td>Crossings ($C$)</td><td id="num_crossings">0</td></tr>
-     <tr><td>Regions ($R$)</td><td id="num_regions">1</td></tr>
-     <tr><td>$R-C-L$</td><td>1</td></tr>
+     <tr><td width="200">Lines ($L$)</td><td width="100" id="num_lines_div">0</td></tr>
+     <tr><td>Crossings ($C$)</td><td id="num_crossings_div">0</td></tr>
+     <tr><td>Regions ($R$)</td><td id="num_regions_div">1</td></tr>
+     <tr><td>$R-C-L$</td><td id="num_one_div">1</td></tr>
     </table>
    </div>
    <div id="msg_div">
     <div id="last_line_msg"></div>
     <div id="line_msg"></div>
     <div id="crossing_msg"></div>
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>        
  </body>

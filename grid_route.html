@@ -10,6 +10,8 @@
     tex2jax: {inlineMath: [["$","$"]]}
    });
   </script> 
+  <script src="youtube_keys.js"></script>  
+  <script src="comb.js"></script>  
   <style type="text/css">
 
    div#main_div { 
@@ -39,21 +41,21 @@
    point.y = 0;
    point.is_corner = 0;
 
-   var grid_route = {};
+   var demo = Object.create(comb.demo);
 
-   grid_route.f = function(i,j) {
+   demo.f = function(i,j) {
     return Math.round((1.5 + i) * this.scale);    
    }
 
-   grid_route.g = function(i,j) {
+   demo.g = function(i,j) {
     return Math.round((this.m + 0.5 - j) * this.scale);
    }
 
-   grid_route.fg = function (i,j) {
+   demo.fg = function (i,j) {
     return {'x' : this.f(i,j), 'y' : this.g(i,j)};
    }
 
-   grid_route.set_coords = function(p,i,j) {
+   demo.set_coords = function(p,i,j) {
     p.i = i;
     p.j = j;
     p.x = this.f(i,j);
@@ -65,19 +67,21 @@
     return p;
    }
 
-   grid_route.latex_binom = function(n,k) {
+   demo.latex_binom = function(n,k) {
     return "\\left(\\begin{matrix}" + n + "\\\\" + k + "\\end{matrix}\\right)";
    }
 
-   grid_route.init = function() {
+   demo.init = function() {
     var i,j,k,n,x,x0,x1,y0,y1,p;
+
+    this.name = 'grid_route';
+    
     this.n = 6;
     this.m = 3;   
     this.nm = this.n + this.m;
     this.scale = 120;
 
-    this.main_svg = document.getElementById('main_svg');
-    this.msg_div  = document.getElementById('msg_div');
+    this.find_ids([]);
     this.h_line = {};
     this.v_line = {};
 
@@ -87,7 +91,7 @@
     this.points = {};
 
     p = Object.create(point);
-    grid_route.set_coords(p,0,0);
+    demo.set_coords(p,0,0);
     p.index = 0;
     this.points[0] = p;
 
@@ -95,7 +99,7 @@
      this.h_set.push(i); 
      this.is_h[i] = 1;
      p = Object.create(point);
-     grid_route.set_coords(p,i,0);
+     demo.set_coords(p,i,0);
      p.index = i;
      p.is_corner = 0;
      this.points[i] = p;
@@ -106,7 +110,7 @@
      this.v_set.push(j); 
      this.is_h[j] = 0;
      p = Object.create(point);
-     grid_route.set_coords(p,this.n,j);
+     demo.set_coords(p,this.n,j);
      p.index = j;
      p.is_corner = 0;
      this.points[j] = p;
@@ -121,10 +125,7 @@
      y0 = this.g(0,i);
      x1 = this.f(this.n,i);
      p = 'M ' + x0 + '  ' + y0 + ' L ' + x1 + ' ' + y0;
-     this.h_line[i] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-     this.h_line[i].setAttribute('stroke','#888888');
-     this.h_line[i].setAttribute('stroke_width',1);
-     this.h_line[i].setAttribute('d',p);
+     this.h_line[i] = comb.svg.line(x0,y0,x1,y0,'#888888',1);
      this.main_svg.appendChild(this.h_line[i]);
     }
 
@@ -134,14 +135,9 @@
      x0 = this.f(i,0); 
      y0 = this.g(i,0);
      y1 = this.g(i,this.m);
-     p = 'M ' + x0 + '  ' + y0 + ' L ' + x0 + ' ' + y1;
-     this.v_line[i] = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-     this.v_line[i].setAttribute('stroke','#888888');
-     this.v_line[i].setAttribute('stroke_width',1);
-     this.v_line[i].setAttribute('d',p);
+     this.v_line[i] = comb.svg.line(x0,y0,x0,y1,'#888888',1);
      this.main_svg.appendChild(this.v_line[i]);
     }
-
 
     for (i = 0; i <= this.nm; i++) {
      p = this.points[i];
@@ -180,7 +176,7 @@
     this.show_path();
    }
 
-   grid_route.show_path = function() {
+   demo.show_path = function() {
     var i,j,k,p,q,s;
     i = 0;
     j = 0;
@@ -248,32 +244,32 @@
     MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.msg_div]);
    }
 
-   grid_route.flip = function(k) {
+   demo.flip = function(k) {
     this.is_h[k] = 1 - this.is_h[k];
     this.is_h[k+1] = 1 - this.is_h[k+1];
     this.show_path();
    }
 
-   grid_route.set_handlers = function(b,p) {
+   demo.set_handlers = function(b,p) {
     var me = this;
     b.onmouseover = function() { me.handle_mouseover(b,p);};
     b.onmouseout  = function() { me.handle_mouseout(b,p);};
     b.onclick     = function() { me.handle_click(b,p);};
    }
 
-   grid_route.handle_mouseover = function(b,p) {
+   demo.handle_mouseover = function(b,p) {
     if (p.is_corner) {
      b.setAttribute('stroke','#00FFFF');
     }
    } 
 
-   grid_route.handle_mouseout = function(b,p) {
+   demo.handle_mouseout = function(b,p) {
     if (p.is_corner) {
      b.setAttribute('stroke','#008B8B');
     }
    } 
 
-   grid_route.handle_click = function(b,p) {
+   demo.handle_click = function(b,p) {
     if (p.is_corner) {
      this.flip(p.index);
     }
@@ -281,10 +277,13 @@
 
   </script>
  </head>
- <body onload="grid_route.init()">
+ <body onload="demo.init()">
   <div id="frame">
    <svg id="main_svg" width="1200" height="500"></svg>
    <div id="msg_div"></div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
+   </div>
   </div>
  </body>
 </html>

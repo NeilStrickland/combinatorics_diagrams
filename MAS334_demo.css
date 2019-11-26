@@ -59,3 +59,12 @@ table.edged td {
  border: 1px solid #CCCCCC; 
 }
 
+div.youtube_link {
+ position: absolute;
+ right : 5px;
+ bottom : 5px;
+}
+
+div.youtube_link:hover {
+ cursor: pointer
+}
