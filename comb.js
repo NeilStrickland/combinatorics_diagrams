@@ -61,6 +61,19 @@ comb.svg.frect = function(x0,y0,w,h,color) {
  return n
 };
 
+comb.svg.pane = function(x0,y0,w,h) {
+ var n = this.node('rect');
+ n.setAttribute('x', x0);
+ n.setAttribute('y', y0);
+ n.setAttribute('width', w);
+ n.setAttribute('height', h);
+ n.setAttribute('stroke','none');
+ n.setAttribute('fill', 'white');
+ n.setAttribute('opacity', 0);
+ n.setAttribute('pointer-events','all');
+ return n
+};
+
 comb.svg.lines = function(points,color,thickness) {
  var n,i,m,u,s,point_strings;
  n = this.node('path');
@@ -118,6 +131,7 @@ comb.svg.text = function(s,x,y) {
  n.setAttribute('fill','black');
  n.setAttribute('x', x);
  n.setAttribute('y', y);
+ n.setAttribute('pointer-events','none');
  n.textContent = s;
  return n; 
 };
@@ -131,9 +145,20 @@ comb.svg.math_text = function(s,x,y) {
  n.setAttribute('fill','black');
  n.setAttribute('x', x);
  n.setAttribute('y', y);
+ n.setAttribute('pointer-events','none');
  n.textContent = s;
  return n; 
 };
+
+comb.svg.image = function(url,x,y,w,h) {
+ var n = this.node('image');
+ n.setAttribute('href',url);
+ n.setAttribute('x', x);
+ n.setAttribute('y', y);
+ n.setAttribute('width', w);
+ n.setAttribute('height', h);
+ return n; 
+}
 
 comb.svg.append_tspan = function(t,s) {
  var u = this.node('tspan');
@@ -245,13 +270,25 @@ comb.svg.arrow_defs = function() {
 
 //////////////////////////////////////////////////////////////////////
 
+comb.latex = {};
+
+comb.latex.binom = function(n,k) {
+ return "\\left(\\begin{matrix}" + n + "\\\\" + k + "\\end{matrix}\\right)";
+}
+
+//////////////////////////////////////////////////////////////////////
+
 comb.demo = {};
 
 comb.demo.find_ids = function(ids) {
  var i,id,ids0,x;
  
- ids0 = ids.concat(['main_div','main_svg','msg_div','youtube_button']);
+ ids0 = ['main_div','main_svg','msg_div','youtube_button'];
 
+ if (ids !== undefined) {
+  ids0 = ids.concat(ids0);
+ }
+ 
  for (i in ids0) {
   id = ids0[i];
 
@@ -286,4 +323,9 @@ comb.demo.get_offset = function( el ) {
   el = el.offsetParent;
  }
  return { top: _y, left: _x };
+}
+
+comb.demo.set_msg = function(s) {
+ this.msg_div.innerHTML = s;
+ MathJax.Hub.Queue(['Typeset',MathJax.Hub,this.msg_div]);
 }
