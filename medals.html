@@ -1,0 +1,219 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 680px;
+    margin-left: 80px;
+    margin-right: 80px;
+    font-size: 24px;
+   }
+  </style>
+  <script type="text/javascript">
+   var demo = Object.create(comb.demo);
+
+   demo.medal = {
+    win_colour  : '#0000FF',
+    lose_colour : '#006400'
+   };
+
+   demo.medal.is_for = function(k) {
+    return (k == this.i || k == this.j);
+   }
+   
+   demo.medal.init = function(i,j,T) {
+    var m = Object.create(this);
+
+    m.i = i;
+    m.j = j;
+    m.p = T.players[i];
+    m.q = T.players[j];
+    
+    m.svg = comb.svg.group();
+    m.disc = comb.svg.disc(50,50,40,'#E8B923');
+    m.disc.setAttribute('stroke-width',3);
+    m.svg.appendChild(m.disc);
+    m.i_text = comb.svg.text(m.p.name,50 - 15,50);
+    m.v_text = comb.svg.text('v',50,50);
+    m.j_text = comb.svg.text(m.q.name,50 + 15,50);
+    m.svg.appendChild(m.i_text); 
+    m.svg.appendChild(m.v_text); 
+    m.svg.appendChild(m.j_text); 
+
+    m.ij_square = T.grid.square[i][j];
+    m.ji_square = T.grid.square[j][i];
+
+    m.set_winner(T.result[i][j],T);
+
+    return m;
+   }
+
+   demo.medal.set_winner = function(r,T) {
+    this.ij_square.rect.setAttribute('fill',T.grid.col[ r][0]);
+    this.ji_square.rect.setAttribute('fill',T.grid.col[-r][0]);
+    this.ij_square.text.textContent = (r == 1) ? 'W' : 'L';
+    this.ji_square.text.textContent = (r == 1) ? 'L' : 'W';
+    
+    if (r == 1) {
+     this.winner = this.i;
+     this.i_text.setAttribute('fill',this.win_colour);
+     this.j_text.setAttribute('fill',this.lose_colour);
+    } else {
+     this.winner = this.j;
+     this.i_text.setAttribute('fill',this.lose_colour);
+     this.j_text.setAttribute('fill',this.win_colour);
+    }    
+   }
+   
+   demo.init = function() {
+    var i,j,k,l,x,y;
+    var me = this;
+
+    this.find_ids();
+
+    this.n = 5;
+    var T = tournament.consistent(['A','C','E','D','B']);
+    this.T = T;
+
+    this.main_svg.appendChild(this.T.make_grid(50,50,70,100,1).svg);
+
+    this.medals = [];
+    this.medal_index = {};
+    
+    for (i = 0; i < this.n; i++) {
+     var p = T.players[i];
+     p.medals_won = [];
+    }
+    
+    for (i = 0; i < this.n; i++) {
+     this.medal_index[i] = {};
+    }
+    
+    for (i = 0; i < this.n; i++) {
+     for (j = i + 1; j < this.n; j++) {
+      var m = this.medal.init(i,j,T);
+      this.medals.push(m);
+      this.medal_index[i][j] = m;
+      this.medal_index[j][i] = m;
+      T.players[m.winner].medals_won.push(m);
+      this.main_svg.appendChild(m.svg);
+     }
+    }
+
+    this.medals_x0 = T.grid.x0 + (this.n + 3) * T.grid.w;
+    this.medals_y0 = T.grid.y0 + T.grid.h;
+
+    this.set_medals_won();
+    
+    for (i = 0; i < this.n; i++) {
+     var p = T.players[i];
+     for (j in p.medals_won) {
+      var m = p.medals_won[j];
+      m.x = this.medals_x0 + j * 100;
+      m.y = this.medals_y0 + i * 100;
+      m.svg.setAttribute('transform','translate(' + m.x + ',' + m.y + ')');
+     }
+    }
+    
+    T.grid.set_all_handlers();
+
+    for (i = 0; i < T.n; i++) {
+     for (j = 0; j < T.n; j++) {
+      this.set_click_handler(i,j);
+     }
+    }
+
+    T.grid.highlight_square = function(i,j,k) {
+     this.__proto__.highlight_square.call(this,i,j,k);
+
+     if (i != j) {
+      var m = me.medal_index[i][j];
+      m.disc.setAttribute('stroke', k ? '#FF0000' : 'none');
+     }
+    }
+   }
+
+   demo.set_medals_won = function() {
+    var n = this.n;
+    
+    for (i = 0; i < n; i++) {
+     this.T.players[i].medals_won = [];
+    }
+
+    for (i in this.medals) {
+     m = this.medals[i];
+     this.T.players[m.winner].medals_won.push(m);
+    }
+   }
+   
+   demo.set_click_handler = function(i,j) {
+    var me = this;
+    var u = this.T.grid.square[i][j];
+    
+    u.rect.onclick = function() { me.handle_square_click(i,j); };
+    u.text.onclick = function() { me.handle_square_click(i,j); };
+   }
+
+   demo.handle_square_click = function(i,j) {
+    this.flip_result(i,j);
+   }
+
+   demo.flip_result = function(i,j) {
+    var r = this.T.result[i][j];
+    this.T.set_result(i,j,-r);
+    this.medal_index[i][j].set_winner(i < j ? -r : r,this.T);
+    
+    this.set_medals_won();
+
+    for (var k = 0; k < this.n; k++) {
+     var p = this.T.players[k];
+     this.T.grid.score_box[k].text.textContent =
+      p.medals_won.length;
+     
+     for (var l in p.medals_won) {
+      var m = p.medals_won[l];
+      m.x = this.medals_x0 + l * 100;
+      m.y = this.medals_y0 + k * 100;
+      TweenMax.to(m.svg,2,{x : m.x, y : m.y});
+     }
+    }
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="700">
+   </svg>
+   <div id="msg_div">
+    To specify the results of a tournament, we just need to allocate the medals.
+    Each medal has two names, and can only be allocated to one of the named players.
+    The number of medals for each player is the score.
+   </div>
+   <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+   </svg>
+  </div>
+ </body>
+</html>

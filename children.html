@@ -1,0 +1,330 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+   div#main_div {
+    position:absolute;
+    width:820px;
+    font-size:16px;
+   }
+
+   div#msg_div {
+    position: absolute;
+    top: 650px;
+    margin-left: 80px;
+    margin-right: 80px;
+    font-size: 24px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    right: 30px;
+    top: 50px;
+   }
+
+
+  </style>
+  <script type="text/javascript">
+   var demo = Object.create(comb.demo);
+   
+   demo.medal = {
+    win_colour  : '#0000FF',
+    lose_colour : '#006400'
+   };
+
+   demo.medal.is_for = function(k) {
+    return (k == this.i || k == this.j);
+   }
+   
+   demo.medal.init = function(i,j,k,T) {
+    var m = Object.create(this);
+
+    m.i = i;
+    m.j = j;
+    m.k = k;
+    m.p = T.players[i];
+    m.q = T.players[j];
+    
+    m.svg = comb.svg.group();
+    m.box = comb.svg.rect(0,0,170,120,'#0000FF',2);
+    m.box.setAttribute('rx',3);
+    m.box.setAttribute('ry',3);
+    m.box.setAttribute('opacity',0);
+    m.svg.appendChild(m.box);
+    m.disc = comb.svg.disc(50,50,25,'#E8B923');
+    m.disc.setAttribute('stroke-width',3);
+    m.svg.appendChild(m.disc);
+    m.i_text = comb.svg.text(m.p.name,50 - 10,50);
+    m.v_text = comb.svg.text('v',50,50);
+    m.j_text = comb.svg.text(m.q.name,50 + 10,50);
+    m.k_text = comb.svg.text(k+1,150,30);
+    m.i_text.setAttribute('font-size','16px');
+    m.v_text.setAttribute('font-size','16px');
+    m.j_text.setAttribute('font-size','16px');
+    m.k_text.setAttribute('font-size','16px');
+    m.svg.appendChild(m.i_text); 
+    m.svg.appendChild(m.v_text); 
+    m.svg.appendChild(m.j_text);
+    m.svg.appendChild(m.k_text);
+    m.sprog = comb.svg.image('../images/child_' + m.k + '.png',
+			       70,0,75,110);
+    m.svg.appendChild(m.sprog);
+
+    return m;
+   }
+
+   demo.medal.show = function(i) {
+    if (i == 0) {
+     this.svg.setAttribute('opacity',0.2);
+     this.box.setAttribute('opacity',0);
+    } else if (i == 1) {
+     this.svg.setAttribute('opacity',1);
+     this.box.setAttribute('opacity',0);
+    } else {
+     this.svg.setAttribute('opacity',1);
+     this.box.setAttribute('opacity',1);
+    }
+   }
+   
+   demo.init = function() {
+    var i,j,k,l,A,B,x,y,b,t;
+    var me = this;
+
+    this.find_ids(['solve_button']);
+
+    this.n = 5;
+    var T = tournament.setup([
+     ['A','B'],['A','C'],['A','D'],['B','C'],['C','D'],
+     ['D','B'],['E','A'],['E','B'],['E','C'],['E','D']
+    ]);
+    this.T = T;
+    
+    this.win_colour = '#0000FF';
+    this.lose_colour = '#006400';
+
+    this.medals = [];
+    this.medals_index = {};
+    for (i = 0; i < this.n; i++) {
+     this.medals_index[i] = {};
+    }
+
+    for (i = 0; i < this.n; i++) {
+     for (j = i + 1; j < this.n; j++) {
+      var m = this.medal.init(i,j,this.medals.length,T);
+      this.main_svg.appendChild(m.svg);
+
+      this.medals.push(m);
+      this.medals_index[i][j] = m;
+      this.medals_index[j][i] = m;
+     }
+    }
+
+    this.medals_x0 = 100;
+    this.medals_y0 = 350;
+    
+    for (i in this.medals) {
+     var m = this.medals[i];
+     m.x = this.medals_x0 + (i % 5) * 220;
+     m.y = this.medals_y0 + Math.floor(i/5) * 150;
+     m.svg.setAttribute('transform','translate(' + m.x + ',' + m.y + ')');
+    }
+
+    for (i in T.players) {
+     var p = T.players[i];
+     p.svg = comb.svg.group();
+     p.rect = comb.svg.rect(0,0,150,50,'#006400',1);
+     p.rect.setAttribute('rx',3);
+     p.rect.setAttribute('ry',3);
+     p.text = comb.svg.text(p.name + ' scores ' + T.get_score(p),75,25);
+     p.pane = comb.svg.pane(0,0,150,50);
+     p.rect.setAttribute('pointer-events','none');
+     p.text.setAttribute('pointer-events','none');
+     p.svg.appendChild(p.rect);
+     p.svg.appendChild(p.text);
+     p.svg.appendChild(p.pane);
+     var x = 100 + 220 * i;
+     var y = 30;
+     p.svg.setAttribute('transform','translate(' + x + ',' + y + ')');
+     this.main_svg.appendChild(p.svg);
+
+     p.selected = 0;
+     p.medals_won = [];
+
+     this.set_click_handler(i);
+    }
+
+    for (i in this.medals) {
+     var m = this.medals[i];
+     var r = T.result[m.i][m.j];
+     if (r == 1) {
+      m.p.medals_won.push(m);
+     } else {
+      m.q.medals_won.push(m);
+     }
+    }
+
+    for (i in T.players) {
+     var p = T.players[i];
+     for (j in p.medals_won) {
+      var m = p.medals_won[j];
+      m.x1 = 100 + 220 * i;
+      m.y1 = 100 + 140 * j;
+     }
+    }
+    
+    this.paint();
+    this.solved = 0;
+
+    this.solve_button.onclick = function() { me.solve(); }
+   }
+
+   demo.paint = function() {
+    var T = this.T;
+    var selected_players = [];
+    
+    for (var i in T.players) {
+     var p = T.players[i];
+     if (p.selected) {
+      selected_players.push(p);
+      p.rect.setAttribute('stroke-width',3);
+      p.rect.setAttribute('fill','#88FF88');
+     } else {
+      p.rect.setAttribute('stroke-width',1);
+      p.rect.setAttribute('fill','#FFFFFF');
+     }
+    }
+
+    var ns = selected_players.length;
+    var qualified_medals = [];
+    var unqualified_medals = [];
+    
+    for (var i in this.medals) {
+     var m = this.medals[i];
+     m.is_qualified = 0;
+     for (var j in selected_players) {
+      var p = selected_players[j];
+      if (m.i == p.index || m.j == p.index) {
+       m.is_qualified = 1;
+      }
+     }
+
+     if (m.is_qualified) {
+      m.show(2);
+      qualified_medals.push(m);
+     } else {
+      m.show(ns > 0 ? 0 : 1);
+      unqualified_medals.push(m);
+     }
+    }
+
+    var s = '';
+    if (ns == 0) {
+     s =
+      'To define a tournament with the indicated scores, we need to decide ' +
+      'how to award the medals.  We need a team of three children to present ' +
+      'medals to A, a single child to present a medal to B, and so on. ' +
+      'Children can only present medals to players named on the medal that ' +
+      'they carry.';
+    } else if (ns == 1) {
+     var p = selected_players[0];
+     var k = T.get_score(p);
+     if (k == 1) {
+      s = 'We need a single child to present a medal to ' + p.name + '.';
+     } else {
+      s = 'We need a team of $' + k + '$ children to present medals to ' + p.name + '.';
+     }
+
+     s = s + ' There are 4 qualified children (the ones carrying medals showing ' +
+      ' the letter ' + p.name + ').  As $' + k + '\\leq 4$, the team allocation ' +
+      'plausibility condition is satisfied.';
+    } else if (ns == 5) {
+     s = 'We have $10$ children carrying $10$ medals, and the total of the listed ' +
+      'scores is $10$, so everything is consistent';
+    } else {
+     var names0 = [];
+     var k = 0;
+     for (var j in selected_players) {
+      var p = selected_players[j];
+      names0.push(p.name);
+      k += T.get_score(p);
+     }
+     var names1 = names0.slice(0,-1).join(',') + ' and ' + names0.slice(-1)[0];
+     var names2 = names0.join('');
+     var l = ns * (ns - 1)/2 + ns * (5 - ns);
+     s = 'We need a total of $' + k + '$ children to present medals to ' + names1 +
+      '. There are $' + l + '$ qualified children (carrying medals with at least one ' +
+      'of the letters ' + names2 + ').  As $' + k + '\\leq' + l + '$, the team allocation ' +
+      'plausibility condition is satisfied.';
+    }
+
+    this.msg_div.innerHTML = s;
+    MathJax.Hub.Queue(['Typeset',MathJax.Hub,this.msg_div]);
+   }
+
+   demo.set_click_handler = function(i) {
+    var me = this;
+    var p = this.T.players[i];
+    p.pane.onclick = function() { me.handle_player_click(i); }
+   }
+   
+   demo.handle_player_click = function(i) {
+    if (this.solved) { return; }
+    var p = this.T.players[i];
+    p.selected = p.selected ? 0 : 1;
+    this.paint();
+   }
+
+   demo.solve = function() {
+    this.solved = 1;
+
+    for (i in this.T.players) {
+     this.T.players[i].selected = 0;
+    }
+
+    this.paint();
+    
+    for (var i in this.medals) {
+     var m = this.medals[i];
+     TweenMax.to(m.svg,2,{x : m.x1, y : m.y1});
+    }
+
+    this.msg_div.innerHTML =
+     'This shows a solution to the medal allocation problem, and thus a tournament with ' +
+     'the specified scores.  Under each player we have a queue of children, each ' +
+     'carrying a medal that includes the player\'s name.  The length of the queue is ' +
+     'the specified score for the player.';
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="650">
+   </svg>
+   <div id="msg_div">
+   </div>
+   <div id="controls_div">
+    <table>
+     <tr>
+      <td class="control" id="solve_button">Solve</td>
+     </tr>
+    </table>
+   </div>
+  </div>
+ </body>
+</html>

@@ -1,0 +1,241 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script src="youtube_keys.js"></script>  
+  <script src="comb.js"></script>  
+  <style type="text/css">
+   div#main_div { 
+    position:absolute; 
+   }
+
+   div#vals_div { 
+    position:absolute; 
+    left: 30px;
+    top: 30px;
+   }
+
+   div#controls_div { 
+    position:absolute;
+    left:1200;
+    top:0;
+   }
+
+   div#msg_div {
+    font-size:22px;
+    margin: 20px;
+   }
+
+   text.set {
+    font-size: 20px;
+   }
+
+  </style>
+  <script type="text/javascript">
+
+   var demo = Object.create(comb.demo);
+
+   demo.name = 'wrestling';
+
+   demo.players0 = [
+    ['Awesome Al',1,4],
+    ['Big Brian',5,1],
+    ['Carl the Cannibal',1,5],
+    ['Don the Dinosaur',2,6],
+    ['Ed the Elephant',5,2],
+    ['Fierce Fred',2,3]
+   ];
+
+   demo.msg0 = [];
+
+   demo.msg0.push(
+    'The WSDWL claim that these are their results for the season. <br/>' +
+    'But we suspect that the whole league is just a scam to sell dietary supplements.'
+   );
+   demo.msg0.push(
+    'This does not make sense.  The total score is $1+5+1+2+5+2=16$, ' +
+    'but the total number of matches is $' + comb.latex.binom(6,2) + '=15$, so the total ' +
+    'score should be $15$ as well.');
+   demo.msg0.push(
+    'The WSDWL have issued a correction: Don the Dinosaur won only one match. ' +
+    'Now the total is correct.');
+   demo.msg0.push( 
+    'To understand the situation better, we sort the scores into descending order.');
+   demo.msg0.push(
+    'The score list still cannot be correct.  The total score for wrestlers ' +
+     'A, C, D and F is only $5$.  However, they play $' + comb.latex.binom(4,2) + '=6$ matches ' +
+    'against each other, so they should have a total score of at least $6$.');
+   demo.msg0.push(
+    'Alternatively: wrestlers B and E have a total score of $10$.  But they can only ' +
+    'earn $8$ points by beating the other $4$ wrestlers, and one more point by ' +
+    'fighting each other, so their total score should be at most $9$');
+
+   demo.init = function() {
+    var e,i,j,k,dx,dy,old_sets;
+
+    var me = this;
+
+    this.find_ids();
+
+    this.title_text = comb.svg.text('World Super-Dodgy Wrestling League Results',20,70);
+    this.title_text.setAttribute('text-anchor','left');
+    this.title_text.setAttribute('font-family','Comic Sans MS');
+    this.title_text.setAttribute('font-size','40px');
+    this.main_svg.appendChild(this.title_text);
+    
+    this.players = [];
+    for (i in this.players0) {
+     var p = {};
+     p.i = i;
+     p.name  = this.players0[i][0];
+     p.score = this.players0[i][1];
+     p.rank  = this.players0[i][2];
+
+     p.y0 = 45 * i + 150;
+     p.y1 = 45 * (p.rank - 1) + 150;
+     
+     p.svg = comb.svg.group();
+     p.name_box   = comb.svg.rect(0,0,300,40,'black',1);
+     p.score_box  = comb.svg.rect(300,0,40,40,'black',1);
+     p.name_text  = comb.svg.text(p.name,10,20);
+     p.name_text.setAttribute('text-anchor','left');
+     p.name_text.setAttribute('font-family','Comic Sans MS');
+     p.score_text = comb.svg.math_text(p.score,320,20);
+     p.svg.appendChild(p.name_box);
+     p.svg.appendChild(p.score_box);
+     p.svg.appendChild(p.name_text);
+     p.svg.appendChild(p.score_text);
+
+     if (i == 3) {
+      p.alt_score_text = comb.svg.math_text('1',320,20);
+      p.alt_score_text.setAttribute('opacity',0);
+      p.svg.appendChild(p.alt_score_text);
+     }
+     
+     p.svg.setAttribute('transform','translate(40,' + p.y0 + ')');
+     this.main_svg.appendChild(p.svg);
+     this.players.push(p);
+    }
+
+    for (i = 0; i < 10; i++) {
+     var x = comb.svg.image('../images/diet' + (i % 5) + '.jpg',
+			    50 + 100 * i,460,80,100);
+     this.main_svg.appendChild(x);
+    }
+
+    var x = comb.svg.image('../images/wrestler.png',
+			   1000,60,200,480);
+    this.main_svg.appendChild(x);
+
+    this.msg = [];
+    for (i in this.msg0) {
+     var m = {};
+     m.i = i;
+     m.div = document.createElement('div');
+     m.div.style.display = 'none';
+     m.div.innerHTML = this.msg0[i];
+     this.msg_div.appendChild(m.div);
+     MathJax.Hub.Queue(['Typeset',MathJax.Hub,m.div]);
+     this.msg.push(m);
+    }
+    
+    this.set_stage(0);
+   };
+
+   demo.set_stage = function(i) {
+    var me = this;
+    var i0 = this.stage;
+    this.stage = Math.max(0, Math.min(this.msg.length - 1,i));
+    var i1 = this.stage;
+    var j;
+    
+    for (j in this.msg) {
+     this.msg[j].div.style.display = (j == i1) ? 'block' : 'none';
+    }
+
+    if (i1 == 4) {
+     this.mark_scores([0,2,3,5]);
+    } else if (i1 == 5) {
+     this.mark_scores([1,4]);
+    } else {
+     this.mark_scores([]);
+    }
+    
+    if (i1 >= 3 && i0 < 3) {
+     for (j in this.players) {
+      var p = this.players[j];
+      TweenMax.to(p.svg,3,{y : p.y1});
+     }
+    }
+
+    if (i1 < 3 && i0 >= 3) {
+     for (j in this.players) {
+      var p = this.players[j];
+      TweenMax.to(p.svg,3,{y : p.y0});
+     }
+    }
+
+    if (i1 >= 2 && i0 < 2) {
+     var p = this.players[3];
+     this.mark_scores([3]);
+     TweenMax.to(p.score_text,3,{opacity : 0});
+     TweenMax.to(p.alt_score_text,3,{opacity : 1, onComplete : function() { me.mark_scores([]); } });
+    }
+
+    if (i1 < 2 && i0 >= 2) {
+     var p = this.players[3];
+     TweenMax.to(p.score_text,3,{opacity : 1});
+     TweenMax.to(p.alt_score_text,3,{opacity : 0});
+    }
+
+   }
+
+   demo.mark_scores = function(js) {
+    var i,i0,p,m;
+    
+    for (i in this.players) {
+     p = this.players[i];
+     i0 = parseInt(i);
+     m = js.includes(i0);
+     p.score_box.setAttribute('fill', m ? '#FFBBBB' : 'none');
+    }
+   }
+   
+   demo.next = function() {
+    this.set_stage(this.stage + 1);
+   }
+   
+   demo.previous = function() {
+    this.set_stage(this.stage - 1);
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1200" height="620"></svg>
+   <div id="msg_div"></div>
+   <div id="controls_div">
+    <div class="control" id="previous" onclick="demo.previous()">Previous</div>
+    <div class="control" id="next" onclick="demo.next()">Next</div>
+   </div>
+<!--
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
+   </div>
+-->
+  </div>
+ </body>
+</html>
