@@ -1575,87 +1575,199 @@ matching_problem.delete_cross = function(a,b) {
 //////////////////////////////////////////////////////////////////////
 
 var tournament = {
- players : ['A','B','C','D','E'],
- grid_x0 : 0,
- grid_y0 : 0,
- grid_w : 50,
- grid_h : 50,
- grid_stroke : 'grey',
- win_bg : '#ddddff',
- lose_bg : '#ddffdd',
- col  : { '0' : {0 : '#000000', 1 : '#000000', 2 : '#000000'},
-	  '1' : {0 : '#ddddff', 1 : '#bbbbff', 2 : '#9999ff'},
-	 '-1' : {0 : '#ddffdd', 1 : '#bbffbb', 2 : '#99ff99'}}, 
- letter : { '0' : '', '1' : 'W', '-1' : 'L'}
+ player_names : ['A','B','C','D','E']
 } 
+
+tournament.player = {
+ index : 0,
+ name : '',
+ results : {},
+ indexed_results : []
+};
+
+tournament.get_player = function(x) {
+ if (x.__proto__ === tournament.player) {
+  return x;
+ }
+
+ if (this.player_names.includes(x)) {
+  return this.player_index[x];
+ }
+
+ if (0 <= x && x < this.players.length) {
+  return this.players[x];
+ }
+
+ return null;
+}
+
+tournament.get_results_table = function() {
+ var r = {};
+ for (var i in this.players) {
+  var p = this.players[i];
+  r[p.name] = {};
+  for (var j in this.players) {
+   var q = this.players[j];
+   r[p.name][q.name] = this.result[i][j];
+  }
+ }
+
+ return r;
+}
+
+tournament.get_results_for = function(x) {
+ var p = this.get_player(x);
+ if (! p) { return null; }
+ return this.result[p.index];
+}
+
+tournament.get_results_table_for = function(x) {
+ var p = this.get_player(x);
+ if (! p) { return null; }
+ return this.get_results_table()[p.name];
+}
+
+tournament.get_result = function(x,y) {
+ var p = this.get_player(x);
+ var q = this.get_player(y);
+ if (! (p && q)) { return null; }
+ return this.result[p.index][q.index];
+}
+
+tournament.get_wins = function(x) {
+ var p = this.get_player(x);
+ if (! p) { return null; }
+ var i = p.index;
+ var wins = [];
+
+ for (var j = 0; j < this.players.length; j++) {
+  if (this.result[i][j] == 1) {
+   wins.push(this.players[j]);
+  }
+ }
+
+ return wins;
+}
+
+tournament.get_win_names = function(x) {
+ var wins = this.get_wins(x);
+ if (! wins) { return null; }
+ return wins.map(function(p) { return p.name; });
+}
+
+tournament.get_win_indices = function(x) {
+ var wins = this.get_wins(x);
+ if (! wins) { return null; }
+ return wins.map(function(p) { return p.index; });
+}
+
+tournament.get_losses = function(x) {
+ var p = this.get_player(x);
+ if (! p) { return null; }
+ var i = p.index;
+ var losses = [];
+
+ for (var j = 0; j < this.players.length; j++) {
+  if (this.result[i][j] == -1) {
+   losses.push(this.players[j]);
+  }
+ }
+
+ return losses;
+}
+
+tournament.get_loss_names = function(x) {
+ var losses = this.get_losses(x);
+ if (! losses) { return null; }
+ return losses.map(function(p) { return p.name; });
+}
+
+tournament.get_loss_indices = function(x) {
+ var losses = this.get_losses(x);
+ if (! losses) { return null; }
+ return losses.map(function(p) { return p.index; });
+}
+
+tournament.get_score = function(x) {
+ var p = this.get_player(x);
+ if (! p) { return null; }
+ var i = p.index;
+ var score = 0;
+
+ for (var j = 0; j < this.players.length; j++) {
+  if (this.result[i][j] == 1) {
+   score++;
+  }
+ }
+
+ return score;
+}
+
+tournament.set_result = function(x,y,r) {
+ var p = this.get_player(x);
+ var q = this.get_player(y);
+ if (! (p && q)) { return null; }
+ if (p.index == q.index) { return; }
+
+ var r0 = (r > 0) ? 1 : -1;
+ this.result[p.index][q.index] =  r0;
+ this.result[q.index][p.index] = -r0;
+}
 
 tournament.setup = function(wins) {
  var T,players0,i,j,k,w,a,b;
  
  T = Object.create(this);
- 
- T.wins = wins;
- T.losses = [];
- 
- players0 = {};
- for (i in wins) {
-  players0[wins[i][0]] = 1;
-  players0[wins[i][1]] = 1;
+
+ var wins0 = wins;
+ if (typeof wins0 === 'string') {
+  wins0 = wins0.match(/.{1,2}/g);
  }
 
- T.players = Object.keys(players0);
- T.players.sort();
- T.n = T.players.length;
+ var wins1 = [];
+ 
+ for (i in wins0) {
+  var w = wins0[i];
+  if (typeof w === 'string' && w.length === 2) {
+   w = [w.substring(0,1),w.substring(1)];
+  }
+
+  if (Array.isArray(w) && w.length === 2) {
+   wins1.push(w);
+  }
+ }
+ 
+ players0 = {};
+ for (i in wins1) {
+  players0[wins1[i][0]] = 1;
+  players0[wins1[i][1]] = 1;
+ }
+
+ T.player_names = Object.keys(players0);
+ T.player_names.sort();
+ T.n = T.player_names.length;
+ T.players = [];
  T.player_index = {};
 
- for (i = 0; i < T.n; i++) {
-  T.player_index[T.players[i]] = i;
+ for (i in T.player_names) {
+  var p = Object.create(this.player);
+  p.name = T.player_names[i];
+  p.index = i;
+  T.players.push(p);
+  T.player_index[p.name] = p;
  }
 
  T.result = {};
- T.score = {};
- T.wins_for = {};
- T.losses_for = {};
- T.indexed_result = {};
- T.indexed_score = {};
- T.indexed_wins_for = {};
- T.indexed_losses_for = {};
- 
  for (i = 0; i < T.n; i++) {
-  a = T.players[i];
-  T.result[a] = {};
-  T.wins_for[a] = [];
-  T.losses_for[a] = [];
-  T.indexed_result[i] = {};
-  T.indexed_wins_for[i] = [];
-  T.indexed_losses_for[i] = [];
-  
+  T.result[i] = {};
   for (j = 0; j < T.n; j++) {
-   b = T.players[j];
-   T.result[a][b] = 0;
-   T.indexed_result[i][j] = 0;
+   T.result[i][j] = 0;
   }
-  T.score[a] = 0;
-  T.indexed_score[i] = 0;
  }
-
- for (i in T.wins) {
-  w = T.wins[i];
-  a = w[0];
-  b = w[1];
-  j = T.player_index[a];
-  k = T.player_index[b];
-  T.losses.push([b,a]);
-  T.wins_for[a].push(b);
-  T.losses_for[b].push(a);
-  T.result[a][b] =  1;
-  T.result[b][a] = -1;
-  T.score[a]++;
-  T.indexed_wins_for[j].push(k);
-  T.indexed_losses_for[k].push(j);
-  T.indexed_result[j][k] =  1;
-  T.indexed_result[k][j] = -1;
-  T.indexed_score[j]++;
+ 
+ for (i in wins1) {
+  var w = wins1[i];
+  T.set_result(w[0],w[1],1);
  }
 
  return T;
@@ -1689,60 +1801,168 @@ tournament.odd_modular = function(m) {
  return this.setup(W);
 }
 
-tournament.make_grid = function(with_scores) {
- var P,n,R,x0,y0,w,h,g,i,j,p,q,u,c,t;
+tournament.grid = {
+ x0 : 0,
+ y0 : 0,
+ w  : 50,
+ h  : 50,
+ stroke : 'grey',
+ col  : { '0' : {0 : '#000000', 1 : '#000000', 2 : '#000000'},
+	  '1' : {0 : '#ddddff', 1 : '#bbbbff', 2 : '#9999ff'},
+	 '-1' : {0 : '#ddffdd', 1 : '#bbffbb', 2 : '#99ff99'}}, 
+ letter : { '0' : '', '1' : 'W', '-1' : 'L'},
+ msg_div : null,
+ default_msg : '',
+ graph : null
+};
+
+tournament.col_msg = function(x) {
+ var p0 = this.get_player(x);
+ var i = p0.index;
+ var p = p0.name;
+ 
+ var s = 'This column shows the results of games against player ' + p + '. ';
+ var w = this.get_win_names(i);
+ var l = this.get_loss_names(i);
+
+ if (w.length == 0) {
+  s += 'Every other player wins against player ' + p + ', so every entry in this column is W.';
+ } else if (w.length == 1) {
+  var q = w[0];
+  s += 'Player ' + q + ' loses to ' + p + ', so we have an L in the (' +
+   q + ',' + p + ') position.  Every other player wins against ' + p +
+   ', so all other entries in this column are W.';
+ } else if (w.length == this.n - 2) {
+  var q = l[0];
+  s += 'Player ' + q + ' wins against ' + p + ', so we have a W in the (' +
+   q + ',' + p + ') position.  Every other player loses to ' + p +
+   ', so all other entries in this column are L.';
+ } else if (w.length == this.n - 1) {
+  s += 'Every other player loses to ' + p + ', so every entry in this column is L.';
+ } else {
+  s +=
+   'Players ' + w.slice(0,-1).join(',') + ' and ' + w.slice(-1)[0] + ' lose to ' + p + '. ' + 
+   'Players ' + l.slice(0,-1).join(',') + ' and ' + l.slice(-1)[0] + ' win against ' + p + '.'; 
+ }
+
+ return s;
+}
+
+tournament.row_msg = function(x) {
+ var p0 = this.get_player(x);
+ var i = p0.index;
+ var p = p0.name;
+
+ var s = 'This row shows the results of games played by ' + p + '. ';
+ var w = this.get_win_names(i);
+ var l = this.get_loss_names(i);
+
+ if (w.length == 0) {
+  s += 'Player ' + p + ' loses to every other player, so every entry in this row is L. ';
+ } else if (w.length == 1) {
+  var q = w[0];
+  s += 'Player ' + p + ' wins against ' + q + ', so we have a W in the (' +
+   p + ',' + q + ') position.  Player ' + p + ' loses to every other player, so all other entries in this row are L.';
+ } else if (w.length == this.n - 2) {
+  var q = l[0];
+  s += 'Player ' + p + ' loses to ' + q + ', so we have an L in the (' +
+   p + ',' + q + ') position.  Player ' + p + ' wins against every other player, so all other entries in this row are W.';
+ } else if (w.length == this.n - 1) {
+  s += 'Player ' + p + ' wins against every other player, so every entry in this row is W.';
+ } else {
+  s +=
+   'Player ' + p + ' wins against ' + w.slice(0,-1).join(',') + ' and ' + w.slice(-1)[0] + '. ' + 
+   'Player ' + p + ' loses to ' + l.slice(0,-1).join(',') + ' and ' + l.slice(-1)[0] + '.';
+ }
+ 
+ s += ' The score for player ' + p + ' is ' + w.length + '.';
+ return s;
+}
+
+tournament.score_msg = function(x) {
+ var p = this.get_player(x);
+ 
+ var s = ' The score for player ' + p.name + ' is ' + this.get_score(p) + '.';
+ return s;
+}
+
+tournament.square_msg = function(x,y) {
+ var p = this.get_player(x);
+ var q = this.get_player(y);
+ var pn = p.name;
+ var qn = q.name;
+ var s;
+ 
+ if (this.result[p.index][q.index] == 1) {
+  s = 'Player ' + pn + ' wins against player ' + qn + '. <br/> ' +
+      '(Equivalently, player ' + qn + ' loses to player ' + pn + '.)';
+ } else {
+  s = 'Player ' + pn + ' loses to player ' + qn + '. <br/> ' +
+   '(Equivalently, player ' + qn + ' wins against player ' + pn + '.)';
+ }
+
+ return s;
+}
+
+tournament.make_grid = function(x0,y0,w,h,with_scores) {
+ var P,n,R,g,i,j,p,q,u,c,t;
      
  P = this.players;
  n = this.n;
- R = this.indexed_result;
- x0 = this.grid_x0;
- y0 = this.grid_y0;
- w = this.grid_w;
- h = this.grid_h;
- 
- g = {x0 : x0, y0 : y0, w : w, h : h};
+ R = this.result;
+
+ g = Object.create(this.grid);
  this.grid = g;
+ g.parent = this;
+ 
+ g.x0 = x0;
+ g.y0 = y0;
+ g.w = w;
+ g.h = h;
 
  g.row_header = {};
  g.col_header = {};
- g.indexed_row_header = {};
- g.indexed_col_header = {};
  
  g.square = {};
- g.indexed_square = {};
  g.svg = comb.svg.group();
 
  for (i = 0; i < n; i++) {
   p = P[i];
-  g.square[p] = {};
-  g.indexed_square[i] = {};
-
+  g.square[i] = {};
+  
   u = {};
   u.rect = comb.svg.rect(x0,y0 + (i + 1) * h,w,h,'black',1);
-  u.text = comb.svg.text('' + p,x0 + 0.5 * w,y0 + (i + 1.5) * h);
-  g.row_header[p] = u;
-  g.indexed_row_header[i] = u;
+  u.text = comb.svg.text('' + p.name,x0 + 0.5 * w,y0 + (i + 1.5) * h);
+  u.pane = comb.svg.pane(x0,y0 + (i + 1) * h,w,h);
+  u.rect.setAttribute('pointer-events','none');
+  u.text.setAttribute('pointer-events','none');
+  g.row_header[i] = u;
+  p.row_header = u;
   g.svg.appendChild(u.rect);
   g.svg.appendChild(u.text);
+  g.svg.appendChild(u.pane);
   
   u = {};
   u.rect = comb.svg.rect(x0 + (i + 1) * w,y0,w,h,'black',1);
-  u.text = comb.svg.text('' + p,x0 + (i + 1.5) * w,y0 + 0.5 * h);
-  g.col_header[p] = u;
-  g.indexed_col_header[i] = u;
+  u.text = comb.svg.text('' + p.name,x0 + (i + 1.5) * w,y0 + 0.5 * h);
+  u.pane = comb.svg.pane(x0 + (i + 1) * w,y0,w,h);
+  u.rect.setAttribute('pointer-events','none');
+  u.text.setAttribute('pointer-events','none');
+  g.col_header[i] = u;
+  p.col_header = u;
   g.svg.appendChild(u.rect);
   g.svg.appendChild(u.text);
+  g.svg.appendChild(u.pane);
   
   for (j = 0; j < n; j++) {
    q = P[j];
    u = {};
-   c = this.col[R[i][j]][0];
-   t = this.letter[R[i][j]];
+   c = g.col[R[i][j]][0];
+   t = g.letter[R[i][j]];
    u.rect = comb.svg.rect(x0 + (j + 1) * w, y0 + (i + 1) * h,w,h,'black',1);
    u.text = comb.svg.text(t,x0 + (j + 1.5) * w, y0 + (i + 1.5) * h);
    u.rect.setAttribute('fill',c);
-   g.square[p][q] = u;
-   g.indexed_square[i][j] = u;
+   g.square[i][j] = u;
    g.svg.appendChild(u.rect);
    g.svg.appendChild(u.text);
   }
@@ -1754,39 +1974,230 @@ tournament.make_grid = function(with_scores) {
   g.svg.appendChild(g.scores_header);
   g.svg.appendChild(g.scores_text);
 
-  g.score = {};
-  g.indexed_score = {};
+  g.score_box = {};
   
   for (j = 0; j < n; j++) {
    u = {};
    u.rect = comb.svg.rect(x0 + (n + 1) * w, y0 + (j + 1) * h,2 * w,h,'black',1);
-   u.text = comb.svg.text(this.indexed_score[j],x0 + (n + 2) * w, y0 + (j + 1.5) * h);
+   u.text = comb.svg.text(this.get_score(j),x0 + (n + 2) * w, y0 + (j + 1.5) * h);
+   u.pane = comb.svg.pane(x0 + (n + 1) * w, y0 + (j + 1) * h,2 * w,h);
+   u.rect.setAttribute('pointer-events','none');
+   u.text.setAttribute('pointer-events','none');
    g.svg.appendChild(u.rect);
    g.svg.appendChild(u.text);
-   g.indexed_score[j] = u;
-   g.score[this.players[j]] = u;
+   g.svg.appendChild(u.pane);
+   g.score_box[j] = u;
+   this.players[j].score_box = u;
   }
  }
  
  return g;
 }
 
-tournament.make_graph = function() {
- var P,R,n,x0,y0,m0,g0,g,i,j,p,xy1,s,xy2,a,u,nu,xy1a,xy2a;
-     
- P = this.players;
- R = this.indexed_result;
- n = this.n;
- x0 = this.graph_x0;
- y0 = this.graph_y0;
- m0 = this.graph_scale;
- g0 = 25;
+tournament.grid.highlight_square = function(i,j,k) {
+ var s = this.square[i][j];
+ var r = this.parent.result[i][j];
+ s.rect.setAttribute('fill',this.col[r][k]);
+}
+
+tournament.grid.highlight_score = function(i,k) {
+ this.score_box[i].rect.setAttribute('fill',k ? '#ffbbbb' : '#ffffff');
+}
  
- g = {};
+tournament.grid.highlight_arrow = function(i,j,k) {
+ if (this.graph && this.graph.highlight_arrow) {
+  this.graph.highlight_arrow(i,j,k);
+ }
+}
+
+tournament.grid.handle_row_header_mouseover = function(i,e,t) {
+ var T,j,k,p,s,n;
+
+ T = this.parent;
+ n = T.n;
+ p = T.players[i].name;
+    
+ for (j = 0; j < n; j++) {
+  for (k = 0; k < n; k++) {
+   if (j != k) {
+    this.highlight_square(j,k,(i == j) ? 2 : 0);
+    this.highlight_arrow(j,k,0);
+   }
+  }
+
+  this.highlight_score(j, i == j ? 1 : 0);
+ }
+
+ for (j = 0; j < n; j++) {
+  this.highlight_arrow(j,i,2);
+ }
+
+ if (this.msg_div) {
+  this.msg_div.innerHTML = this.parent.row_msg(i);
+ }
+}
+
+tournament.grid.handle_col_header_mouseover = function(i,e,t) {
+ var T,j,k,p,s,n;
+ 
+ T = this.parent;
+ n = T.n;
+ p = T.players[i].name;
+    
+ for (j = 0; j < n; j++) {
+  for (k = 0; k < n; k++) {
+   if (j != k) {
+    this.highlight_square(j,k,(i == k) ? 2 : 0);
+    this.highlight_arrow(j,k,0);       
+   }
+  }
+ }
+
+ for (j = 0; j < n; j++) {
+  this.highlight_arrow(j,i,2);
+ }
+
+ if (this.msg_div) {
+  this.msg_div.innerHTML = this.parent.col_msg(i);
+ }
+}
+ 
+tournament.grid.handle_score_mouseover = function(i) {
+ var j,k;
+
+ var T = this.parent;
+ var n = T.n;
+ var R = T.result;
+ var p = T.players[i].name;
+ 
+ for (j = 0; j < n; j++) {
+  this.highlight_score(j, i == j ? 1 : 0);
+  for (k = 0; k < n; k++) {
+   this.highlight_square(j,k,0);
+   this.highlight_arrow(j,k,0);
+  }
+ }
+ 
+ for (k = 0; k < n; k++) {
+  if (R[i][k] == 1) {
+   this.highlight_square(i,k,2);
+   this.highlight_arrow(i,k,2);
+  } else {
+   this.highlight_square(i,k,1);
+  }
+ }
+
+ if (this.msg_div) {
+  this.msg_div.innerHTML = this.parent.score_msg(p);
+ } 
+}
+
+tournament.grid.handle_square_mouseover = function(i,j) {
+ var k,l,n;
+
+ n = this.parent.n;
+ 
+ for (k = 0; k < n; k++) {
+  this.highlight_score(k,0);
+  
+  for (l = 0; l < n; l++) {
+   if (k != l) {
+    this.highlight_square(k,l,0);
+    this.highlight_arrow(k,l,0);
+   }
+  }
+ }
+
+ this.highlight_arrow(i,j,2);
+ this.highlight_square(i,j,2);
+ this.highlight_square(j,i,1);
+
+ if (this.msg_div) {
+  this.msg_div.innerHTML = this.parent.square_msg(i,j);
+ }
+}
+
+tournament.grid.handle_mouseout = function(e,t) {
+ var j,k;
+
+ for (j = 0; j < this.parent.n; j++) {
+  this.highlight_score(j,0);
+     
+  for (k = 0; k < this.parent.n; k++) {
+   if (j != k) {
+    this.highlight_square(j,k,0);
+    this.highlight_arrow(j,k,1);
+   }
+  }
+ }
+
+ if (this.msg_div) {
+  this.msg_div.innerHTML = this.default_msg;
+ }
+}
+
+tournament.grid.set_player_handlers = function(i) {
+ var me = this;
+
+ this.col_header[i].pane.onmouseenter =
+  function(e) { me.handle_col_header_mouseover(i,e,'rect'); }
+ this.col_header[i].pane.onmouseleave =
+  function(e) { me.handle_mouseout(e,'rect'); }
+ this.row_header[i].pane.onmouseenter =
+  function(e) { me.handle_row_header_mouseover(i,e,'rect'); }
+ this.row_header[i].pane.onmouseleave =
+  function(e) { me.handle_mouseout(e,'rect'); }
+ this.score_box[i].pane.onmouseenter =
+  function(e) { me.handle_score_mouseover(i,e,'rect'); }
+ this.score_box[i].pane.onmouseleave =
+  function(e) { me.handle_mouseout(e,'rect'); }
+}
+
+tournament.grid.set_square_handler = function(i,j) {
+ var me = this;
+ var v = this.square[i][j];
+    
+ v.rect.onmouseover = function() { me.handle_square_mouseover(i,j); };
+ v.rect.onmouseout  = function() { me.handle_mouseout(); };
+}
+
+tournament.grid.set_all_handlers = function() {
+ var n = this.parent.n;
+ 
+ for (var i = 0; i < n; i++) {
+  this.set_player_handlers(i);
+     
+  for (var j = 0; j < n; j++) {
+   this.set_square_handler(i,j);
+  }
+ }
+}
+
+tournament.graph = {
+ x0 : 0,
+ y0 : 0,
+ m0 : 1,
+ g0 : 25
+}
+
+tournament.make_graph = function(x0,y0,m0,g0) {
+ var P,R,n,g,i,j,p,xy1,s,xy2,a,u,nu,xy1a,xy2a;
+
+ var g = Object.create(this.graph);
  this.graph = g;
+ g.parent = this;
+ 
+ P = this.players;
+ R = this.result;
+ n = this.n;
+ 
+ g.x0 = x0;
+ g.y0 = y0;
+ g.m0 = m0;
+ g.g0 = g0;
+ 
  g.svg = comb.svg.group();
  g.node = {};
- g.indexed_node = {};
  g.arrow = {};
 
  for (i = 0; i < n; i++) { g.arrow[i] = {}; }
@@ -1795,9 +2206,9 @@ tournament.make_graph = function() {
   p = P[i];
   xy1 = this.graph_pos[i];
   xy1 = [x0 + m0 * xy1[0],y0 + m0 * xy1[1]];
-  s = comb.svg.text(p,xy1[0],xy1[1]);
-  g.node[p] = s;
-  g.indexed_node[i] = s;
+  s = comb.svg.text(p.name,xy1[0],xy1[1]);
+  g.node[i] = s;
+  p.graph_node = s;
   g.svg.appendChild(s);
   for (j = 0; j < n; j++) {
    if (R[i][j] == 1) {
@@ -1820,7 +2231,123 @@ tournament.make_graph = function() {
 
  return g;
 }
+
+tournament.graph.highlight_arrow = function(i,j,k) {
+ if (i == j) { return; }
+    
+ var a = this.arrow[i][j];
+ if (k == 0) {
+  a.setAttribute('stroke','#888888');
+  a.setAttribute('stroke-width',1);
+ } else if (k == 1) {
+  a.setAttribute('stroke','#000000');
+  a.setAttribute('stroke-width',1);
+ } else {
+  if (this.parent.result[i][j] == 1) {
+   a.setAttribute('stroke','#0000ff');
+  } else {
+   a.setAttribute('stroke','#00ff00');
+  }
+  a.setAttribute('stroke-width',3);
+ }
+}
+
+var team_tournament = Object.create(tournament);
+
+team_tournament.col_msg = function(x) {
+ var p = this.get_player(x);
+ var i = p.index;
  
+ var s = 'This column shows the results of games against ' + p.full_name + '. ';
+ var w = this.get_wins(i);
+ var l = this.get_losses(i);
+ var f = function(r) { return r.full_name; };
+ var wf = w.map(f);
+ var lf = l.map(f);
+
+ if (w.length == 0) {
+  s += 'Every other team wins against ' + p.full_name + ', so every entry in this column is W.';
+ } else if (w.length == 1) {
+  var q = w[0];
+  s += q.full_name + ' loses to ' + p.full_name + ', so we have an L in the (' +
+   q.name + ',' + p.name + ') position.  Every other team wins against ' + p.full_name +
+   ', so all other entries in this column are W.';
+ } else if (w.length == this.n - 2) {
+  var q = l[0];
+  s += q.full_name + ' wins against ' + p.full_name + ', so we have a W in the (' +
+   q.name + ',' + p.name + ') position.  Every other team loses to ' + p.full_name +
+   ', so all other entries in this column are L.';
+ } else if (w.length == this.n - 1) {
+  s += 'Every other team loses to ' + p.full_name + ', so every entry in this column is L.';
+ } else {
+  s +=
+   wf.slice(0,-1).join(',') + ' and ' + wf.slice(-1)[0] + ' lose to ' + p.full_name + '. ' + 
+   lf.slice(0,-1).join(',') + ' and ' + lf.slice(-1)[0] + ' win against ' + p.full_name + '.'; 
+ }
+
+ return s;
+}
+
+team_tournament.row_msg = function(x) {
+ var p = this.get_player(x);
+ var i = p.index;
+
+ var s = 'This row shows the results of games played by ' + p.full_name + '. ';
+ var w = this.get_wins(i);
+ var l = this.get_losses(i);
+ var f = function(r) { return r.full_name; };
+ var wf = w.map(f);
+ var lf = l.map(f);
+
+ if (w.length == 0) {
+  s += p.full_name + ' loses to every other team, so every entry in this row is L. ';
+ } else if (w.length == 1) {
+  var q = w[0];
+  s += p.full_name + ' wins against ' + q.full_name + ', so we have a W in the (' +
+   p.name + ',' + q.name + ') position. ' + p.full_name +
+   ' loses to every other team, so all other entries in this row are L.';
+ } else if (w.length == this.n - 2) {
+  var q = l[0];
+  s += p.full_name + ' loses to ' + q.full_name + ', so we have an L in the (' +
+   p.name + ',' + q.name + ') position. ' + p.full_name +
+   ' wins against every other team, so all other entries in this row are W.';
+ } else if (w.length == this.n - 1) {
+  s += p.full_name + ' wins against every other team, so every entry in this row is W.';
+ } else {
+  s +=
+   p.full_name + ' wins against ' + wf.slice(0,-1).join(',') + ' and ' + wf.slice(-1)[0] + '. ' + 
+   p.full_name + ' loses to ' + lf.slice(0,-1).join(',') + ' and ' + lf.slice(-1)[0] + '.';
+ }
+ 
+ s += ' The score for ' + p.full_name + ' is ' + w.length + '.';
+ return s;
+}
+
+team_tournament.score_msg = function(x) {
+ var p = this.get_player(x);
+ 
+ var s = ' The score for ' + p.full_name + ' is ' + this.get_score(p) + '.';
+ return s;
+}
+
+team_tournament.square_msg = function(x,y) {
+ var p = this.get_player(x);
+ var q = this.get_player(y);
+ var pn = p.full_name;
+ var qn = q.full_name;
+ var s;
+ 
+ if (this.result[p.index][q.index] == 1) {
+  s = pn + ' wins against ' + qn + '. <br/> ' +
+      '(Equivalently, ' + qn + ' loses to ' + pn + '.)';
+ } else {
+  s = pn + ' loses to ' + qn + '. <br/> ' +
+   '(Equivalently, ' + qn + ' wins against ' + pn + '.)';
+ }
+
+ return s;
+}
+
 //////////////////////////////////////////////////////////////////////
 
 var latin_rectangle = {
