@@ -68,3 +68,7 @@ div.youtube_link {
 div.youtube_link:hover {
  cursor: pointer
 }
+
+.hoverpointer:hover {
+ cursor: pointer
+}
