@@ -50,6 +50,9 @@ $demos_json = <<<JSON
  ["rugby","The Rugby World Cup",[]],
  ["consistent","A consistent tournament",["eg-consistent"]],
  ["modular","Odd modular tournament",["eg-odd-modular"]],
+ ["wrestling","World Super-Dodgy Wrestling League",[]],
+ ["medals","Medals",[]],
+ ["children","The medal ceremony allocation problem",[]],
  ["big_latin","A big Latin square",[]],
  ["d8_latin","Latin square for the dihedral group \$D_8\$",["eg-latin-group"]],
  ["mod_latin","Latin square for addition mod \$10\$",["eg-latin-mod"]],
@@ -72,7 +75,10 @@ foreach($demos0 as $d0) {
   $d->refs[] = $labels[$label];
  }
  $d->ref_string = implode(', ', $d->refs);
-
+ if (count($d->refs) > 1) {
+  $d->ref_string = str_replace('Example','Ex',$d->ref_string);
+ }
+ 
  $d->youtube_key = '';
  $d->youtube_url = '';
  $d->youtube_link = '';
