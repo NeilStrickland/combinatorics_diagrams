@@ -46,6 +46,8 @@
   </script>
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/utils/Draggable.min.js"></script>
+  <script src="comb.js"></script>  
+  <script src="youtube_keys.js"></script>  
   <script type="text/javascript">
 
    var tile = {
@@ -115,7 +117,7 @@
     return g;
    }
 
-   var demo = {};
+   var demo = Object.create(comb.demo);
 
    demo.board_x0 = 50;
    demo.board_y0 = 50;
@@ -177,9 +179,11 @@
    demo.init = function() {
     var i,j,p,dh,dv,me;
 
+    this.name = 'tetris';
+    
     me = this;
 
-    this.main_svg = document.getElementById('main_svg');
+    this.find_ids();
 
     this.board_x1 = this.f(this.board_cols,0);
     this.board_y1 = this.g(0,this.board_rows);
@@ -437,6 +441,9 @@
     and one white square.  Thus, the seven tiles together cover (13 red and 15 white), 
     or (15 red and 13 white).  However, the blue rectangle covers (14 red and 14 white).
     Thus, it is impossible to arrange the seven tiles to cover the blue rectangle.
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

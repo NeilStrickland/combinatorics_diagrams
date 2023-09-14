@@ -13,7 +13,8 @@
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
   </script>
-
+  <script src="comb.js"></script>  
+  <script src="youtube_keys.js"></script>  
   <style type="text/css">
    div#main_div {
     position:absolute;
@@ -46,7 +47,8 @@
     svg : null
    };
    
-   var demo = {};
+   var demo = Object.create(comb.demo);
+   
    demo.num_people = 10;
    demo.max_hairs = 5;
    demo.x0 = 100;
@@ -57,9 +59,12 @@
    
    demo.init = function() {
     var i,j,k,l,A,B,x,y,b,t;
-    var me = this;
+
+    this.name = 'hair';
     
-    this.main_svg = document.getElementById('main_svg');
+    var me = this;
+
+    this.find_ids();
     
     this.hair_count = {};
     
@@ -150,6 +155,9 @@
    <div id="msg_div">
     If we have ten people with at most five hairs each, then there must 
     be two people with the same number of hairs.
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

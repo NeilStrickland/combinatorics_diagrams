@@ -83,17 +83,23 @@
   </script>
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/utils/Draggable.min.js"></script>
+  <script src="comb.js"></script>  
+  <script src="youtube_keys.js"></script>  
   <script type="text/javascript">
 
-   var demo = {};
+   var demo = Object.create(comb.demo);
    
    demo.init = function() {
     var i,r;
+
+    this.name = 'bridges';
+    
     var me = this;
     
     this.mode = 'bridges';
     this.path_state = 'empty';
-    this.main_svg = document.getElementById('main_svg');
+
+    this.find_ids();
     
     this.node = {};
     for (i = 1; i <= 4; i++) {
@@ -304,6 +310,9 @@
     </table>
    </div>
    <div id="msg_div" style="display:none">
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

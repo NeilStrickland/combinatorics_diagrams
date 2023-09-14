@@ -302,19 +302,10 @@ matching_problem.setup = function(A_,B_,E) {
  P.cell = {};
  P.indexed_cell = {};
  
- P.is_filled = {};
- P.is_blocked = {};
- P.is_row_blocked = {};
- P.is_col_blocked = {};
- 
  for (i in A) {
   a = A[i];
   P.cell[a] = {};
   P.indexed_cell[i] = {};
-  P.is_filled[a] = {};
-  P.is_blocked[a] = {};
-  P.is_row_blocked[a] = {};
-  P.is_col_blocked[a] = {};
   for (j in B) {
    b = B[j];
    P.cell[a][b] = {
@@ -2356,7 +2347,9 @@ var latin_rectangle = {
  grid_w : 50,
  grid_h : 50,
  grid_stroke : 'grey',
- grid_fill : 'white'
+ grid_fill : 'white',
+ grid_text_colour : 'black',
+ show_col_labels : true
 };
 
 latin_rectangle.cell = {
@@ -2579,8 +2572,9 @@ latin_rectangle.make_grid = function() {
    s.setAttribute('height',h);
    g.svg.appendChild(s);
    g.square[i][j] = s;
-   t = comb.svg.text(this.cell[i][j].value,
-                     x1 + 0.5 * w, y1 + 0.5 * h);
+   t = comb.svg.math_text(this.cell[i][j].value,
+			  x1 + 0.5 * w, y1 + 0.5 * h);
+   t.setAttribute('fill',this.grid_text_colour);
    g.text[i][j] = t;
    g.svg.appendChild(t);
 
@@ -2589,12 +2583,15 @@ latin_rectangle.make_grid = function() {
   }
  }
 
- for (j = 0; j < q; j++) { 
-  s = comb.svg.text(this.col_label[j],x0 + (j + 0.5) * w, y0 - 0.3 * h);
-  g.col_label_text[j] = s;
-  g.svg.appendChild(s);
+ if (this.show_col_labels) {
+  for (j = 0; j < q; j++) { 
+   s = comb.svg.text(this.col_label[j],x0 + (j + 0.5) * w, y0 - 0.3 * h);
+   s.setAttribute('fill',this.grid_text_colour);
+   g.col_label_text[j] = s;
+   g.svg.appendChild(s);
+  }
  }
-
+ 
  return this.grid;
 }
 
@@ -2622,6 +2619,8 @@ latin_rectangle.make_row_extension_grid = function() {
   g.svg.append(s);
 
   t = comb.svg.text('',x1 + 0.5 * g.w,y1 + 0.7 * g.h);
+  t.setAttribute('pointer-events','all');
+  t.classList.add('hoverpointer');
   g.row_ext_text[i] = t;
   
   comb.svg.append_tspan(t,'\{');

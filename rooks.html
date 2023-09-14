@@ -13,6 +13,7 @@
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
   </script>
+  <script src="youtube_keys.js"></script>  
   <script type="text/javascript" src="comb.js"></script>
   <script type="text/javascript" src="MAS334.js"></script>
   
@@ -109,15 +110,16 @@
    
   </style>
   <script type="text/javascript">
-   var demo = {};
+   var demo = Object.create(comb.demo);
    
    demo.init = function() {
     var i,R,div,t,h,x;
+
+    this.name = 'rooks';
+    
     var me = this;
 
-    this.frame = document.getElementById('frame');
-    this.main_svg = document.getElementById('main_svg');
-    this.msg_div = document.getElementById('msg_div');
+    this.find_ids(['frame']);
     
     this.rooks = {};
     
@@ -185,7 +187,8 @@
      R.rook_polynomial_div = div;
      div.className = 'rook_polynomial';
      div.innerHTML = 'Rook polynomial: $' + R.rook_polynomial_string + '$';
-     
+     MathJax.Hub.Queue(["Typeset",MathJax.Hub,div]);
+
      t = R.solution_table;
      x = t.style.left;
      t.style.left = -10000;
@@ -316,6 +319,9 @@
     <div class="control" onclick="demo.show_board(3)">Example 7.14</div>
    </div>
    <div id="msg_div">
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

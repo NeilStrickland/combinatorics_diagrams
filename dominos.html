@@ -40,12 +40,13 @@
     tex2jax: {inlineMath: [["$","$"]]}
    });
   </script> 
-
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
   </script>
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/utils/Draggable.min.js"></script>
+  <script src="comb.js"></script>  
+  <script src="youtube_keys.js"></script>  
   <script type="text/javascript">
    var domino = {
     is_vertical : 0,
@@ -61,7 +62,7 @@
     dragger : null
    };
 
-   var demo = {};
+   var demo = Object.create(comb.demo);
 
    demo.board_x0 = 200;
    demo.board_y0 = 100;
@@ -159,9 +160,11 @@
    demo.init = function() {
     var i,j,p,dh,dv,me;
 
-    me = this;
+    this.name = 'dominos';
     
-    this.main_svg = document.getElementById('main_svg');
+    me = this;
+
+    this.find_ids();
 
     this.board_x1 = this.f(this.board_cols,0);
     this.board_y1 = this.g(0,this.board_rows);
@@ -507,6 +510,9 @@ Here we have a $6\times 6$ board, with $36$ squares.  There are many different w
     <div id="nicked_msg" style="display:none">
 Here we have a $6\times 6$ board, with two black corner squares removed, leaving $18$ white squares and $16$ black ones.  Each domino covers one black square and one white square, so the number of uncovered white squares is always two more than the number of uncovered black squares.  Thus, the total number of uncovered squares can never be zero.  So it is impossible to cover the board.
     </div>
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

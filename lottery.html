@@ -31,8 +31,19 @@
     text-align:center;
    }
   </style>
+  <script src="youtube_keys.js"></script>  
+  <script src="comb.js"></script>  
+  <script type="text/javascript">
+   var demo = Object.create(comb.demo);
+
+   demo.init = function() {
+    this.name = 'lottery';
+    this.find_ids();
+   }
+   
+  </script>
  </head>
- <body>
+ <body onload="demo.init()">
   <div id="frame">
    <div id="ball_div">
     <table id="ball_table">
@@ -118,6 +129,9 @@
     \frac{59.58.57.56.55.54}{6.5.4.3.2.1} = 45057474
     \simeq 4.5\times 10^7.
     $$
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

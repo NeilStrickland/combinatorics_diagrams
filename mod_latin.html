@@ -13,23 +13,25 @@
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
   </script>
+  <script type="text/javascript" src="youtube_keys.js"></script>
   <script type="text/javascript" src="comb.js"></script>
   <script type="text/javascript" src="MAS334.js"></script>
   
   <style type="text/css">
   </style>
   <script type="text/javascript">
-   var demo = {};
+   var demo = Object.create(comb.demo);
    
    demo.init = function() {
     var i,j,k,l,A,B,x,y,b,t,r;
+
+    this.name = 'mod_latin';
+    
     var me = this;
 
     this.n = 10;
-    
-    this.main_svg = document.getElementById('main_svg');
-    this.msg_div = document.getElementById('msg_div');
-    this.unscramble_button = document.getElementById('unscramble');
+
+    this.find_ids(['unscramble_button']);
     
     this.x0 = 90;
     this.y0 = 90;
@@ -402,9 +404,12 @@
    <div id="controls_div" style="position:absolute; left:950px; top:700px;">
     <table>
      <tr>
-      <td class="control" id="unscramble" style="visibility:hidden">Unscramble</td>
+      <td class="control" id="unscramble_button" style="visibility:hidden">Unscramble</td>
      </tr>
     </table>
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

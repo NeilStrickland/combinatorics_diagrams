@@ -2,8 +2,8 @@
 
 require_once('../MAS334.php');
 
-$labels = parse_aux_labels();
-$keys = parse_youtube_keys();
+$labels = $course->parse_aux_labels();
+$keys = $course->parse_youtube_keys();
 
 $demos_json = <<<JSON
 [
@@ -42,7 +42,7 @@ $demos_json = <<<JSON
  ["menage","Problème des ménages",["prob-menage"]],
  ["rook_split","Blocking and stripping",["thm-split"]],
  ["rook_factor","Factoring rook polynomials",["eg-rook-factor"]],
- ["extend","Extending a latin square",["prob-extend"]],
+ ["extend","Extending a latin rectangle",["prob-extend"]],
  ["solve_menage","Solving the Problème des ménages",["eg-solve-menage"]],
  ["snap_sympy","Solving the Snap problem with Python",["eg-snap-finish"]],
  ["SX","Counting the sets \$S_X\$",["lem-SX"]],
@@ -56,6 +56,9 @@ $demos_json = <<<JSON
  ["big_latin","A big Latin square",[]],
  ["d8_latin","Latin square for the dihedral group \$D_8\$",["eg-latin-group"]],
  ["mod_latin","Latin square for addition mod \$10\$",["eg-latin-mod"]],
+ ["biextend","Extending another latin rectangle",["eg-ext-bb"]],
+ ["orthogonal","Orthogonal latin squares",["defn-orth"]],
+ ["latin4","Reduced latin squares of size $4$",["prop-latin-reduced-four"]],
  ["affine_design","Affine plane design over \$\\\\mathbb{Z}/3\$",["eg-affine-design"]],
  ["quadratic_design","Quadratic residue design over \$\\\\mathbb{Z}/7\$",["eg-residue-seven"]]
 ]
@@ -87,7 +90,8 @@ foreach($demos0 as $d0) {
   $d->youtube_key = $keys[$d->name];
   $d->youtube_url = 'https://youtu.be/' . $d->youtube_key;
   $d->youtube_link = <<<HTML
-<span class="video_link"><img src="video_icon.png" height="20px" onclick="location='{$d->youtube_url}'"</img></span>
+<span class="video_link"><img class="hoverpointer" src="video_icon.png" height="20px"
+   onclick="location='{$d->youtube_url}'"</img></span>
 
 HTML;
  }
@@ -114,13 +118,13 @@ echo <<<HTML
    table#A {
     position: absolute;
     left: 50px;
-    top: 70px;
+    top: 60px;
    }
    
    table#B {
     position: absolute;
     left: 680px;
-    top: 70px;
+    top: 60px;
    }
 
    span.video_link {

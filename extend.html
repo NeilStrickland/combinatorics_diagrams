@@ -76,17 +76,19 @@
     tex2jax: {inlineMath: [["$","$"]]}
    });
   </script> 
+  <script type="text/javascript" src="youtube_keys.js"></script>
   <script type="text/javascript" src="comb.js"></script>
   <script type="text/javascript" src="MAS334.js"></script>
   <script type="text/javascript">
 
-   var demo = {};
+   var demo = Object.create(comb.demo);
    
    demo.init = function() {
     var w,x,y,s,i,j,a,b;
-    this.main_svg = document.getElementById('main_svg');
-    this.solutions_div = document.getElementById('solutions_div');
-    this.msg_div = document.getElementById('msg_div');
+
+    this.name = 'extend';
+
+    this.find_ids(['solutions_div']);
     
     this.L = latin_rectangle.setup(
      [[1,2,3,4,5],[2,4,5,3,1],[4,3,1,5,2]]
@@ -197,6 +199,9 @@
     rooks on the board on the right.  You can experiment with this by
     clicking on the board, or by clicking on the entries in the extra
     row. 
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

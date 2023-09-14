@@ -63,6 +63,8 @@
   </script>
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/utils/Draggable.min.js"></script>
+  <script src="youtube_keys.js"></script>  
+  <script src="comb.js"></script>  
   <script type="text/javascript">
    
    var person = {
@@ -81,7 +83,7 @@
     img : null
    }
    
-   var demo = {};
+   var demo = Object.create(comb.demo);
 
    demo.board_x0 = 50;
    demo.board_y0 = 50;
@@ -108,6 +110,10 @@
    demo.init = function() {
     var i,j,p,dh,dv,me;
 
+    this.name = 'handshake';
+
+    this.find_ids();
+    
     me = this;
 
     this.names = ['Anna','Bill','Cate','Doug','Erin','Fred'];
@@ -270,6 +276,9 @@
     </table>
    </div>
    <div id="msg_div">
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

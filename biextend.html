@@ -1,0 +1,867 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <style type="text/css">
+
+   div#msg_div {
+    font-size: 24px;
+    margin: 40px;
+    position:absolute;
+    left: 0px;
+    top:450px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    right: 30px;
+    top: 50px;
+   }
+
+   div#LE_div {
+    position: absolute;
+    left: 700px;
+    top: 270px;
+    width: 550px;
+    height: 180px;
+   }
+   
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="youtube_keys.js"></script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  <script type="text/javascript">
+
+   var demo = Object.create(comb.demo);
+
+   demo.square = {};
+
+   demo.option = {};
+
+   demo.option.block = function(b) {
+    if (b > this.block_state) { this.block_state = b; }
+    return this.block_state;
+   }
+
+   demo.cols = {
+    'box'       : '#888888',
+    'xs_neg'    : '#FF8888',
+    'xs_zero'   : '#FFBF00',
+    'xs_pos'    : '#FFFFFF',
+    'hbar'      : '#0000FF',
+    'vbar'      : '#006400',
+    'ring'      : '#006400',
+    'fixed'     : '#000000',
+    'selected'  : '#0000FF',
+    'available' : '#448844',
+    'blocked'   : '#FF4444',
+    'LE_range'  : '#DDDDFF'
+   }
+   
+   demo.init = function() {
+    var w,x,y,s,i,j,a,b;
+
+    this.name = 'biextend';
+    
+    var me = this;
+    
+    this.find_ids(['next_button','LE_div']);
+    this.stage = 0;
+    this.stage_ready = 1;
+    this.last_stage = 5;
+
+    this.next_button.onclick = function() { me.next_stage(); };
+    
+    this.vals0 = [[5,6,1,3,2],[6,5,2,4,7],[1,4,3,5,6],[4,7,5,6,1]];
+
+    // NOTE: Instructive examples are as follows:
+    // If we start entering 217 on the first new row, we get stuck.
+    // If we enter 21674 on the first new row, we have a negative excess
+    // If we enter 21473 on the first new row, we can proceed
+    // If we then enter _37 on the next row, we get stuck
+    // If we enter 32614 on the next row, we have a negative excess
+    // If we enter 32714 on the next row, we can proceed
+    // There are then 4 ways to complete the next column, because
+    //  12347 is decoupled from 56.
+    this.L = latin_rectangle.setup(this.vals0);
+
+    this.vals = {};
+
+    this.grid = comb.svg.group();
+    this.grid.setAttribute('transform','translate(50 50)');
+    this.main_svg.appendChild(this.grid);
+
+    this.table = comb.svg.group();
+    this.table.setAttribute('transform','translate(700 50)');
+    this.main_svg.appendChild(this.table);
+    
+    this.n = 7;
+    this.gw = 70;
+    this.gh = 50;
+    this.tw = 50;
+    this.th = 40;
+    
+    this.squares = {};
+    this.boxes = {};
+    
+    for (j = 0; j < 5; j++) {
+     this.boxes[j] = {};
+     
+     for (i = 0; i <= this.n; i++) {
+      var b = {};
+      b.i = i;
+      b.j = j;
+
+      b.svg = comb.svg.group();
+      var x = (i == 0) ? 0 : this.tw * (i + 1);
+      var y = this.th * j;
+      var w = (i == 0 ? 2 : 1) * this.tw;
+      b.svg.setAttribute('transform','translate(' + x + ',' + y + ')');
+      if (j > 0) { b.svg.setAttribute('visibility','hidden'); }
+      this.table.appendChild(b.svg);
+      b.rect = comb.svg.rect(0,0,w,this.th,this.cols.box,1);
+      b.text = comb.svg.math_text('',w/2,this.th/2);
+      b.text.setAttribute('font-size','16px');
+      b.ring = comb.svg.rect(2,2,w - 4,this.th - 4,this.cols.ring,2);
+      b.ring.setAttribute('rx',2);
+      b.ring.setAttribute('ry',2);
+      b.ring.setAttribute('visibility','hidden');
+      b.pane = comb.svg.pane(0,0,w,this.th);
+      b.rect.setAttribute('pointer-events','none');
+      b.text.setAttribute('pointer-events','none');
+      b.ring.setAttribute('pointer-events','none');
+      b.pane.setAttribute('pointer-events','none');
+      b.svg.appendChild(b.rect);
+      b.svg.appendChild(b.text);
+      b.svg.appendChild(b.ring);
+      b.svg.appendChild(b.pane);
+
+      if (j == 0) {
+       b.text.textContent = (i == 0) ? 'k' : i;
+      } else {
+       if (i == 0) {
+        b.text.textContent = 'm(k)/e(k)';
+       } else {
+        if (j == 1) {
+         b.L = this.L.multiplicity[i];
+         b.E = this.L.excess[i];
+         b.text.textContent = '' + b.L + '/' + b.E;
+         if (b.E < 0) {
+          b.rect.setAttribute('fill',this.cols.xs_neg);
+         } else if (b.E == 0) {
+          b.rect.setAttribute('fill',this.cols.xs_zero);         
+         } else {
+          b.rect.setAttribute('fill',this.cols.xs_pos);         
+         }
+        }
+       }
+      }
+      
+      this.boxes[j][i] = b;
+      if (i > 0 && j > 0) { this.set_box_handlers(b); }
+     }
+    }
+
+    this.show_table_row(1,1);
+
+    for (i = 0; i < this.n; i++) {
+     this.squares[i] = {};
+     
+     for (j = 0; j < this.n; j++) {
+      var s = Object.create(this.square);
+      this.squares[i][j] = s;
+      s.i = i;
+      s.j = j;
+      s.state = 'empty';
+      s.val = 0;
+      s.selected_val = 0;
+
+      if (j < 5) {
+       if (i < 4) {
+        s.state = 'fixed';
+        s.val = this.vals0[i][j];
+       }
+      }
+      
+      s.svg = comb.svg.group();
+      s.svg.setAttribute('transform','translate(' + (this.gw * j) + ',' + (this.gh * i) + ')');
+      this.grid.appendChild(s.svg);
+      s.rect = comb.svg.rect(0,0,this.gw,this.gh,this.cols.box,1);
+      if (s.state == 'empty') {
+       s.rect.setAttribute('opacity',0.3);
+      }
+      s.svg.appendChild(s.rect);
+
+      s.options = {};
+      for (k = 1; k <= this.n; k++) {
+       var o = Object.create(this.option);
+       o.i = i;
+       o.j = j;
+       o.k = k;
+       o.block_state = 0;
+       o.selected = (k == s.val);
+       o.svg = comb.svg.math_text(k,this.gw/2,this.gh/2);
+       o.svg.setAttribute('font-size','20px');
+       o.svg.setAttribute('pointer-events','visiblePainted');
+       o.svg.classList.add('hoverpointer');
+       if (! o.selected) {
+        o.svg.setAttribute('visibility','hidden');
+       }
+       s.svg.appendChild(o.svg);
+
+       s.options[k] = o;
+      }
+
+      s.ring = comb.svg.rect(2,2,this.gw - 4,this.gh - 4,this.cols.ring,2);
+      s.ring.setAttribute('rx',2);
+      s.ring.setAttribute('ry',2);
+      s.ring.setAttribute('visibility','hidden');
+      s.svg.appendChild(s.ring);
+     }
+    }
+
+    this.hbar = {};
+    this.vbar = {};
+    
+    for (i = 0; i <= this.n; i++) {
+     var b = comb.svg.hline(0, this.gw * this.n, this.gh * i, this.cols.hbar, 3);
+     if (i != 4) {
+      b.setAttribute('opacity',0);
+     }
+     this.hbar[i] = b;
+     this.grid.appendChild(b);
+
+     var b = comb.svg.vline(this.gw * i, 0, this.gh * this.n, this.cols.vbar, 3);
+     if (i != 5) {
+      b.setAttribute('opacity',0);
+     }
+     this.vbar[i] = b;
+     this.grid.appendChild(b);
+    }
+
+    this.set_blocks();
+    this.board = this.L.make_row_extension_problem();
+
+    for (i = 0; i < this.n; i++) {
+     for (j = 0; j < this.n; j++) {
+      for (k = 1; k <= this.n; k++) {
+       this.set_option_click_handler(i,j,k);
+      }
+     }
+    }
+   };
+
+   //////////////////////////////////////////////////////////////////////
+   
+   demo.find_new_multiplicities = function() {
+    var r = {};
+    r.stage = this.stage;
+    r.extension_ok = 1;
+    r.bad_index = 0;
+    r.critical = [];
+    r.excess_shift = this.L.p + this.stage + this.L.q - this.L.n;
+    r.multiplicity = {};
+    for (var k = 1; k <= this.n; k++) { r.multiplicity[k] = 0; }
+    r.excess = {};
+    for (i = 0; i < this.n; i++) {
+     for (j = 0; j < this.n; j++) {
+      var s = this.squares[i][j];
+      var v = 0;
+      if (s.state == 'fixed') {
+       v = s.val;
+      } else if (s.state == 'active') {
+       v = s.selected_val;
+      }
+      
+      if (v) { r.multiplicity[v]++; }
+     }
+    }
+
+    for (var k = 1; k <= this.n; k++) {
+     r.excess[k] = r.multiplicity[k] - r.excess_shift;
+     if (r.excess[k] < 0) {
+      r.extension_ok = 0;
+      r.bad_index = k;
+     } else if (r.excess[k] == 0) {
+      r.critical.push(k);
+     }
+     
+     var b = this.boxes[this.stage + 1][k];
+     b.L = r.multiplicity[k];
+     b.E = r.excess[k];
+     b.text.textContent = '' + b.L + '/' + b.E;
+     if (b.E < 0) {
+      b.rect.setAttribute('fill',this.cols.xs_neg);
+     } else if (b.E == 0) {
+      b.rect.setAttribute('fill',this.cols.xs_zero);   
+     } else {
+      b.rect.setAttribute('fill',this.cols.xs_pos);         
+     }
+    }
+
+    this.new_LE = r;
+    return r;
+   }
+
+   //////////////////////////////////////////////////////////////////////
+
+   demo.check_stage_complete = function() {
+    this.stage_complete = true;
+    
+    for (var i = 0; i < this.n; i++) {
+     for (var j = 0; j < this.n; j++) {
+      var s = this.squares[i][j];
+      if (s.state == 'active' && ! s.selected_val) {
+       this.stage_complete = false;
+      }
+     }
+    }    
+   }
+
+   //////////////////////////////////////////////////////////////////////
+
+   demo.set_square_outlines = function() {
+    for (var i = 0; i < this.n; i++) {
+     for (var j = 0; j < this.n; j++) {
+      var s = this.squares[i][j];
+      var s = this.squares[i][j];
+      s.rect.setAttribute('opacity', s.state == 'empty' ? 0.3 : 1);
+     }
+    }    
+   }   
+
+   //////////////////////////////////////////////////////////////////////
+
+   demo.clear_blocks = function() {
+    for (var i = 0; i < this.n; i++) {
+     for (var j = 0; j < this.n; j++) {
+      for (var k = 1; k <= this.n; k++) {
+       this.squares[i][j].options[k].block_state = 0;
+      }
+     }
+    }
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.set_blocks_core = function() {
+    for (var i = 0; i < this.n; i++) {
+     for (var j = 0; j < this.n; j++) {
+      var s = this.squares[i][j];
+
+      var v,b;
+      
+      if (s.val) {
+       v = s.val;  b = 2;
+      } else if (s.selected_val) {
+       v = s.selected_val; b = 1;
+      } else {
+       v = 0; b = 0;
+      }
+      
+      if (b) {
+       for (var i0 = 0; i0 < this.n; i0++) {
+        if (i0 != i) {
+         this.squares[i0][j].options[v].block(b);
+        }
+       }
+
+       for (var j0 = 0; j0 < this.n; j0++) {
+        if (j0 != j) {
+         this.squares[i][j0].options[v].block(b);
+        }
+       }
+      }
+     }
+    }
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.set_option_visibility = function() {
+    for (var i = 0; i < this.n; i++) {
+     for (var j = 0; j < this.n; j++) {
+      var s = this.squares[i][j];
+      s.visible_options = [];
+      
+      for (k = 1; k <= this.n; k++) {
+       var o = s.options[k];
+       o.svg.setAttribute('visibility','hidden');
+
+       if (s.state == 'fixed') {
+        if (k == s.val) {
+         o.svg.setAttribute('fill',this.cols.fixed);
+         s.visible_options.push(o);
+        }
+       } else if (s.state == 'active') {
+        if (k == s.selected_val) {
+         o.svg.setAttribute('fill',this.cols.selected);
+         o.svg.setAttribute('font-weight','bold');
+         o.svg.setAttribute('opacity',1);
+         s.visible_options.push(o);
+        } else if (o.block_state == 0) {
+         o.svg.setAttribute('fill',this.cols.available);
+         o.svg.setAttribute('font-weight','normal');
+         o.svg.setAttribute('opacity',s.selected_val ? 0.5 : 1);       
+         s.visible_options.push(o);
+        } else if (o.block_state == 1) {
+         o.svg.setAttribute('fill',this.cols.blocked);
+         o.svg.setAttribute('font-weight','normal');
+         o.svg.setAttribute('opacity',0.5);      
+         s.visible_options.push(o);
+        }
+       }
+      }
+
+      var nv = s.visible_options.length;
+      for (k in s.visible_options) {
+       var o = s.visible_options[k];
+       o.svg.setAttribute('visibility','visible');
+       o.x = this.gw/2 + 15 * (k - (nv - 1)/ 2);
+       o.svg.setAttribute('transform','');
+       o.svg.setAttribute('x',o.x);
+      }
+     }
+    }
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.set_blocks = function(keep_msg) {
+    if (arguments.length == 0) { keep_msg = 0; }
+    this.check_stage_complete();
+    this.set_square_outlines();
+    this.clear_blocks();
+    this.set_blocks_core();
+    this.set_option_visibility();
+    
+    if (this.stage == 1 || this.stage == 2) {
+     if (this.stage_complete) {
+      var r = this.find_new_multiplicities();
+      this.show_table_row(this.stage + 1,1);
+      if (r.extension_ok) {
+        var s =
+'We have now completed the new row, so we can calculate the new multiplicities ' +
+'and excesses, as shown on the right.  For numbers $k$ that are included in the new ' +
+'row, $m(k)$ goes up by one and $e(k)$ stays the same.  For numbers $k$ that are ' +
+'not included, $m(k)$ stays the same and $e(k)$ drops by one.  As we have included ' +
+'all the numbers $k$ where $e(k)$ was already zero, the new values of $e(k)$ are ' +
+'all still nonnegative.  This means that the extension problem is still possible ' +
+'and we can proceed to the next stage.';
+       this.set_msg(s);
+       this.make_stage_ready();
+      } else {
+        var s =
+'We have now completed the new row, so we can calculate the new multiplicities ' +
+'and excesses, as shown on the right.  For numbers $k$ that are included in the new ' +
+'row, $m(k)$ goes up by one and $e(k)$ stays the same.  For numbers $k$ that are ' +
+'not included, $m(k)$ stays the same and $e(k)$ drops by one.  As ' +
+'$' + r.bad_index + '$ is not included, $e(' + r.bad_index + ')$ is now ' +
+'negative, so the extension problem is no longer possible.  We need to change ' +
+'the new row before we can proceed.';
+       this.set_msg(s);
+       this.make_stage_unready();
+      }
+     } else {
+      this.show_table_row(this.stage + 1,0);
+      if (! keep_msg) { this.set_msg('We have not yet completed the new row.'); }      
+      this.make_stage_unready();
+     }
+    } else if (this.stage == 4) {
+     if (this.stage_complete) {
+      var s = 'We have now completed column $6$, so we can proceed to column $7$.';
+      this.set_msg(s);
+      this.make_stage_ready();
+     } else {
+      if (! keep_msg) { this.set_msg('We have not yet completed the new column.'); }
+      this.make_stage_unready();
+     }
+    }
+   }
+
+   //////////////////////////////////////////////////////////////////////
+   
+   demo.set_option_click_handler = function(i,j,k) {
+    var o = this.squares[i][j].options[k];
+    var me = this;
+    
+    o.svg.onclick = function() { me.handle_option_click(i,j,k); }
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.handle_option_click = function(i,j,k) {
+    var s = this.squares[i][j];
+    var o = s.options[k];
+
+    if (! (s.state == 'active' && o.block_state == 0)) { return; }
+    s.selected_val = (s.selected_val == k) ? 0 : k;
+
+    this.set_blocks();
+   }
+
+   //////////////////////////////////////////////////////////////////////
+
+   demo.set_box_handlers = function(b) {
+    var me = this;
+    
+    b.pane.onmouseover = function() {
+     me.show_LE(b.j,b.i);
+    };
+
+    b.pane.onmouseout = function() {
+     me.hide_LE(b.j,b.i);
+    };
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.show_table_row = function(i,x) {
+    for (var k = 0; k <= this.n; k++) {
+     var b = this.boxes[i][k];
+     b.svg.setAttribute('visibility',x ? 'visible' : 'hidden');
+     b.pane.setAttribute('pointer-events',(x && i && k) ? 'all' : 'none');
+    }
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.make_stage_ready = function() {
+    this.stage_ready = 1;
+    this.next_button.style.opacity = 1;
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.make_stage_unready = function() {
+    this.stage_ready = 0;
+    this.next_button.style.opacity = 0.2;
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.next_stage = function() {
+    var me = this;
+    
+    if (this.stage == this.last_stage) { return; }
+    if (! this.stage_ready) { return; }
+
+    this.stage++;
+
+    // ------------------------------------------------------------
+    if (this.stage == 1) {
+     this.make_stage_unready();
+     
+     this.hbar[5].setAttribute('opacity',1);
+     for (var i = 0; i < 5; i++) {
+      this.squares[4][i].state = 'active';
+     }
+     this.set_blocks();
+
+     var s =
+      'We first add one more row to the rectangle.  The three options ' +
+      'for each square in the new row are now shown. Note that for ' +
+      '$k\\in\\{2,3,7\\}$ we have $e(k)=0$ (as indicated by the amber ' +
+      'squares in the top right table).  To ensure that we can ' +
+      'continue after this step, we need to include $2,3$ and $7$ ' +
+      'in the new row. You can select a new row by clicking the options.' ;
+     this.set_msg(s);
+    // ------------------------------------------------------------
+    } else if (this.stage == 2) {
+     this.make_stage_unready();
+
+     for (var i = 0; i < 5; i++) {
+      var s = this.squares[4][i];
+      s.val = s.selected_val;
+      s.selected_val = 0;
+      var o = s.options[s.val];
+      
+      var opts = {};
+      opts['x'] = this.gw / 2 - o.x;
+      opts['fill'] = this.cols.fixed;
+      opts['font-weight'] = 'normal';
+      opts['onComplete'] = function() { me.set_blocks(1); };
+      TweenMax.to(o.svg,3,opts);
+
+      var still_free = [];
+      for (k = 1; k <= this.n; k++) {
+       var oo = s.options[k];
+       if (k != s.val && oo.block_state != 2) {
+        still_free.push(oo);
+       }
+      }
+
+      var nv = still_free.length;
+      for (k in still_free) {
+       var oo = still_free[k];
+       oo.block_state = 2;
+       var opts = {};
+       opts['x'] = this.gw/2 + 15 * (k - (nv - 1)/ 2) - oo.x;
+       opts['y'] = this.gh;
+       opts['fill'] = this.cols.available;
+       opts['opacity'] = 1;
+       TweenMax.to(oo.svg,3,opts);
+      }
+
+      TweenMax.to(this.hbar[4],3,{opacity : 0});
+      TweenMax.to(this.hbar[6],3,{opacity : 1});
+
+      s.state = 'fixed';
+      this.squares[5][i].state = 'active';
+     }
+
+     var ks = '\\{' + this.new_LE.critical.join(',') + '\\}';
+     
+     var s =
+      'We now add row number $6$ to the rectangle.  The two options ' +
+      'for each square in the new row are now shown. Note that for ' +
+      '$k\\in' + ks + '$ we have $e(k)=0$ (as indicated by the amber ' +
+      'squares in the second row of the top right table).  To ensure ' +
+      'that we can continue after this step, we need to include these ' +
+      'numbers in the new row.' ;
+
+     this.set_msg(s);
+    // ------------------------------------------------------------
+    } else if (this.stage == 3) {
+     this.make_stage_ready();
+
+     var remaining_option = {};
+     
+     for (var i = 0; i < 5; i++) {
+      var s = this.squares[5][i];
+      s.val = s.selected_val;
+      s.selected_val = 0;
+      var o = s.options[s.val];
+      
+      var opts = {};
+      opts['x'] = this.gw / 2 - o.x;
+      opts['fill'] = this.cols.fixed;
+      opts['font-weight'] = 'normal';
+      opts['onComplete'] = function() { me.set_blocks(1); };
+      TweenMax.to(o.svg,3,opts);
+
+      var still_free = [];
+      for (k = 1; k <= this.n; k++) {
+       var oo = s.options[k];
+       if (k != s.val && oo.block_state != 2) {
+        still_free.push(oo);
+        remaining_option[i] = oo;
+       }
+      }
+
+      var nv = still_free.length;
+      for (k in still_free) {
+       var oo = still_free[k];
+       oo.block_state = 2;
+       var opts = {};
+       opts['x'] = this.gw/2 + 15 * (k - (nv - 1)/ 2) - oo.x;
+       opts['y'] = this.gh;
+       opts['fill'] = this.cols.available;
+       opts['opacity'] = 1;
+       TweenMax.to(oo.svg,3,opts);
+      }
+
+      TweenMax.to(this.hbar[5],3,{opacity : 0});
+      TweenMax.to(this.hbar[7],3,{opacity : 1});
+
+      s.state = 'fixed';
+      this.squares[6][i].state = 'fixed';
+      this.squares[6][i].val = remaining_option[i].k;
+     }
+
+     this.find_new_multiplicities();
+     this.stage_complete = 1;
+     this.show_table_row(4,1);
+
+     var s =
+      'We now want to add row number $7$ to the rectangle.  There ' +
+      'is only one possible choice left in each column, and these ' +
+      'are all different, so there is no work to do for this step. ' +
+      'Note also that all multiplicities $m(k)$ are now equal to $5$, ' +
+      'and all excesses $e(k)$ are equal to zero. ' +
+      'We can now proceed to fill in the two missing columns. ';     
+
+     this.set_msg(s);
+
+     setTimeout(function() {me.set_blocks(1); me.make_stage_ready(); },3500);
+    // ------------------------------------------------------------
+    } else if (this.stage == 4) {
+     this.make_stage_unready();
+     TweenMax.to(this.hbar[6],3,{opacity : 0});
+     TweenMax.to(this.hbar[7],3,{opacity : 0});
+     TweenMax.to(this.vbar[6],3,{opacity : 1});
+
+     for (i = 0; i < this.n; i++) {
+      this.squares[i][5].state = 'active';
+     }
+
+     var s =
+      'We now want to add column number $6$ to the rectangle. ' +
+      'Because we already have a rectangle of maximum possible height, ' +
+      'extension is always possible, and we do not need to worry about ' +
+      'excesses any more.  There are two options for each square in ' +
+      'the new column.';
+
+     this.set_msg(s);
+     this.set_blocks(1);
+    // ------------------------------------------------------------
+    } else if (this.stage == 5) {
+     this.make_stage_unready();
+
+     var remaining_option = {};
+     
+     for (var i = 0; i < 7; i++) {
+      var s = this.squares[i][5];
+      s.val = s.selected_val;
+      s.selected_val = 0;
+      var o = s.options[s.val];
+      
+      var opts = {};
+      opts['x'] = this.gw / 2 - o.x;
+      opts['fill'] = this.cols.fixed;
+      opts['font-weight'] = 'normal';
+      opts['onComplete'] = function() { me.set_blocks(1); };
+      TweenMax.to(o.svg,3,opts);
+
+      var still_free = [];
+      for (k = 1; k <= this.n; k++) {
+       var oo = s.options[k];
+       if (k != s.val && oo.block_state != 2) {
+        still_free.push(oo);
+        remaining_option[i] = oo;
+       }
+      }
+
+      var nv = still_free.length;
+      for (k in still_free) {
+       var oo = still_free[k];
+       oo.block_state = 2;
+       var opts = {};
+       opts['x'] = 3 * this.gw/2 + 15 * (k - (nv - 1)/ 2) - oo.x;
+       opts['fill'] = this.cols.available;
+       opts['opacity'] = 1;
+       TweenMax.to(oo.svg,3,opts);
+      }
+
+      TweenMax.to(this.vbar[5],3,{opacity : 0});
+      TweenMax.to(this.vbar[6],3,{opacity : 0});
+
+      s.state = 'fixed';
+      this.squares[i][6].state = 'fixed';
+      this.squares[i][6].val = remaining_option[i].k;
+     }
+
+     var s =
+      'We now want to add column number $7$ to the rectangle.  There ' +
+      'is only one possible choice left in each row, and these ' +
+      'are all different, so there is no work to do for this step. ' +
+      'We now have a complete $7\\times 7$ latin square.';     
+
+     this.set_msg(s);
+
+     setTimeout(function() {me.set_blocks(1); me.make_stage_unready(); },3500);
+    }
+   }
+
+   demo.show_LE = function(j,i) {
+    var b = this.boxes[j][i];
+    b.ring.setAttribute('visibility','visible');
+    var p = j + 3;
+    var q = 5;
+    var sr = (p == q) ? 'square' : 'rectangle';
+    var e = p + q - this.n;
+    for (var i0 = 0; i0 < p; i0++) {
+     for (var j0 = 0; j0 < q; j0++) {
+      var s = this.squares[i0][j0];
+      var v = s.state == 'active' ? s.selected_val : s.val;
+      s.ring.setAttribute('visibility',v == i ? 'visible' : 'hidden');
+      s.rect.setAttribute('fill',this.cols.LE_range);
+     }
+    }
+
+    var s = '';
+    if (p < 7) {
+     s = 'This box shows the multiplicity and excess of $' + i +
+      '$ in the top left $' + p + '\\times' + q + '$ ' + sr +
+      '. There are $' + b.L +
+      '$ occurrences of $' + i + '$, so $m(' + i + ')=' + b.L + '$. ' +
+      'We also have $e(' + i + ')=m(' + i + ')+n-p-q$ with $n=7$ and ' +
+      '$p=' + p + '$ and $q=' + q + '$ so $e(' + i + ')=m(' + i + ')-' +
+      e + '=' + b.E + '$.';
+
+     if (b.E < 0) {
+      s += ' Because the excess is negative, the latin rectangle shown ' +
+       'cannot be extended to a $7\\times 7$ latin square.  We need to ' +
+       'change the bottom row so that $' + i + '$ appears there; then ' +
+       '$e(' + i + ')$ will be $0$ and we will be able to proceed. ';
+     }
+     
+     this.LE_div.innerHTML = s;
+
+    } else {
+     s = 'This box shows the multiplicity and excess of $' + i +
+      '$ in the top left $7\\times 5$ rectangle.  In every case, ' +
+      'the multiplicity $m(k)$ is $5$ and the excess $e(k)$ is zero. ';
+     this.LE_div.innerHTML = s;     
+    }
+
+    MathJax.Hub.Queue(['Typeset',MathJax.Hub,this.LE_div]);
+   }
+
+   demo.hide_LE = function() {
+    for (i = 0; i < 5; i++) {
+     for (k = 0; k <= this.n; k++) {
+      this.boxes[i][k].ring.setAttribute('visibility','hidden');
+     }
+    }
+
+    for (var i0 = 0; i0 < this.n; i0++) {
+     for (var j0 = 0; j0 < this.n; j0++) {
+      var s = this.squares[i0][j0];
+      s.ring.setAttribute('visibility','hidden');
+      s.rect.setAttribute('fill','white');
+     }
+    }
+
+    this.LE_div.innerHTML = '';
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="500">
+   </svg>
+   <div id="LE_div"></div>
+   <div id="msg_div">
+    The left hand side shows a $4\times 5$ latin rectangle with entries
+    $1,\dotsc,7$ (so $p=4$ and $q=5$ and $n=7$).  We want to extend it
+    to make a $7\times 7$ latin square.  To see whether this is
+    possible, we inspect the multiplicities $m(k)$ and excesses
+    $e(k)=m(k)+n-p-q=m(k)-2$ for the numbers $k=1,\dotsc,7$.  We have
+    $e(k)\geq 0$ for all $k$, so the extension problem is solvable.
+   </div>
+   <div id="controls_div">
+    <table>
+     <tr>
+      <td class="control" id="next_button">Next</td>
+     </tr>
+    </table>
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
+   </div>
+  </div>
+ </body>
+</html>

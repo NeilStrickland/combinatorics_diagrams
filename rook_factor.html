@@ -16,6 +16,7 @@
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TimelineMax.min.js">
   </script>
+  <script type="text/javascript" src="youtube_keys.js"></script>
   <script type="text/javascript" src="comb.js"></script>
   <script type="text/javascript" src="MAS334.js"></script>
 
@@ -92,19 +93,16 @@
 
   </style>
   <script type="text/javascript">
-   var demo = {};
+   var demo = Object.create(comb.demo);
 
    demo.init = function() {
     var i,R,div,t,h,x;
+
+    this.name = 'rook_factor';
+    
     var me = this;
 
-    this.frame = document.getElementById('frame');
-    this.main_svg = document.getElementById('main_svg');
-    this.msg_div = document.getElementById('msg_div');
-    this.rook_polynomial_div = document.getElementById('rook_polynomial_div');
-    this.relation_div = document.getElementById('relation_div');
-    this.C_button = document.getElementById('C_button');
-    this.D_button = document.getElementById('D_button');
+    this.find_ids(['rook_polynomial_div','relation_div','C_button','D_button']);
 
     R = matching_problem.from_eqs(
      {A : ['a','b','e'], B : ['c','d'], C : ['a','e'], D : ['c'], E : ['a','b','e']}
@@ -528,6 +526,9 @@
          onclick="demo.extract(1)">Extract D</div>
    </div>
    <div id="msg_div">
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

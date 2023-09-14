@@ -13,6 +13,7 @@
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
   </script>
+  <script type="text/javascript" src="youtube_keys.js"></script>
   <script type="text/javascript" src="comb.js"></script>
   <script type="text/javascript" src="MAS334.js"></script>
   
@@ -103,6 +104,9 @@
    
    demo.init = function() {
     var i,j,k,l,A,B,x,y,b,t;
+
+    this.name = 'children';
+    
     var me = this;
 
     this.find_ids(['solve_button']);
@@ -324,6 +328,9 @@
       <td class="control" id="solve_button">Solve</td>
      </tr>
     </table>
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

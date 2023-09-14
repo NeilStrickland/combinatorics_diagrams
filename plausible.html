@@ -1,0 +1,195 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script src="youtube_keys.js"></script>  
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  <style type="text/css">
+   div#msg_div {
+    position: absolute;
+    top: 120px;
+    left: 100px;
+    width : 600px;
+    font-size: 20px;
+   }
+  </style>
+
+  <script type="text/javascript">
+   var demo = Object.create(comb.demo);
+   
+   demo.init = function() {
+    this.name = 'plausible';
+
+    var me = this;
+
+    this.find_ids(['frame','msg_div']);
+
+    var R = matching_problem.from_eqs(
+     {a : [4,7], b : [2,4,7], c : [1,5,6,7], d : [4],
+      e : [1,2,5,8], f : [3,5,8], g : [3,4], h : [3,4,7]}
+    );
+
+    this.in_U = {};
+    this.U = [];
+    this.in_CU = {};
+    this.CU = [];
+    
+    this.rooks = R;
+
+    R.grid_x0 = 800;
+    R.grid_y0 = 80;
+    R.make_grid();
+    R.row_box = {};
+    R.col_box = {};
+    R.col_bars = {};
+    
+    for (var a of R.left_set) {
+     this.in_CU[a] = 0;
+     var l = R.grid.row_label[a];
+     l.setAttribute('x',l.getAttribute('x')-20);
+     var x = l.getAttribute('x');
+     var y = l.getAttribute('y');
+     var d = comb.svg.circle(x-5,y,16,'#FF0000',2);
+     d.setAttribute('visibility','hidden');
+     R.row_box[a] = d;
+     R.grid.svg.appendChild(d);
+    }
+
+    var x0 = R.grid_x0 + R.grid_w;
+    var y0 = R.grid_y0 + R.grid_h;
+    
+    for (var b of R.right_set) {
+     this.in_U[b] = 0;
+     var l = R.grid.col_label[b];
+     l.setAttribute('y',l.getAttribute('y')-20);
+     this.set_handler(l,b);
+     var x = l.getAttribute('x');
+     var y = l.getAttribute('y');
+     var d = comb.svg.circle(x-1,y,16,'#0000FF',2);
+     d.setAttribute('visibility','hidden');
+     R.col_box[b] = d;
+     R.grid.svg.appendChild(d);
+
+     R.col_bars[b] = comb.svg.group();
+     R.col_bars[b].setAttribute('visibility','hidden');
+     var i = R.right_index[b];
+     var x1 = x0 + (i - 0.5) * R.grid_w; 
+
+     for (var a of R.coblock[b]) {
+      var j = R.left_index[a];
+      var y1 = y0 + (j - 0.5) * R.grid_h;
+      var z = comb.svg.hline(x0-15,x1,y1,'#FF0000',2);
+      R.col_bars[b].appendChild(z);
+      var d = comb.svg.disc(x1,y1,10,'#FF0000');
+      R.col_bars[b].appendChild(d);
+     }
+
+     R.grid.svg.appendChild(R.col_bars[b]);
+    }
+    
+    this.main_svg.appendChild(R.grid.svg); 
+   };
+
+   demo.set_handler = function(l,b) {
+    var me = this;
+    
+    l.onclick = function() {
+     me.toggle(b);
+    };
+   };
+   
+   demo.toggle = function(b) {
+    var R = this.rooks;
+    
+    this.in_U[b] = ! this.in_U[b];
+    this.U = [];
+    this.CU = [];
+    for (var a of R.left_set) {
+     this.in_CU[a] = 0;
+    }
+
+    for (var b0 of R.right_set) {
+     if (this.in_U[b0]) {
+      this.U.push(b0);
+      R.col_box[b0].setAttribute('visibility','visible');
+      R.col_bars[b0].setAttribute('visibility','visible');
+      for (var a of R.coblock[b0]) {
+       this.in_CU[a] = 1;
+       R.cell[a][b0].square.setAttribute('fill','#8888FF');
+      }
+     } else {
+      R.col_box[b0].setAttribute('visibility','hidden');
+      R.col_bars[b0].setAttribute('visibility','hidden')
+      for (var a of R.coblock[b0]) {
+       R.cell[a][b0].square.setAttribute('fill','#FFFFFF');
+      }
+     }
+    }
+
+    for (var a of R.left_set) {
+     if (this.in_CU[a]) {
+      this.CU.push(a);
+      R.row_box[a].setAttribute('visibility','visible')
+     } else {
+      R.row_box[a].setAttribute('visibility','hidden')
+     }
+    }
+
+    var msg = '';
+    if (this.U.length == 0) {
+     msg = 'For $U=\\emptyset$ we have $C_U=\\emptyset$, so $|C_U|=|U|=0$, ' +
+      'so $U$ is barely plausible.  This holds for any matching problem, not ' +
+      'just this one: the empty set is always barely plausible.';
+    } else if (this.U.length == 8) {
+     msg = 'For the full set $U=B=\{1,\dotsc,8\}$ we have ' +
+      '$C_U=A=\{a,\dotsc,h\}$.  This means that $|C_U|=|U|=8$, ' +
+      'so $U$ is barely plausible.';
+    } else {
+     var nU = this.U.length;
+     var nCU = this.CU.length;
+     var Us = '\\{' + this.U.join() + '\\}';
+     var CUs = '\\{' + this.CU.join() + '\\}';
+     msg = 'For the set $U=' + Us + '$, we have $C_U=' + CUs + '$. ';
+     if (nCU < nU) {
+      msg += 'As $|C_U|=' + nCU + '<' + nU + '=|U|$, we see that the ' +
+       'set $U$ is implausible.  Because there exists an implausible ' +
+       'set, we see that this matching problem has no solution.';
+     } else if (nCU == nU) {
+      msg += 'As $|C_U|=' + nCU + '=|U|$ and $U\\neq\\emptyset,B$, ' +
+       'we see that the set $U$ is a barely plausible intermediate set.';
+     } else {
+      msg += 'As $|C_U|=' + nCU + '>' + nU + '=|U|$, we see that the ' +
+       'set $U$ is very plausible.';
+     }
+    }
+
+    this.msg_div.innerHTML = msg;
+    MathJax.Hub.Queue(['Typeset',MathJax.Hub,this.msg_div]);
+   };
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="700">
+   </svg>
+   <div id="msg_div">
+    Click the column headers to start.
+   </div>
+  </div>
+ </body>
+</html>
+
+ 

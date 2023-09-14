@@ -38,17 +38,19 @@
     tex2jax: {inlineMath: [["$","$"]]}
    });
   </script> 
+  <script type="text/javascript" src="youtube_keys.js"></script>
   <script type="text/javascript" src="comb.js"></script>
   <script type="text/javascript" src="MAS334.js"></script>
   <script type="text/javascript">
 
-   var demo = {};
+   var demo = Object.create(comb.demo);
 
    demo.init = function() {
     var w,x,y,s;
-    this.main_svg = document.getElementById('main_svg');
-    this.main_div = document.getElementById('main_div');
-    this.msg_div  = document.getElementById('msg_div');
+
+    this.name = 'solve_menage';
+
+    this.find_ids();
     
     this.board = matching_problem.from_eqs({
      A : [2,3,4],
@@ -140,6 +142,9 @@
    <div id="controls_div">
     <div class="control" onclick="demo.next()">Next</div>
     <div class="control" onclick="demo.previous()">Previous</div>
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

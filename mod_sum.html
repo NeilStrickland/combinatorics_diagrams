@@ -93,18 +93,23 @@
   </script>
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/utils/Draggable.min.js"></script>
+  <script src="youtube_keys.js"></script>  
+  <script src="comb.js"></script>  
   <script type="text/javascript">
 
-   var demo = {};
+   var demo = Object.create(comb.demo);
 
    demo.n = 10;
    demo.m = 100;
    
    demo.init = function() {
-    var me = this;
+
+    this.name = 'mod_sum';
     
-    this.msg_div = document.getElementById('msg_div');
-    this.main_table = document.getElementById('main_table');
+    var me = this;
+
+    this.find_ids(['main_table']);
+    
     this.x_td = {};
     this.y_td = {};
     this.z_td = {};
@@ -342,6 +347,9 @@
     <div class="control" id="step">Step</div>
    </div>
    <div id="msg_div">
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

@@ -1,0 +1,261 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="youtube_keys.js"></script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  
+  <style type="text/css">
+  </style>
+  <script type="text/javascript">
+   var demo = Object.create(comb.demo);
+
+   demo.init = function() {
+
+    this.name = 'orthogonal';
+    
+    var me = this;
+    
+    this.find_ids(['merge_button','msg0','msg1','msg2','msgi','msgj']);
+
+    this.L = latin_rectangle.setup([[1,2,3,4],[2,1,4,3],[3,4,1,2],[4,3,2,1]]);
+    this.M = latin_rectangle.setup([[1,2,3,4],[3,4,1,2],[4,3,2,1],[2,1,4,3]]);
+
+    this.L.grid_x0 = 50;
+    this.L.grid_y0 = 100;
+    this.L.grid_w = 80;
+    this.L.grid_h = 60;
+    this.L.grid_text_colour = '#FF0000';
+    this.L.show_col_labels = false;
+
+    this.M.grid_x0 = 690;
+    this.M.grid_y0 = 100;
+    this.M.grid_w = 80;
+    this.M.grid_h = 60;
+    this.M.grid_text_colour = '#0000FF';
+    this.M.show_col_labels = false;
+
+    this.main_svg.appendChild(this.L.make_grid().svg);
+    this.main_svg.appendChild(this.M.make_grid().svg);
+
+    for (i = 0; i < 4; i++) {
+     for (j = 0; j < 4; j++) {
+      this.L.grid.square[i][j].setAttribute('fill','none');
+      this.M.grid.square[i][j].setAttribute('fill','none');
+     }
+    }
+
+    this.check_x0 = 1100;
+    this.check_y0 = 150;
+    this.check_w = 40;
+    this.check_h = 40;
+    this.check_svg = comb.svg.group();
+    this.check_svg.setAttribute('transform','translate(' + this.check_x0 + ',' + this.check_y0 + ')');
+    this.check_svg.setAttribute('opacity',0);
+    this.main_svg.appendChild(this.check_svg);
+    
+    this.checks = [];
+    
+    for (i = 1; i <= 4; i++) {
+     for (j = 1; j <= 4; j++) {
+      var c = {};
+      c.i = i;
+      c.j = j;
+      c.k = this.checks.length;
+      c.x = (j - 1) * this.check_w;
+      c.y = (i - 1) * this.check_h;
+
+      c.svg = comb.svg.group();
+      c.svg.setAttribute('transform','translate(' + c.x + ',' + c.y + ')');
+      c.rect = comb.svg.rect(0,0,this.check_w,this.check_h,'grey',1);
+      c.i_text = comb.svg.math_text(c.i,0.4 * this.check_w,0.5 * this.check_h);
+      c.i_text.setAttribute('fill',this.L.grid_text_colour);
+      c.i_text.setAttribute('font-size','16px');
+      c.j_text = comb.svg.math_text(c.j,0.6 * this.check_w,0.5 * this.check_h);
+      c.j_text.setAttribute('fill',this.M.grid_text_colour);
+      c.j_text.setAttribute('font-size','16px');
+      c.pane = comb.svg.pane(0,0,this.check_w,this.check_h);
+      c.pane.classList.add('hoverpointer');
+      c.rect.setAttribute('pointer-events','none');
+      c.i_text.setAttribute('pointer-events','none');
+      c.j_text.setAttribute('pointer-events','none');
+      c.svg.appendChild(c.rect);
+      c.svg.appendChild(c.i_text);
+      c.svg.appendChild(c.j_text);
+      c.svg.appendChild(c.pane);
+      this.check_svg.appendChild(c.svg);
+      
+      this.checks.push(c);
+      this.set_check_handler(c.k);
+     }
+    }
+
+    this.L_label = comb.svg.math_text('L'   ,210,400);
+    this.LM_label = comb.svg.math_text('L*M',210 + 320,400);
+    this.M_label = comb.svg.math_text('M'   ,210 + 640,400);
+    this.LM_label.setAttribute('opacity',0);
+
+    this.main_svg.appendChild(this.L_label);
+    this.main_svg.appendChild(this.LM_label);
+    this.main_svg.appendChild(this.M_label);
+
+    this.state = 'unmerged';
+    this.active_check = null;
+     
+    this.merge_button.onclick = function() { me.merge(); }
+
+    this.msgi.style.color = 'red';
+    this.msgj.style.color = 'blue';
+    this.msgi.style['font-family'] = comb.math_font;
+    this.msgj.style['font-family'] = comb.math_font;
+    
+    window.onwheel = function(e) {
+     if (me.state == 'merged') {
+      me.next_check(e.deltaY > 0 ? 1 : -1);
+     }
+    }
+   }
+
+   demo.merge = function() {
+    TweenMax.to(this.L.grid.svg,3,{x :  320});
+    TweenMax.to(this.M.grid.svg,3,{x : -320});
+    TweenMax.to(this.L_label ,3,{opacity : 0});
+    TweenMax.to(this.M_label ,3,{opacity : 0});
+    TweenMax.to(this.LM_label,3,{opacity : 1});
+    TweenMax.to(this.check_svg,3,{opacity : 1});
+    
+    for (i = 0; i < 4; i++) {
+     for (j = 0; j < 4; j++) {
+      TweenMax.to(this.L.grid.text[i][j],3,{x : -6});
+      TweenMax.to(this.M.grid.text[i][j],3,{x :  6});
+     }
+    }
+
+    this.state = 'merged';
+    this.msg0.style.display = 'none';
+    this.msg1.style.display = 'block';
+   }
+
+   demo.set_check_handler = function(k) {
+    var me = this;
+    this.checks[k].pane.onclick = function() { me.handle_check_click(k); }
+   }
+
+   demo.handle_check_click = function(k) {
+    var k0 = -1;
+    if (this.active_check) { k0 = this.active_check.k; }
+    if (k == k0) {
+     this.active_check = null;
+    } else {
+     this.active_check = this.checks[k];
+    }
+
+    this.show_check();
+   }
+
+   demo.next_check = function(s) {
+    var k;
+    if (this.active_check) {
+     k = (this.active_check.k + s + 16) % 16;
+    } else {
+     k = 0;
+    }
+
+    this.active_check = this.checks[k];
+    this.show_check();
+   }
+   
+   demo.show_check = function() {
+    if (! this.active_check) {
+     this.hide_check();
+     return;
+    }
+
+    for (var i = 0; i < 4; i++) {
+     for (var j = 0; j < 4; j++) {
+      var a = this.L.cell[i][j].value;
+      var b = this.M.cell[i][j].value;
+      if (a == this.active_check.i && b == this.active_check.j) {
+       this.L.grid.square[i][j].setAttribute('fill','#CCFFCC');
+       this.M.grid.square[i][j].setAttribute('fill','none');
+      } else {
+       this.L.grid.square[i][j].setAttribute('fill','none');
+       this.M.grid.square[i][j].setAttribute('fill','none');
+      }
+     }
+    }
+
+    for (var k in this.checks) {
+     if (k == this.active_check.k) {
+      this.checks[k].rect.setAttribute('fill','#CCFFCC');
+     } else {
+      this.checks[k].rect.setAttribute('fill','none');
+     }
+    }
+
+    this.msgi.innerHTML = this.active_check.i;
+    this.msgj.innerHTML = this.active_check.j;
+    this.msg1.style.display = 'none';
+    this.msg2.style.display = 'block';
+   }
+
+   demo.hide_check = function() {
+    for (var i = 0; i < 4; i++) {
+     for (var j = 0; j < 4; j++) {
+      this.L.grid.square[i][j].setAttribute('fill','none');
+      this.M.grid.square[i][j].setAttribute('fill','none');
+     }
+    }
+
+    for (var k in this.checks) {
+     this.checks[k].rect.setAttribute('fill','none');
+    }
+   }
+   
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame" style="position:absolute">
+   <svg id="main_svg" width="1300" height="750" style="position:absolute; left:0px; top:0px;"></svg>
+   <div id="msg_div" style="position:absolute; left:50px; top:500px; width: 1000px; font-size:24px;">
+    <div id="msg0">
+     This shows two latin squares $L$ and $M$ of size $4$.  We claim that they
+     are orthogonal.  To check this, we need to merge them together to form
+     $L*M$.     
+    </div>
+    <div id="msg1" style="display: none">
+     For $L$ and $M$ to be orthogonal, every possible combination $ij$ (with
+     $i,j\in\{1,2,3,4\}$) must appear precisely once in $L*M$.  All possible
+     combinations are laid out in a regular way in the small square on the right.
+     We can click on them to see how they appear in $L*M$.
+    </div>
+    <div id="msg2" style="display: none">
+     The combination <span id="msgi">1</span><span id="msgj">1</span> occurs
+     precisely once in $L*M$, as expected.
+    </div>
+   </div>
+   <div id="controls_div" style="position:absolute; right:50px; top:50px;">
+    <table>
+     <tr>
+      <td class="control" id="merge_button">Merge</td>
+     </tr>
+    </table>
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
+   </div>
+  </div>
+ </body>
+</html>

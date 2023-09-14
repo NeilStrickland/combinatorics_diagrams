@@ -18,6 +18,7 @@
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
   </script>
+  <script type="text/javascript" src="youtube_keys.js"></script>
   <script type="text/javascript" src="comb.js"></script>
   <script type="text/javascript" src="MAS334.js"></script>
   
@@ -27,16 +28,18 @@
 
    'use strict';
    
-   var demo = {};
+   var demo = Object.create(comb.demo);
    
    demo.init = function() {
     var i,j,k,l,A,B,x,y,b,t,r,g,h,c,a,col;
+
+    this.name = 'd8_latin';
+    
     var me = this;
 
     this.n = 8;
-    
-    this.main_svg = document.getElementById('main_svg');
-    this.msg_div = document.getElementById('msg_div');
+
+    this.find_ids();
     
     this.x0 = 90;
     this.y0 = 90;
@@ -351,6 +354,9 @@
     \end{align*}
    </div>
    <div id="msg_div" style="position:absolute; left:650px; top:400px; width: 600px; font-size:24px;">
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

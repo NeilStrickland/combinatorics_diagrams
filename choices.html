@@ -9,11 +9,11 @@
     position: absolute;
    }
 
-   div#message_div {
+   div#msg_div {
     position: absolute;
     top: 700px;
-    width: 1360px;
-    text-align: center;
+    left: 40px;
+    width: 1240px;
     font-size: 20px;
    }
 
@@ -112,7 +112,10 @@
    }
 
   </style>
+  <script src="youtube_keys.js"></script>  
+  <script src="comb.js"></script>  
   <script type="text/javascript">
+
    var choice = {};
    choice.length = 0;
    choice.div = null;
@@ -190,11 +193,13 @@
     this.div.style.top  = this.pos[1] + 'px';
    };
 
-   var choices = {};
+   var demo = Object.create(comb.demo);
 
-   choices.init = function() {
-    this.choice_div  = document.getElementById('choice_div');
-    this.message_div = document.getElementById('message_div');
+   demo.init = function() {
+    this.name = 'choices';
+
+    this.find_ids(['choice_div','msg_div']);
+
     this.n = 6;
     this.k = 3;
     this.list_selection = '';
@@ -263,7 +268,7 @@
     }
    }
 
-   choices.clear_selection = function() {
+   demo.clear_selection = function() {
     var i,x;
     this.list_selection = '';
     for (i in this.obj_list) {
@@ -274,10 +279,10 @@
      x = this.set_list[i];
      x.div.className = 'set';
     }
-    this.message_div.innerHTML = 'There are six possible choices for which athlete wins gold.';
+    this.msg_div.innerHTML = 'There are six possible choices for which athlete wins gold.';
    }
 
-   choices.set_list_selection = function(s) {
+   demo.set_list_selection = function(s) {
     var l,i,x,y;
     this.list_selection = s;
     l = s.length;
@@ -311,15 +316,15 @@
     } else {
      msg = 'Here athlete ' + s.substring(0,1) + ' wins gold, athlete ' + s.substring(1,2) + ' wins silver ' +
       ' and athlete ' + s.substring(2,3) + ' wins bronze.  This is one of the 6&times;5&times;4=120 ' +
-      ' ways in which the medals can be awarded.<br/>  The unordered set of athletes who win a medal is ' + 
+      ' ways in which the medals can be awarded.  The unordered set of athletes who win a medal is ' + 
       y.string + '.';
     }
 
-    this.message_div.innerHTML = msg;
+    this.msg_div.innerHTML = msg;
    }
 
 
-   choices.set_set_selection = function(t) {
+   demo.set_set_selection = function(t) {
     var i,x;
     this.list_selection = '';
     this.set_selection = t;
@@ -342,11 +347,11 @@
      y.div.className = 'choice3 selected3';
     }
 
-    this.message_div.innerHTML = 'If we know that the set of athletes who get a medal is ' + x.string + 
+    this.msg_div.innerHTML = 'If we know that the set of athletes who get a medal is ' + x.string + 
      ', then there are six possible ways in which the gold, silver and bronze can be awarded.';
    }
 
-   choices.handle_list_click = function(c) {
+   demo.handle_list_click = function(c) {
     if (this.list_selection == c.string) {
      this.clear_selection();
     } else {
@@ -354,7 +359,7 @@
     }
    }
 
-   choices.handle_set_click = function(s) {
+   demo.handle_set_click = function(s) {
     if (this.set_selection == s.key) {
      this.clear_selection();
     } else {
@@ -363,10 +368,13 @@
    }
   </script>
  </head>
- <body onload="choices.init()">
+ <body onload="demo.init()">
   <div id="frame">
    <div id="choice_div"></div>
-   <div id="message_div"></div>
+   <div id="msg_div"></div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
+   </div>
   </div>
  </body>
 </html>

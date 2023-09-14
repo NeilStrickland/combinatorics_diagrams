@@ -15,26 +15,9 @@
     width: 60px;
    }
 
-   div#count_div {
-    position: absolute;
-    left: 1100px;
-    top: 200px;
-   }
-
-   div#count_div td {
-    width:70px;
-   }
-
-   div#main_div {
-    position:absolute;
-    left: 50px;
-    top: 50px;
-   }
-
    div#msg_div {
     position:absolute;
     top: 500px;
-    text-align:center;
     font-size: 24px;
     margin: 40px;
    }
@@ -51,14 +34,16 @@
     tex2jax: {inlineMath: [["$","$"]]}
    });
   </script> 
-
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
   </script>
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/utils/Draggable.min.js"></script>
-  <script type="text/javascript">
+  <script src="youtube_keys.js"></script>  
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
 
+  <script type="text/javascript">
    var box = {
     i : 0,
     x : 0,
@@ -66,7 +51,7 @@
     text : null
    };
 
-   var demo = {};
+   var demo = Object.create(comb.demo);
 
    demo.n = 32;
    demo.m = 8;
@@ -74,10 +59,11 @@
    demo.init = function() {
     var i,j,p,dh,dv,me;
 
-    me = this;
+    this.name = 'sum_set';
     
-    this.main_svg = document.getElementById('main_svg');
-    this.msg_div  = document.getElementById('msg_div');
+    me = this;
+
+    this.find_ids(['general_msg_div','explain_msg_div']);
 
     this.box = {};
 
@@ -113,6 +99,9 @@
 
     document.getElementById('trim').onclick = 
      function() { me.trim(); }
+
+    document.getElementById('explain').onclick = 
+     function() { me.explain(); }
 
     this.choose_set();
    }
@@ -151,9 +140,8 @@
 
     this.U_msg = 'This shows the set $U=\\{' + this.chosen.join(',') +
      '\\}$ (which has size ' + this.m + ').';
-    
-    this.msg_div.innerHTML = this.U_msg;
-    MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.msg_div]);
+
+    this.set_msg(this.U_msg);
     
     this.sets_by_sum = {};
     this.repeated_sums = [];
@@ -255,9 +243,7 @@
    demo.show_AB = function() {
     this.show_X('A','green',285,185,165);
     this.show_X('B','blue' ,315,415,435);
-    this.msg_div.innerHTML = 
-     this.U_msg + '<br/><br/>' + this.AB_msg;
-    MathJax.Hub.Queue(["Typeset",MathJax.Hub,this.msg_div]);
+    this.set_msg(this.U_msg + '<br/><br/>' + this.AB_msg);
    }
 
    demo.show_X = function(X,col,y1,y2,y3) {
@@ -317,6 +303,18 @@
     u.textContent = e;
    }
 
+   demo.set_msg = function(s) {
+    this.general_msg_div.innerHTML = s;
+    this.general_msg_div.style.display = 'block';
+    this.explain_msg_div.style.display = 'none';
+    MathJax.Hub.Queue(['Typeset',MathJax.Hub,this.general_msg_div]);
+   }
+   
+   demo.explain = function() {
+    this.general_msg_div.style.display = 'none';
+    this.explain_msg_div.style.display = 'block';
+   }
+
   </script>
  </head>
  <body onload="demo.init()">
@@ -327,8 +325,25 @@
     <div class="control" id="choose">Choose</div>
     <div class="control" id="check" >Check</div>
     <div class="control" id="trim"  >Trim</div>
+    <div class="control" id="explain">Explain</div>
    </div>
    <div id="msg_div">
+    <div id="general_msg_div"></div>
+    <div id="explain_msg_div" style="display:none">
+     If $|U|=8$ then there are $2^8=256$ different subsets of $U$, say
+     $X_1,\dotsc,X_{256}$.   Let $s_i$ be the sum of the numbers in
+     $X_i$.  This is the sum of at most $8$ numbers from $1$ to $32$,
+     so the largest possible value is $25+26+\dotsb+32=228$.  We
+     therefore have $256$ numbers $s_i$ in the range
+     $\{0,\dotsc,228\}$, so they cannot all be different.  We can
+     choose $i&lt;j$ with $s_i=s_j$ and then the sets $A=X_i$ and $B=X_j$
+     are distinct but have the same sum.  The sets
+     $A'=A\setminus(A\cap B)$ and $B'=B\setminus(A\cap B)$ are then
+     distinct disjoint subsets of $U$ with the same sum.
+    </div>
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

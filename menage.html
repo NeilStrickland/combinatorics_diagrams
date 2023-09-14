@@ -52,20 +52,20 @@
     tex2jax: {inlineMath: [["$","$"]]}
    });
   </script> 
+  <script type="text/javascript" src="youtube_keys.js"></script>
   <script type="text/javascript" src="comb.js"></script>
   <script type="text/javascript" src="MAS334.js"></script>
   <script type="text/javascript">
 
-   var demo = {};
+   var demo = Object.create(comb.demo);
 
    demo.man = {};
    demo.woman = {};
    
    demo.init = function() {
-    var w,x,y,s;
-    this.main_svg = document.getElementById('main_svg');
-    this.solutions_div = document.getElementById('solutions_div');
-    this.msg_div = document.getElementById('msg_div');
+    this.name = 'menage';
+
+    this.find_ids(['solutions_div']);
     
     this.men = [];
     this.men_by_code = {};
@@ -98,7 +98,7 @@
     this.board.make_grid();
     this.main_svg.appendChild(this.board.grid.svg);
 
-    T = {};
+    var T = {};
     this.table = T;
     T.cx = 300;
     T.cy = 300;
@@ -109,11 +109,11 @@
     T.svg = comb.svg.disc(T.cx,T.cy,T.r1,'green');
     this.main_svg.appendChild(T.svg);
     
-    for (i = 0; i < 5; i++) {
-     w = this.women[i];
-     x = T.cx + T.r2 * Math.sin(Math.PI * 0.4 * i) - 25;
-     y = T.cy - T.r2 * Math.cos(Math.PI * 0.4 * i) - 25;
-     p = comb.svg.node('image');
+    for (var i = 0; i < 5; i++) {
+     var w = this.women[i];
+     var x = T.cx + T.r2 * Math.sin(Math.PI * 0.4 * i) - 25;
+     var y = T.cy - T.r2 * Math.cos(Math.PI * 0.4 * i) - 25;
+     var p = comb.svg.node('image');
      p.setAttribute('href','../images/woman_' + w.code + '.png');
      p.setAttribute('x',x);
      p.setAttribute('y',y);
@@ -153,11 +153,11 @@
      this.main_svg.appendChild(w.label);
     }
     
-    for (i = 0; i < 5; i++) {
-     m = this.men[i];
-     x = this.board.grid_x0 + 490;
-     y = this.board.grid_y0 + 97 + 80 * i;
-     p = comb.svg.node('image');
+    for (var i = 0; i < 5; i++) {
+     var m = this.men[i];
+     var x = this.board.grid_x0 + 490;
+     var y = this.board.grid_y0 + 97 + 80 * i;
+     var p = comb.svg.node('image');
      p.setAttribute('href','../images/man_' + m.code + '.png');
      p.setAttribute('x',x);
      p.setAttribute('y',y);
@@ -184,12 +184,12 @@
     }
     
     this.man_slots = {};
-    for (i = 1; i <= 5; i++) {
-     s = {};
+    for (var i = 1; i <= 5; i++) {
+     var s = {};
      this.man_slots[i] = s;
-     x = T.cx + T.r0 * Math.sin(Math.PI * 0.4 * (i - 0.5));
-     y = T.cy - T.r0 * Math.cos(Math.PI * 0.4 * (i - 0.5));
-     p = comb.svg.frect(x - 15,y - 15,30,30,'#CCCCCC');
+     var x = T.cx + T.r0 * Math.sin(Math.PI * 0.4 * (i - 0.5));
+     var y = T.cy - T.r0 * Math.cos(Math.PI * 0.4 * (i - 0.5));
+     var p = comb.svg.frect(x - 15,y - 15,30,30,'#CCCCCC');
      p.setAttribute('rx',5);
      p.setAttribute('ry',5);
      s.box = p;
@@ -212,10 +212,10 @@
      s.occupant = null;
     }
     
-    for (i in this.board.left_set) {
-     a = this.board.left_set[i];
-     for (j in this.board.right_set) {
-      b = this.board.right_set[j];
+    for (var i in this.board.left_set) {
+     var a = this.board.left_set[i];
+     for (var j in this.board.right_set) {
+      var b = this.board.right_set[j];
       
       if (this.board.relation_table[a][b]) {
        this.set_square_handler(this.board.grid.square[a][b],a,b);
@@ -224,7 +224,7 @@
      }
     }
     
-    sols0 = [
+    var sols0 = [
      '23451','24153','24513','25413','34152','34512','34521',
      '35412','35421','43152','43512','43521','45123'
     ];
@@ -232,11 +232,11 @@
     this.board.solutions = [];
     this.board.solutions_by_key = {};
     
-    for (i in sols0) {
-     u0 = sols0[i];
-     n0 = u0.length;
-     u1 = u0.split('');
-     u = {size : n0};
+    for (var i in sols0) {
+     var u0 = sols0[i];
+     var n0 = u0.length;
+     var u1 = u0.split('');
+     var u = {size : n0};
      u.key = 'A' + u1[0] + 'B' + u1[1] + 'C' + u1[2] + 'D' + u1[3] + 'E' + u1[4];
      u.slots = [['A',u1[0]],
                 ['B',u1[1]],
@@ -259,7 +259,7 @@
    }
 
    demo.add_man = function(name) {
-    x = Object.create(this.man);
+    var x = Object.create(this.man);
     x.index = this.men.length;
     x.name = name;
     x.code = name.substr(0,1);
@@ -268,7 +268,7 @@
    }
 
    demo.add_woman = function(name) {
-    x = Object.create(this.woman);
+    var x = Object.create(this.woman);
     x.index = this.women.length;
     x.name = name;
     x.code = name.substr(0,1);
@@ -290,15 +290,15 @@
    }
    
    demo.paint_seats = function() {
-    for (i in this.board.right_set) {
-     b = this.board.right_set[i];
-     s = this.man_slots[b];
+    for (var i in this.board.right_set) {
+     var b = this.board.right_set[i];
+     var s = this.man_slots[b];
      s.occupant = null;
      
-     for (j in this.board.left_set) {
-      a = this.board.left_set[j];
+     for (var j in this.board.left_set) {
+      var a = this.board.left_set[j];
       
-      if (this.board.is_filled[a][b]) {
+      if (this.board.cell[a][b].is_filled) {
        s.occupant = a;
        s.image.setAttribute('href','../images/man_' + a + '.png');
        s.image.setAttribute('visibility','visible');
@@ -357,31 +357,29 @@
    }
    
    demo.paint_couple = function() {
-    var c,i,w,m,v,b,u;
-    
-    c = this.selected_couple;
-    for (i in this.women) {
-     w = this.women[i];
-     v = (w.code === c) ? 'visible' : 'hidden';
+    var c = this.selected_couple;
+    for (var i in this.women) {
+     var w = this.women[i];
+     var v = (w.code === c) ? 'visible' : 'hidden';
      w.image_frame.setAttribute('visibility',v);
     }
     
-    for (i in this.men) {
-     m = this.men[i];
-     v = (m.code === c) ? 'visible' : 'hidden';
+    for (var i in this.men) {
+     var m = this.men[i];
+     var v = (m.code === c) ? 'visible' : 'hidden';
      m.image_frame.setAttribute('visibility',v);
     } 
     
     if (c) {
-     b = this.board.block[c];
+     var b = this.board.block[c];
      
      this.msg_div.innerHTML = 'Man ' + c +
       ' is not allowed to sit next to woman ' + c +
       ', so he can only sit in seat ' + b[0] + ', ' + 
       b[1] + ' or ' + b[2] + '.';
      
-     for (i in this.man_slots) {
-      u = this.man_slots[i];
+     for (var i in this.man_slots) {
+      var u = this.man_slots[i];
       if (i == b[0] || i == b[1] || i == b[2]) {
        u.box.setAttribute('fill','#CCCCCC');
       } else {
@@ -391,8 +389,8 @@
     } else {
      this.msg_div.innerHTML = '';
 
-     for (i in this.man_slots) {
-      u = this.man_slots[i];
+     for (var i in this.man_slots) {
+      var u = this.man_slots[i];
       u.box.setAttribute('fill','#CCCCCC');
      }
     }
@@ -407,6 +405,9 @@
    <div id="solutions_div">
    </div>
    <div id="msg_div">
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

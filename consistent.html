@@ -13,6 +13,7 @@
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
   </script>
+  <script type="text/javascript" src="youtube_keys.js"></script>
   <script type="text/javascript" src="comb.js"></script>
   <script type="text/javascript" src="MAS334.js"></script>
   
@@ -33,15 +34,17 @@
    
   </style>
   <script type="text/javascript">
-   var demo = {};
+   var demo = Object.create(comb.demo);
    
    demo.init = function() {
     var i,j,x,y;
+
+    this.name = 'consistent';
+    
     var me = this;
 
-    this.main_svg = document.getElementById('main_svg');
+    this.find_ids();
     this.main_svg.appendChild(comb.svg.arrow_defs());
-    this.msg_div = document.getElementById('msg_div');
 
     this.n = 7;
     var T = tournament.consistent(['A','C','F','D','E','B','G']);
@@ -92,6 +95,9 @@
        </marker>
      </defs>
    </svg>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
+   </div>
   </div>
  </body>
 </html>

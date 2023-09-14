@@ -43,6 +43,8 @@
    }
 
   </style>
+  <script src="youtube_keys.js"></script>  
+  <script src="comb.js"></script>  
   <script type="text/javascript">
    
    var region = {
@@ -70,7 +72,7 @@
     eq : null
    };
    
-   var demo = {};
+   var demo = Object.create(comb.demo);
 
    demo.x0 = 300;
    demo.y0 = 350;
@@ -80,7 +82,9 @@
    demo.init = function() {
     var x0,y0,a,b,r,i,s,p;
 
-    this.main_svg = document.getElementById('main_svg');
+    this.name = 'venn3';
+
+    this.find_ids();
 
     this.step = 0;
 
@@ -396,10 +400,10 @@
      <li id="eq_s_or_b">$\text{number playing squash or badminton}=m_s+m_b-m_{sb}=24$</li>
     </ul>
    </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
+   </div>
   </div>
  </body>
 </html>
 
-this.eq_labels = [
-
-]

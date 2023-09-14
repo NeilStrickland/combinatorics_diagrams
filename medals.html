@@ -13,6 +13,7 @@
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
   </script>
+  <script type="text/javascript" src="youtube_keys.js"></script>
   <script type="text/javascript" src="comb.js"></script>
   <script type="text/javascript" src="MAS334.js"></script>
   
@@ -89,6 +90,9 @@
    
    demo.init = function() {
     var i,j,k,l,x,y;
+
+    this.name = 'medals';
+    
     var me = this;
 
     this.find_ids();
@@ -214,6 +218,9 @@
    </div>
    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
    </svg>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
+   </div>
   </div>
  </body>
 </html>

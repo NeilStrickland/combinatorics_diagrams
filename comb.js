@@ -283,7 +283,7 @@ comb.demo = {};
 comb.demo.find_ids = function(ids) {
  var i,id,ids0,x;
  
- ids0 = ['main_div','main_svg','msg_div','youtube_button'];
+ ids0 = ['frame','main_div','main_svg','msg_div','youtube_button'];
 
  if (ids !== undefined) {
   ids0 = ids.concat(ids0);

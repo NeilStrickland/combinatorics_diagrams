@@ -1,0 +1,569 @@
+<html>
+ <head>
+  <style type="text/css" media="screen">
+   @import url(MAS334_demo.css);
+  </style>
+  <style type="text/css">
+
+   div#msg_div {
+    font-size: 24px;
+    margin: 40px;
+    position:absolute;
+    left: 0px;
+    top:450px;
+   }
+
+   div#controls_div {
+    position:absolute;
+    right: 30px;
+    top: 50px;
+   }
+
+   div#LE_div {
+    position: absolute;
+    left: 700px;
+    top: 270px;
+    width: 550px;
+    height: 180px;
+   }
+   
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"> 
+   MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"]]}
+   });
+  </script> 
+  <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
+  </script>
+  <script type="text/javascript" src="youtube_keys.js"></script>
+  <script type="text/javascript" src="comb.js"></script>
+  <script type="text/javascript" src="MAS334.js"></script>
+  <script type="text/javascript">
+
+   var demo = Object.create(comb.demo);
+
+   demo.square = {};
+
+   demo.option = {};
+
+   demo.option.block = function(b) {
+    if (b > this.block_state) { this.block_state = b; }
+    return this.block_state;
+   }
+
+   demo.cols = {
+    'box'       : '#888888',
+    'ring'      : '#006400',
+    'fixed'     : '#000000',
+    'selected'  : '#0000FF',
+    'available' : '#448844',
+    'blocked'   : '#FF4444'
+   }
+   
+   demo.init = function() {
+    var w,x,y,s,i,j,a,b;
+
+    this.name = 'latin4';
+    
+    var me = this;
+    
+    this.find_ids(['start_button','backtrack_button',
+                   'msg0','msg1',
+                   'msg2','msg2pos','msg2val',
+                   'msg3','msg3pos','msg3val1','msg3val2',
+                   'msg4','msg4pos',
+		   'msg5',
+		   'msg6'
+                   ]);
+    this.stage = 0;
+    this.stage_ready = 1;
+    this.last_stage = 5;
+
+    this.vals = {};
+
+    this.grid = comb.svg.group();
+    this.grid.setAttribute('transform','translate(350 50)');
+    this.main_svg.appendChild(this.grid);
+
+    this.n = 4;
+    this.gw = 80;
+    this.gh = 80;
+    
+    this.squares = {};
+    this.trail = [];
+    
+    for (i = 0; i < this.n; i++) {
+     this.squares[i] = {};
+     
+     for (j = 0; j < this.n; j++) {
+      var s = Object.create(this.square);
+      this.squares[i][j] = s;
+      s.i = i;
+      s.j = j;
+      s.val = 0;
+      s.selected_val = 0;
+      if (i == 0 || j == 0) {
+       s.state = 'fixed';
+       s.val = i + j + 1;
+      } else {
+       s.state = 'empty';
+      }
+      
+      s.svg = comb.svg.group();
+      s.svg.setAttribute('transform','translate(' + (this.gw * j) + ',' + (this.gh * i) + ')');
+      this.grid.appendChild(s.svg);
+      s.rect = comb.svg.rect(0,0,this.gw,this.gh,this.cols.box,1);
+      s.svg.appendChild(s.rect);
+
+      s.options = {};
+      for (k = 1; k <= this.n; k++) {
+       var o = Object.create(this.option);
+       o.i = i;
+       o.j = j;
+       o.k = k;
+       o.block_state = 0;
+       o.selected = (k == s.val);
+       o.svg = comb.svg.math_text(k,this.gw/2,this.gh/2);
+       o.svg.setAttribute('pointer-events','visiblePainted');
+       o.svg.classList.add('hoverpointer');
+       if (! o.selected) {
+        o.svg.setAttribute('visibility','hidden');
+       }
+       s.svg.appendChild(o.svg);
+
+       s.options[k] = o;
+      }
+
+      s.ring = comb.svg.rect(3,3,this.gw - 6,this.gh - 6,this.cols.ring,2);
+      s.ring.setAttribute('rx',3);
+      s.ring.setAttribute('ry',3);
+      s.ring.setAttribute('visibility','hidden');
+      s.svg.appendChild(s.ring);
+
+      s.crumb = comb.svg.math_text('',this.gw - 12, this.gh - 10);
+      s.crumb.setAttribute('font-size','12px');
+      s.crumb.setAttribute('fill','red');
+      s.svg.appendChild(s.crumb);
+
+      s.starred = 0;
+     }
+    }
+
+    this.sols0 = [
+     [[1,2,3,4],[2,1,4,3],[3,4,1,2],[4,3,2,1]],
+     [[1,2,3,4],[2,1,4,3],[3,4,2,1],[4,3,1,2]],
+     [[1,2,3,4],[2,3,4,1],[3,4,1,2],[4,1,2,3]],
+     [[1,2,3,4],[2,4,1,3],[3,1,4,2],[4,3,2,1]]
+    ];
+
+    this.sols = [];
+    
+    for (k = 0; k < 4; k++) {
+     var s = {};
+     s.k = k;
+     s.found = 0;
+     s.vals = this.sols0[k];
+
+     s.svg = comb.svg.group();
+     s.svg.setAttribute('visibility','hidden');
+     this.main_svg.appendChild(s.svg);
+     s.x = 740 + 110 * k;
+     s.y = 250;
+     s.svg.setAttribute('transform','translate(' + s.x + ',' + s.y + ')');
+
+     for (i = 0; i < this.n; i++) {
+      for (j = 0; j < this.n; j++) {
+       var t = comb.svg.math_text(s.vals[i][j],20 * i,20 * j);
+       t.setAttribute('font-size','12px');
+       s.svg.appendChild(t);
+      }
+     }
+     
+     this.sols.push(s);
+    }
+    
+    for (i = 0; i < this.n; i++) {
+     for (j = 0; j < this.n; j++) {
+      for (k = 1; k <= this.n; k++) {
+       this.set_option_click_handler(i,j,k);
+      }
+     }
+    }
+
+    this.start_button.onclick = function() { me.start(); }
+    this.backtrack_button.onclick = function() { me.backtrack(); }
+   };
+
+   //////////////////////////////////////////////////////////////////////
+
+   demo.start = function() {
+    this.set_blocks();
+    this.step = -1;
+    this.activate(1,1);
+    this.set_blocks();
+    this.show_msg(1);
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+   
+   demo.clear_blocks = function() {
+    for (var i = 0; i < this.n; i++) {
+     for (var j = 0; j < this.n; j++) {
+      for (var k = 1; k <= this.n; k++) {
+       this.squares[i][j].options[k].block_state = 0;
+      }
+     }
+    }
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.set_blocks_core = function() {
+    for (var i = 0; i < this.n; i++) {
+     for (var j = 0; j < this.n; j++) {
+      var s = this.squares[i][j];
+
+      var v,b;
+      
+      if (s.val) {
+       v = s.val;  b = 2;
+      } else if (s.selected_val) {
+       v = s.selected_val; b = 1;
+      } else {
+       v = 0; b = 0;
+      }
+      
+      if (b) {
+       for (var i0 = 0; i0 < this.n; i0++) {
+        if (i0 != i) {
+         this.squares[i0][j].options[v].block(b);
+        }
+       }
+
+       for (var j0 = 0; j0 < this.n; j0++) {
+        if (j0 != j) {
+         this.squares[i][j0].options[v].block(b);
+        }
+       }
+      }
+     }
+    }
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.set_option_visibility = function() {
+    for (var i = 0; i < this.n; i++) {
+     for (var j = 0; j < this.n; j++) {
+      var s = this.squares[i][j];
+      s.free_options = [];
+      s.visible_options = [];
+      
+      for (k = 1; k <= this.n; k++) {
+       var o = s.options[k];
+       o.svg.setAttribute('visibility','hidden');
+
+       if (s.state == 'fixed') {
+        if (k == s.val) {
+         o.svg.setAttribute('fill',this.cols.fixed);
+         s.visible_options.push(o);
+        }
+       } else if (s.state == 'active') {
+        if (k == s.selected_val) {
+         TweenMax.to(o.svg,0,{fill : this.cols.selected,
+                              'font-weight' : 'bold',
+                              opacity : 1});
+         s.visible_options.push(o);
+        } else if (o.block_state == 0) {
+         TweenMax.to(o.svg,0,{fill : this.cols.available,
+                              'font-weight' : 'normal',
+                              opacity : s.selected_val ? 0.5 : 1});
+         s.visible_options.push(o);
+        } else if (o.block_state == 1) {
+         TweenMax.to(o.svg,0,{fill : this.cols.blocked,
+                              'font-weight' : 'normal',
+                              opacity : 0.5});
+         s.visible_options.push(o);
+        }
+        if (o.block_state == 0) {
+         s.free_options.push(o);
+        }
+       } else {
+        if (o.block_state == 0) {
+         s.free_options.push(o);
+        }
+       }
+      }
+
+      var nv = s.visible_options.length;
+      for (k in s.visible_options) {
+       var o = s.visible_options[k];
+       o.svg.setAttribute('visibility','visible');
+       o.x = this.gw/2 + 15 * (k - (nv - 1)/ 2);
+       o.svg.setAttribute('transform','');
+       o.svg.setAttribute('x',o.x);
+      }
+     }
+    }
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.set_blocks = function(keep_msg) {
+    if (arguments.length == 0) { keep_msg = 0; }
+    this.clear_blocks();
+    this.set_blocks_core();
+    this.set_option_visibility();
+   }
+
+   //////////////////////////////////////////////////////////////////////
+   
+   demo.set_option_click_handler = function(i,j,k) {
+    var o = this.squares[i][j].options[k];
+    var me = this;
+    
+    o.svg.onclick = function() { me.handle_option_click(i,j,k); }
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.handle_option_click = function(i,j,k) {
+    var me = this;
+    
+    var s = this.squares[i][j];
+    var o = s.options[k];
+    var t = s.free_options.length > 1 ? 2 : 0.3;
+    
+    if (! (s.state == 'active' && o.block_state == 0)) { return; }
+    s.selected_val = (s.selected_val == k) ? 0 : k;
+
+    this.set_blocks();
+
+    s.state = 'fixed';
+    s.val = s.selected_val;
+
+    TweenMax.to(o.svg,t,
+                {x : this.gw/2 - o.x,
+                 fill : '#000000',
+                 'font-weight' : 'normal'});
+
+    setTimeout(function() { me.next_square(); },1000 * t + 100);
+    
+    for (l = 1; l <= this.n; l++) {
+     if (l != k) {
+      oo = s.options[l];
+      TweenMax.to(oo.svg,t,{opacity : 0})
+     }
+    }
+   }
+
+   //////////////////////////////////////////////////////////////////////
+
+   demo.next_square = function() {
+    var done = 0;
+
+    this.set_blocks();
+
+    var m = 4;
+    for (i = 0; i < this.n; i++) {
+     for (j = 0; j < this.n; j++) {
+      var s = this.squares[i][j];
+      if (s.state != 'fixed') {
+       m = Math.min(m,s.free_options.length);
+      }
+     }
+    }
+
+    for (i = 0; i < this.n; i++) {
+     for (j = 0; j < this.n; j++) {
+      var s = this.squares[i][j];
+      s.ring.setAttribute('visibility','hidden');
+      if (! done && s.state != 'fixed' && s.free_options.length == m) {
+       done = 1;
+       this.activate(i,j);
+
+       if (m == 3) {
+        this.show_msg(1);
+       } else if (m == 2) {
+        this.msg3pos.innerHTML = '$(' + (i + 1) + ',' + (j + 1) + ')$';
+        this.msg3val1.innerHTML = '$' + s.free_options[0].k + '$';
+        this.msg3val2.innerHTML = '$' + s.free_options[1].k + '$';
+        this.show_msg(3);
+       } else if (m == 1) {
+        this.msg2pos.innerHTML = '$(' + (i + 1) + ',' + (j + 1) + ')$';
+        this.msg2val.innerHTML = '$' + s.free_options[0].k + '$';
+        this.show_msg(2);
+       }
+      }
+     }
+    }
+
+    if (! done) {
+     this.show_msg(5);
+     this.check_sols();
+    }
+
+    this.set_blocks();
+   }
+
+   //////////////////////////////////////////////////////////////////////
+
+   demo.backtrack = function() {
+    var m = this.trail.length;
+    if (m < 2) { return; }
+    var s = this.trail.pop();
+    s.state = 'empty';
+    s.val = 0;
+    s.selected_val = 0;
+    s.crumb.textContent = '';
+    s.ring.setAttribute('visibility','hidden');
+    m--;
+    this.step--;
+
+    while (m >= 2 && (this.trail[m-1].starred != 1)) {
+     var s = this.trail.pop();
+     s.state = 'empty';
+     s.val = 0;
+     s.selected_val = 0;
+     s.crumb.textContent = '';
+     s.ring.setAttribute('visibility','hidden');
+     m--;
+     this.step--;
+    }
+
+    s = this.trail[m-1];
+    s.state = 'active';
+    s.val = 0;
+    s.selected_val = 0;
+    this.set_blocks();
+    s.ring.setAttribute('visibility','visible');
+    if (s.free_options.length > 1) {
+     s.crumb.textContent = '' + this.step + '*';
+     s.starred = 1;
+    } else {
+     s.crumb.textContent = this.step;
+     s.starred = 0;
+    }
+
+    this.msg4pos.innerHTML = '$(' + (s.i + 1) + ',' + (s.j + 1) + ')$';
+    this.show_msg(4);
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+   
+   demo.activate = function(i,j) {
+    this.step++;
+    
+    var s = this.squares[i][j];
+    s.state = 'active';
+    s.ring.setAttribute('visibility','visible');
+    if (s.free_options.length > 1) {
+     s.crumb.textContent = '' + this.step + '*';
+     s.starred = 1;
+    } else {
+     s.crumb.textContent = this.step;
+     s.starred = 0;
+    }
+
+    this.trail.push(s);
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.show_msg = function(i) {
+    for (j = 0; j <= 6; j++) {
+     this['msg' + j].style.display = (j == i) ? 'block' : 'none';
+    }
+
+    MathJax.Hub.Queue(['Typeset',MathJax.Hub,this.msg_div]);
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+   demo.check_sols = function() {
+    for (k = 0; k < 4; k++) {
+     var match = 1;
+     var sol = this.sols[k];
+     for (i = 0; i < this.n; i++) {
+      for (j = 0; j < this.n; j++) {
+       if (sol.vals[i][j] != this.squares[i][j].val) {
+	match = 0;
+       }
+      }
+     }
+
+     if (match) {
+      sol.found = 1;
+      sol.svg.setAttribute('visibility','visible');
+     }
+    }
+
+    var all_found = 1;
+    for (k = 0; k < 4; k++) {
+     if (! this.sols[k].found) { all_found = 0; }
+    }
+
+    if (all_found) { this.show_msg(6); };
+   }
+   
+   //////////////////////////////////////////////////////////////////////
+
+  </script>
+ </head>
+ <body onload="demo.init()">
+  <div id="frame">
+   <svg id="main_svg" width="1300" height="500">
+   </svg>
+   <div id="msg_div">
+    <div id="msg0">
+     This demonstration shows how to find all possible reduced latin
+     squares of size $4$.  Because we are only considering reduced
+     squares, the first row and the first column are $(1,2,3,4)$.
+    </div>
+    <div id="msg1" style="display: none">
+     In position $(2,2)$ we cannot have a $2$, because of the $2$s
+     directly above and directly to the left.  However, we can choose
+     between $1$, $3$ and $4$.  In the bottom right of the box we have
+     written <span style="color:red">0*</span>: the
+     <span style="color:red">0</span> indicates that this is step
+     $0$, and the <span style="color:red">*</span> indicates that
+     we have several choices.
+    </div>
+    <div id="msg2" style="display: none">
+     We now have only one choice for the entry in position
+     <span id="msg2pos"></span>: the only way we can avoid duplicates
+     in the corresponding row and column is to place a
+     <span id="msg2val"></span> there.
+    </div>
+    <div id="msg3" style="display: none">
+     There are two possible choices for the entry in position
+     <span id="msg3pos"></span>, namely <span id="msg3val1"></span>
+     and <span id="msg3val2"></span>.
+    </div>
+    <div id="msg4" style="display: none">
+     We now backtrack to position <span id="msg4pos"></span>, which is
+     the last place where we had any choice.
+    </div>
+    <div id="msg5" style="display: none">
+     We now have a reduced latin square of size $4$.
+    </div>
+    <div id="msg6" style="display: none">
+     We have now found all four of the possible reduced latin squares
+     of size $4$.
+    </div>
+   </div>
+   <div id="controls_div">
+    <table>
+     <tr><td class="control" id="start_button">Start</td></tr>
+     <tr><td class="control" id="backtrack_button">Backtrack</td></tr>
+    </table>
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
+   </div>
+  </div>
+ </body>
+</html>

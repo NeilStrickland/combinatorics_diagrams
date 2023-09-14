@@ -13,6 +13,7 @@
   <script type="text/javascript"
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js">
   </script>
+  <script src="youtube_keys.js"></script>  
   <script type="text/javascript" src="comb.js"></script>
   <script type="text/javascript" src="MAS334.js"></script>
   
@@ -57,14 +58,17 @@
    
   </style>
   <script type="text/javascript">
-   var demo = {};
+   
+   var demo = Object.create(comb.demo);
    
    demo.init = function() {
     var i,j,k,l,A,B,x,y,b,t;
+
+    this.name = 'match';
+    
     var me = this;
 
-    this.main_svg = document.getElementById('main_svg');
-    this.msg_div = document.getElementById('msg_div');
+    this.find_ids();
     
     this.left_set_full = {
       a : 'Ann',
@@ -141,6 +145,8 @@
     this.main_svg.appendChild(this.P.graph.svg);
     
     this.set_all_handlers(1);
+
+    MathJax.Hub.Queue(["Typeset",MathJax.Hub,document.body]);
    }
    
    demo.set_all_handlers = function(t) {
@@ -244,6 +250,9 @@
          style="width: 60px; font-size: 20px;">Solve</div>
    </div>
    <div id="msg_div">
+   </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
    </div>
   </div>
  </body>

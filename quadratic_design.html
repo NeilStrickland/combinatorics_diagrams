@@ -17,6 +17,7 @@
   </script> 
   <script src="https://preview.babylonjs.com/babylon.js"></script>
   <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+  <script type="text/javascript" src="youtube_keys.js"></script>
   <script src="comb.js"></script>
   <script src="comb_babylon.js"></script>
 
@@ -40,7 +41,7 @@
  <body>
   <h1>The quadratic residue design for $\mathbb{Z}/7$</h1>
   <div style="width:100%; margin: 0 auto; text-align:center;">
-   <div style="width:100%; margin-left: 200px;"> 
+   <div style="width:1000; margin-left: 200px;"> 
     <table>
      <tr>
       <td>
@@ -66,11 +67,13 @@
    <br>
    <div id="msg_div" style="width:900px; text-align: left; margin-left: 200px;">
    </div>
+   <div class="youtube_link">
+    <img id="youtube_button" src="video_icon.png" height="40px"/>
+   </div>
   </div>
- <script>
-  var demo = {
+  <script>
    
-  };
+  var demo = Object.create(comb.demo);
 
   demo.f = function(u,v,w) {
    var R,r,x,y,z;
@@ -108,12 +111,14 @@
   }
   
   demo.init = function () {
+   this.name = 'quadratic_design';
+    
    var me = this;
+   this.find_ids();
 
    this.canvas = document.getElementById('main_canvas');
    this.blocks_tbody = document.getElementById('blocks_tbody');
    this.varieties_tbody = document.getElementById('varieties_tbody');
-   this.msg_div = document.getElementById('msg_div');
 
    this.set_message(this.overview_msg);
    
