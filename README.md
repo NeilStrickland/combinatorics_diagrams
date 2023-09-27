@@ -1,4 +1,3 @@
 # Combinatorics diagrams
 
-This is set of interactive or animated diagrams for a course in combinatorics.  
-Other course material is at https://shef.ac.uk/nps/courses/MAS334.
+This is set of interactive or animated diagrams for the [MAS334 Combinatorics](https://strickland1.org/courses/MAS334) course at the University of Sheffield.
