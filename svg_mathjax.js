@@ -1,4 +1,4 @@
-/*
+!/*
  * SVG_MathJax
  * 
  * Copyright 2014 Jason M. Sachs

@@ -1,4 +1,4 @@
-comb.flat = function(a) {
+!comb.flat = function(a) {
  var b = [];
  for (i = 0; i < a.length; i++) {
   b = b.concat(a[i]);

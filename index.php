@@ -1,6 +1,6 @@
 <?php
 
-require_once('../MAS334.php');
+require_once('../MPS352.php');
 
 $labels = $course->parse_aux_labels();
 $keys = $course->parse_youtube_keys();
@@ -113,7 +113,7 @@ echo <<<HTML
 <html>
  <head>
   <style type="text/css" media="screen">
-   @import url(MAS334_demo.css);
+   @import url(MPS352_demo.css);
    
    table#A {
     position: absolute;
